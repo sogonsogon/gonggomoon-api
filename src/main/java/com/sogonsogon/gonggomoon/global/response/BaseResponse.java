@@ -28,11 +28,14 @@ public class BaseResponse<T> {
     // 성공 응답
     // ──────────────────────────────────────
 
+    private static final String DEFAULT_SUCCESS_CODE = "SUCCESS";
+    private static final String DEFAULT_SUCCESS_MESSAGE = "요청이 성공적으로 처리되었습니다.";
+
     public static BaseResponse<Void> success() {
         return BaseResponse.<Void>builder()
                 .success(true)
-                .code("SUCCESS")
-                .message("요청이 성공적으로 처리되었습니다.")
+                .code(DEFAULT_SUCCESS_CODE)
+                .message(DEFAULT_SUCCESS_MESSAGE)
                 .timestamp(Instant.now())
                 .build();
     }
@@ -40,8 +43,8 @@ public class BaseResponse<T> {
     public static <T> BaseResponse<T> success(T data) {
         return BaseResponse.<T>builder()
                 .success(true)
-                .code("SUCCESS")
-                .message("요청이 성공적으로 처리되었습니다.")
+                .code(DEFAULT_SUCCESS_CODE)
+                .message(DEFAULT_SUCCESS_MESSAGE)
                 .data(data)
                 .timestamp(Instant.now())
                 .build();
@@ -50,7 +53,7 @@ public class BaseResponse<T> {
     public static <T> BaseResponse<T> success(T data, String message) {
         return BaseResponse.<T>builder()
                 .success(true)
-                .code("SUCCESS")
+                .code(DEFAULT_SUCCESS_CODE)
                 .message(message)
                 .data(data)
                 .timestamp(Instant.now())
