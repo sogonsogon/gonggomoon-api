@@ -1,0 +1,4 @@
+spring:
+  profiles:
+    active: local # 기본값 설정 (application-local.yml이 기본적으로 로드됨)
+

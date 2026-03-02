@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/your_local_db
+    username: your_local_username
+    password: your_local_password
+
+
+# 이후 추가 되는 필드는 이 곳에 정의해주세요.
