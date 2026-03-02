@@ -1,6 +1,7 @@
 package com.sogonsogon.gonggomoon.global.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +22,7 @@ public class BaseResponse<T> {
     private final T data;
     private final List<FieldError> errors;
     private final PageInfo pageInfo;
-    private final LocalDateTime timestamp;
+    private final Instant timestamp;
 
     // ──────────────────────────────────────
     // 성공 응답
@@ -32,7 +33,7 @@ public class BaseResponse<T> {
                 .success(true)
                 .code("SUCCESS")
                 .message("요청이 성공적으로 처리되었습니다.")
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now())
                 .build();
     }
 
@@ -42,7 +43,7 @@ public class BaseResponse<T> {
                 .code("SUCCESS")
                 .message("요청이 성공적으로 처리되었습니다.")
                 .data(data)
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now())
                 .build();
     }
 
@@ -52,7 +53,7 @@ public class BaseResponse<T> {
                 .code("SUCCESS")
                 .message(message)
                 .data(data)
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now())
                 .build();
     }
 
@@ -67,7 +68,7 @@ public class BaseResponse<T> {
                 .message("요청이 성공적으로 처리되었습니다.")
                 .data(data)
                 .pageInfo(pageInfo)
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now())
                 .build();
     }
 
@@ -80,7 +81,7 @@ public class BaseResponse<T> {
                 .success(false)
                 .code(code)
                 .message(message)
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now())
                 .build();
     }
 
@@ -90,7 +91,7 @@ public class BaseResponse<T> {
                 .code(code)
                 .message(message)
                 .errors(errors)
-                .timestamp(LocalDateTime.now())
+                .timestamp(Instant.now())
                 .build();
     }
 
