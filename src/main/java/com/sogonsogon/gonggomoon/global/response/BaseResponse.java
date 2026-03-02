@@ -7,7 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -20,7 +19,7 @@ public class BaseResponse<T> {
     private final String code;
     private final String message;
     private final T data;
-    private final List<FieldError> errors;
+    private final List<ValidationError> errors;
     private final PageInfo pageInfo;
     private final Instant timestamp;
 
@@ -88,7 +87,7 @@ public class BaseResponse<T> {
                 .build();
     }
 
-    public static BaseResponse<Void> fail(String code, String message, List<FieldError> errors) {
+    public static BaseResponse<Void> fail(String code, String message, List<ValidationError> errors) {
         return BaseResponse.<Void>builder()
                 .success(false)
                 .code(code)
@@ -105,7 +104,7 @@ public class BaseResponse<T> {
     @Getter
     @Builder
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public static class FieldError {
+    public static class ValidationError {
         private final String field;
         private final String reason;
     }
