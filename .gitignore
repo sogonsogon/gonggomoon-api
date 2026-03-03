@@ -39,4 +39,9 @@ out/
 ### IntelliJ IDEA
 .idea/
 
-###
+### MacOS
+.DS_Store
+
+### application yaml 파일
+application-*.yaml
+application-*.yml
