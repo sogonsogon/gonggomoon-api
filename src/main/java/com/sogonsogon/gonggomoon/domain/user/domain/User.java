@@ -26,7 +26,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
     name = "users",
     uniqueConstraints = {
         @UniqueConstraint(name = "uk_users_email", columnNames = "email"),
-        @UniqueConstraint(name = "uk_users_nickname", columnNames = "nickname")
     }
 )
 @Getter
@@ -45,12 +44,6 @@ public class User {
     @Column(nullable = false, length = 50)
     private String name;
 
-    @Column(nullable = false, length = 50)
-    private String nickname; // Unique
-
-    @Column
-    private String profileImageUrl; // Nullable
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role; // ADMIN, USER
@@ -66,6 +59,9 @@ public class User {
     @LastModifiedDate
     @Column(name = "updated_at")
     private Instant updatedAt; // 수정일(Nullable)
+
+    @Column
+    private String profileImageUrl; // Nullable
 
     public enum Role {
         ADMIN, USER
