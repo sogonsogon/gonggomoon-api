@@ -43,12 +43,14 @@ public class SecurityConfig {
             .oauth2Login(oauth2 -> oauth2
                 // [검문소 1] 프론트가 호출할 진입점 (설정하신 엔드포인트 적용)
                 .authorizationEndpoint(auth -> auth
+                    // 예시) http://localhost:8080/api/v1/auth/social/login/naver를 호출하면 네이버 Oauth2 로그인 프로세스가 시작됩니다.
                     .baseUri("/api/v1/auth/social/login")
                     // 세션을 못 쓰니 쿠키를 임시 저장소로 사용하겠다고 선언!
                     .authorizationRequestRepository(cookieAuthorizationRequestRepository)
                 )
-                // [검문소 2] 구글에서 인증을 마치고 리다이렉트 되어 돌아오는 기본 주소는 /login/oauth2/code/{provider} 입니다.
-                // 이 주소로 코드가 오면, 아래의 UserService가 작동하여 구글에서 유저 정보를 가져옵니다.
+                // [검문소 2] 구글에서 인증을 마치고 리다이렉트 되어 돌아오는 기본 주소는 application에 정의합니다
+                // 예시) http://localhost:8080/login/oauth2/code/naver로 네이버에서 리다이렉트가 오면, 이 주소가 스프링 시큐리티의 OAuth2 로그인 프로세스에 걸립니다.
+                // 이 주소로 코드가 오면, 아래의 UserService가 작동하여 Provider에서 유저 정보를 가져옵니다.
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService) // DB에 유저 정보 저장 및 업데이트 로직
                 )
