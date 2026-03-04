@@ -2,17 +2,13 @@ package com.sogonsogon.gonggomoon.domain.auth.infrastructure.oauth2;
 
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.jwt.JwtTokenProvider;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.HttpCookieOAuth2AuthorizationRequestRepository;
-import com.sogonsogon.gonggomoon.global.utils.CookieUtils;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
 @RequiredArgsConstructor
@@ -21,28 +17,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final JwtTokenProvider tokenProvider;
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
 
-    // TODO : 아래 메서드로 테스트 해보고 필요 없으면 삭제
-//    @Override
-//    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
-//
-//        // 1. 프론트엔드가 처음에 지정했던 redirect_uri를 쿠키에서 꺼냅니다.
-//        Optional<String> redirectUri = CookieUtils.getCookie(request, HttpCookieOAuth2AuthorizationRequestRepository.REDIRECT_URI_PARAM_COOKIE_NAME)
-//            .map(Cookie::getValue);
-//
-//        // 2. JWT(Access Token)를 생성합니다.
-//        String token = tokenProvider.createToken(authentication);
-//
-//        // 3. 최종적으로 이동할 프론트엔드 URL을 조립합니다. (예: http://localhost:3000/oauth2/redirect?token=xxxx)
-//        String targetUrl = UriComponentsBuilder.fromUriString(redirectUri.orElse(getDefaultTargetUrl()))
-//            .queryParam("token", token)
-//            .build().toUriString();
-//
-//        // 4. 인증 과정에서 썼던 임시 쿠키들을 싹 청소합니다.
-//        clearAuthenticationAttributes(request, response);
-//
-//        // 5. 프론트엔드로 리다이렉트!
-//        getRedirectStrategy().sendRedirect(request, response, targetUrl);
-//    }
 @Override
 public void onAuthenticationSuccess(HttpServletRequest request,
                                     HttpServletResponse response,
