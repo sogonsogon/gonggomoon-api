@@ -10,8 +10,26 @@ public class NaverOAuth2UserInfo extends OAuth2UserInfo {
 
     public NaverOAuth2UserInfo(Map<String, Object> attributes) {
         super(attributes);
-        // 네이버는 attributes.get("response") 안에 진짜 정보가 있습니다.
-        this.response = (Map<String, Object>) attributes.get("response");
+
+        // 1. "response" 키가 존재하는지, 데이터가 있는지 확인
+        Object responseObj = attributes.get("response");
+
+        // TODO : 추후에 CustomException이 추가되면 IllegalArgumentException 대신 해당 예외로 변경되어야 할 로직
+        if (responseObj == null) {
+            // 로깅을 함께 남겨주면 추후 디버깅에 매우 유리합니다.
+            throw new IllegalArgumentException("네이버 로그인 응답에 'response' 필드가 존재하지 않습니다. 네이버 API 응답 구조가 변경되었는지 확인하세요. attributes: " + attributes);
+        }
+
+        // 2. "response" 데이터가 우리가 기대하는 Map 형식이 맞는지 확인
+        // TODO : 추후에 CustomException이 추가되면 IllegalArgumentException 대신 해당 예외로 변경되어야 할 로직
+        if (!(responseObj instanceof Map)) {
+            throw new IllegalArgumentException("네이버 로그인 응답의 'response' 필드가 Map 형식이 아닙니다. API 응답 구조가 변경되었는지 확인하세요. 실제 타입: " + responseObj.getClass().getName());
+        }
+
+        // 3. 안전하게 캐스팅
+        @SuppressWarnings("unchecked")
+        Map<String, Object> responseMap = (Map<String, Object>) responseObj;
+        this.response = responseMap;
     }
 
     @Override
