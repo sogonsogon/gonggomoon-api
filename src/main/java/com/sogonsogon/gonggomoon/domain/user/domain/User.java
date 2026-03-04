@@ -70,4 +70,55 @@ public class User {
     public enum Status {
         ACTIVE, SLEEP, WITHDRAWN
     }
+
+    /**
+     * 프로필이 변경된 경우에만 업데이트를 수행하는 메서드입니다.
+     * 변경 여부를 boolean으로 반환하여, 변경이 발생한 경우에만 DB 업데이트가 일어나도록 할 수 있습니다.
+     *
+     * @param name 변경된 이름
+     * @param profileImageUrl 변경된 프로필 이미지 URL
+     * @return 프로필이 변경된 경우 true, 그렇지 않은 경우 false
+    * */
+    public boolean updateProfile(String name, String profileImageUrl) {
+        boolean changed = false;
+
+        // 1) 이름 정규화 + 빈 값 방지
+        String newName = normalizeName(name);  // null or cleaned
+
+        // NOTE : this.name이 null이 될 수 없도록 설계되어 있지만, 혹시라도 null이 들어오는 경우를 대비하여 null 체크를 추가합니다.
+        if (newName != null && !this.name.equals(newName)) {
+            this.name = newName;
+            changed = true;
+        }
+
+        // 2) 이미지 URL 정규화 + 빈 값 방지
+        String newProfileImageUrl = normalizeProfileUrl(profileImageUrl); // null or cleaned
+
+        // NOTE : this.profileImageUrl이 null이 될 수 있으므로, equals 비교 전에 null 체크를 합니다.
+        if (newProfileImageUrl != null && !this.profileImageUrl.equals(newProfileImageUrl)) {
+            this.profileImageUrl = newProfileImageUrl;
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private String normalizeName(String name) {
+        if (name == null) return null;
+        String trimmed = name.trim();
+        if (trimmed.isEmpty()) return null;
+
+        // "홍길동   입니다" 같은 연속 공백을 하나로
+        return trimmed.replaceAll("\\s+", " ");
+    }
+
+    private String normalizeProfileUrl(String url) {
+        if (url == null) return null;
+        String trimmed = url.trim();
+        if (trimmed.isEmpty()) return null;
+
+        // ✅ 선택 정책: 프로필 URL이 매번 변동되는 쿼리스트링(?, &)이 붙는 경우가 많으면 제거
+        int q = trimmed.indexOf('?');
+        return (q >= 0) ? trimmed.substring(0, q) : trimmed;
+    }
 }
