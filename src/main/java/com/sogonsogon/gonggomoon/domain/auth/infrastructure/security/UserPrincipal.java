@@ -1,6 +1,5 @@
 package com.sogonsogon.gonggomoon.domain.auth.infrastructure.security;
 
-// domain/auth/application/UserPrincipal.java
 import com.sogonsogon.gonggomoon.domain.user.domain.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,32 +11,24 @@ import java.util.Collections;
 import java.util.Map;
 
 // 💡 실무 팁: UserDetails와 OAuth2User를 모두 구현하면 일반 로그인과 소셜 로그인을 통합 처리할 수 있습니다.
-public class UserPrincipal implements OAuth2User, UserDetails {
+public class UserPrincipal implements OAuth2User, UserDetails, AccessUser {
 
-    private Long id;
-    private String email;
-    private String password;
+    private User user;
     private Collection<? extends GrantedAuthority> authorities;
     private Map<String, Object> attributes; // 소셜 로그인 시 구글/카카오에서 받은 원본 데이터
 
-    public UserPrincipal(Long id, String email, String password, Collection<? extends GrantedAuthority> authorities) {
-        this.id = id;
-        this.email = email;
-        this.password = password;
+    public UserPrincipal(User user, Collection<? extends GrantedAuthority> authorities) {
+        this.user = user;
         this.authorities = authorities;
     }
 
     // 💡 팩토리 메서드: 우리 DB의 User 엔티티를 받아서 UserPrincipal로 변환
     public static UserPrincipal create(User user) {
-        // 권한 설정 (User 엔티티에 RoleEnum이 있다고 가정)
-        // ex: List<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority(user.getRole().name()));
-        Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+        // 권한 설정 (TODO : `ROLE_`을 붙이는 이유는 Spring Security의 관례이다.)
+        Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_"+user.getRole().name()));
 
         return new UserPrincipal(
-            user.getId(),
-            user.getEmail(),
-//            user.getPassword(), // 소셜 로그인이면 null이거나 더미 비밀번호일 수 있음 TODO : 로직관련 수정이 필요함.
-            null,
+            user,
             authorities
         );
     }
@@ -49,8 +40,11 @@ public class UserPrincipal implements OAuth2User, UserDetails {
         return userPrincipal;
     }
 
+    // --- AccessUser 인터페이스 구현 ---
+
+    @Override
     public Long getId() {
-        return id;
+        return user.getId();
     }
 
     public void setAttributes(Map<String, Object> attributes) {
@@ -65,7 +59,7 @@ public class UserPrincipal implements OAuth2User, UserDetails {
 
     @Override
     public String getName() { // 식별자 반환
-        return String.valueOf(id);
+        return String.valueOf(user.getPublicId());
     }
 
     // --- UserDetails 인터페이스 구현 ---
@@ -76,12 +70,12 @@ public class UserPrincipal implements OAuth2User, UserDetails {
 
     @Override
     public String getPassword() {
-        return password;
+        return null; // 패스워드는 저장하지 않음 !
     }
 
     @Override
     public String getUsername() {
-        return email; // 시큐리티에서 username은 보통 로그인 ID(이메일)를 의미합니다.
+        return String.valueOf(user.getPublicId());
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.auth.infrastructure.jwt;
 
+import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.UserPrincipal;
+import com.sogonsogon.gonggomoon.domain.user.application.CustomUserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -13,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.stream.Collectors;
+import javax.crypto.SecretKey;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,7 +29,7 @@ import org.springframework.stereotype.Component;
 public class JwtTokenProvider {
 
     private static final String AUTHORITIES_KEY = "auth";
-    private static final String TOKEN_TYPE_KEY = "typ";
+    private static final String TOKEN_TYPE_KEY = "type";
     private static final String ACCESS_TYPE = "access";
     private static final String REFRESH_TYPE = "refresh";
 
@@ -38,16 +41,22 @@ public class JwtTokenProvider {
     // refresh 만료(ms)
     private final long refreshTokenValidityMs;
 
+    // CustomUserDetailsService
+    CustomUserDetailsService customUserDetailsService;
+
     public JwtTokenProvider(
         @Value("${jwt.secret}") String secretKey,
         @Value("${jwt.access-token-validity-in-seconds}") long accessTokenValiditySeconds,
-        @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValiditySeconds
+        @Value("${jwt.refresh-token-validity-in-seconds}") long refreshTokenValiditySeconds,
+        CustomUserDetailsService customUserDetailsService
     ) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
 
         this.accessTokenValidityMs = accessTokenValiditySeconds * 1000;
         this.refreshTokenValidityMs = refreshTokenValiditySeconds * 1000;
+
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     /**
@@ -63,7 +72,7 @@ public class JwtTokenProvider {
         Date expiry = new Date(now + accessTokenValidityMs);
 
         return Jwts.builder()
-            .subject(authentication.getName())
+            .subject(authentication.getName()) // User public_id(UUID) 값이 들어감
             .issuedAt(issuedAt)
             .expiration(expiry)
             .claim(AUTHORITIES_KEY, authorities)
@@ -83,7 +92,7 @@ public class JwtTokenProvider {
         Date expiry = new Date(now + refreshTokenValidityMs);
 
         return Jwts.builder()
-            .subject(authentication.getName())
+            .subject(authentication.getName()) // User public_id(UUID) 값이 들어감
             .issuedAt(issuedAt)
             .expiration(expiry)
             .claim(TOKEN_TYPE_KEY, REFRESH_TYPE)
@@ -98,7 +107,7 @@ public class JwtTokenProvider {
      */
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parser()
-            .verifyWith((javax.crypto.SecretKey) key)
+            .verifyWith((SecretKey) key)
             .build()
             .parseSignedClaims(token)
             .getPayload();
@@ -109,17 +118,17 @@ public class JwtTokenProvider {
             throw new IllegalArgumentException("권한 정보(auth)가 없는 토큰입니다. (refresh token일 수 있음)");
         }
 
+        UserPrincipal userPrincipal = customUserDetailsService.loadUserPrincipalByPublicId(claims.getSubject());
+
         Collection<? extends GrantedAuthority> authorities =
             Arrays.stream(authClaim.toString().split(","))
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
 
-        org.springframework.security.core.userdetails.User principal =
-            new org.springframework.security.core.userdetails.User(claims.getSubject(), "", authorities);
-
-        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+        return new UsernamePasswordAuthenticationToken(userPrincipal, token, authorities);
     }
 
+    // TODO : EntryPointException 같은 커스텀 예외로 변경하는 것을 권장
     public boolean validateToken(String token) {
         try {
             Jwts.parser()
