@@ -7,9 +7,9 @@ public enum UserErrorCode implements BaseErrorCode {
     USER_NOT_FOUND("USER_NOT_FOUND", HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
     ;
 
-    private String code;
-    private HttpStatus status;
-    private String message;
+    private final String code;
+    private final HttpStatus status;
+    private final String message;
 
      UserErrorCode(String code, HttpStatus status, String message) {
         this.code = code;
