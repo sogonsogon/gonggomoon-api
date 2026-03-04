@@ -1,6 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.auth.infrastructure.security;
 
-import com.nimbusds.oauth2.sdk.util.StringUtils;
+import org.springframework.util.StringUtils;
 import com.sogonsogon.gonggomoon.global.utils.CookieUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -37,7 +37,7 @@ public class HttpCookieOAuth2AuthorizationRequestRepository implements
 
         // 프론트엔드가 파라미터로 보낸 redirect_uri가 있다면 이것도 쿠키에 저장
         String redirectUriAfterLogin = request.getParameter(REDIRECT_URI_PARAM_COOKIE_NAME);
-        if (StringUtils.isNotBlank(redirectUriAfterLogin)) {
+        if (StringUtils.hasText(redirectUriAfterLogin)) {
             CookieUtils.addCookie(response, REDIRECT_URI_PARAM_COOKIE_NAME, redirectUriAfterLogin, COOKIE_EXPIRE_SECONDS);
         }
     }
