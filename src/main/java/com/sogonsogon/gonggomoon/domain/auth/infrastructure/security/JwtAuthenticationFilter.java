@@ -26,6 +26,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String jwt = getJwtFromRequest(request);
 
         // 2. 토큰이 존재하고, 유효한 서명/만료일자를 가졌는지 검증합니다.
+        /*
+        * TODO : `/reissue` 재발급 API는 JwtAuthenticationFilter를 타지 않도록 SecurityConfig에서 예외 처리 필요
+        *  refresh token은 Authorization 헤더 키를 사용하는게 아니라 별도의 헤더 `Refresh-Token`를 사용하는게 좋을 것이다.
+        * */
+
         if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
             // 3. 유효하다면 토큰에서 유저 정보(ID나 권한)를 뽑아 Authentication 객체를 만듭니다.
             Authentication authentication = tokenProvider.getAuthentication(jwt);
