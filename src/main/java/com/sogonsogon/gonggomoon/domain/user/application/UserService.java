@@ -3,7 +3,6 @@ package com.sogonsogon.gonggomoon.domain.user.application;
 import com.sogonsogon.gonggomoon.domain.user.application.exception.UserNotFoundException;
 import com.sogonsogon.gonggomoon.domain.user.domain.User;
 import com.sogonsogon.gonggomoon.domain.user.domain.UserRepository;
-import com.sogonsogon.gonggomoon.global.error.BaseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
