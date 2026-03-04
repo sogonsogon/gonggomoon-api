@@ -2,8 +2,6 @@ package com.sogonsogon.gonggomoon.global.error;
 
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -52,6 +50,6 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
             .status(errorCode.getStatus())
-            .body(BaseResponse.fail(errorCode.name(), errorCode.getMessage(), errors));
+            .body(BaseResponse.fail(errorCode.getCode(), errorCode.getMessage(), errors));
     }
 }
