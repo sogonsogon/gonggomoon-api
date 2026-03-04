@@ -54,11 +54,11 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private Role role; // ADMIN, USER
+    private UserRole role; // ADMIN, USER
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private Status status; // active, sleep, withdrawn
+    private UserStatus status; // active, sleep, withdrawn
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -70,14 +70,6 @@ public class User {
 
     @Column
     private String profileImageUrl; // Nullable
-
-    public enum Role {
-        ADMIN, USER
-    }
-
-    public enum Status {
-        ACTIVE, SLEEP, WITHDRAWN
-    }
 
     /**
      * 프로필이 변경된 경우에만 업데이트를 수행하는 메서드입니다.
