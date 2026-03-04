@@ -8,9 +8,11 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +28,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
     name = "users",
     uniqueConstraints = {
         @UniqueConstraint(name = "uk_users_email", columnNames = "email"),
+    },
+    indexes = {
+        @Index(name = "ux_users_public_id", columnList = "public_id", unique = true)
     }
 )
 @Getter
@@ -37,6 +42,9 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; // PK
+
+    @Column(name = "public_id", nullable = false, updatable = false, unique = true)
+    private UUID publicId;
 
     @Column(nullable = false, length = 255)
     private String email; // Unique (암호화 여부는 별도 컨버터/컬럼 설계에 따라)
