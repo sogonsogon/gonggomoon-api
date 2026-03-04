@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,9 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    @Value("${spring.security.oauth2.client.redirect-front-uri}")
+    private String REDIRECT_URI;
 
     private final JwtTokenProvider tokenProvider;
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
@@ -35,8 +39,8 @@ public void onAuthenticationSuccess(HttpServletRequest request,
     clearAuthenticationAttributes(request, response);
 
     // ✅ 3) 프론트 콜백으로만 리다이렉트 (token 파라미터 없음)
-    // TODO : 프론트 리다이렉트 주소 받아와야 할 듯 ? -> 그리고 해당 callback 주소에서 /api/v1/users/me API를 호출하도록 해야함 !
-    String targetUrl = "http://localhost:3000/auth/callback";
+    // TODO : 프론트 리다이렉트 주소 받아와야 할 듯 ? -> application.yml에서 수정하면 됨.
+    String targetUrl = REDIRECT_URI;
     getRedirectStrategy().sendRedirect(request, response, targetUrl);
 }
 
