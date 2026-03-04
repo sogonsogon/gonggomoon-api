@@ -2,7 +2,6 @@ package com.sogonsogon.gonggomoon.domain.auth.infrastructure.security;
 
 // domain/auth/application/UserPrincipal.java
 import com.sogonsogon.gonggomoon.domain.user.domain.User;
-import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
