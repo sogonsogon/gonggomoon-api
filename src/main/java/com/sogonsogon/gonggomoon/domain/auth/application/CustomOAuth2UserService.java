@@ -7,6 +7,7 @@ import com.sogonsogon.gonggomoon.domain.user.domain.User;
 import com.sogonsogon.gonggomoon.domain.user.domain.User.Role;
 import com.sogonsogon.gonggomoon.domain.user.domain.User.Status;
 import com.sogonsogon.gonggomoon.domain.user.domain.UserRepository;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -51,6 +52,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             .email(userInfo.getEmail())
             .name(userInfo.getName())
             .profileImageUrl(userInfo.getImageUrl())
+            .publicId(UUID.randomUUID())
             .status(Status.ACTIVE)
             // Enum 타입으로 관리하는 것을 강력히 권장합니다. (ex: AuthProvider.GOOGLE)
 //            .provider(registrationId) // TODO : 프로바이더는 oauth 테이블에서 관리해야하는거 같음.
