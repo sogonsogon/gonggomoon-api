@@ -4,9 +4,9 @@ import com.sogonsogon.gonggomoon.domain.auth.infrastructure.oauth2.OAuth2UserInf
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.oauth2.OAuth2UserInfoFactory;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.UserPrincipal;
 import com.sogonsogon.gonggomoon.domain.user.domain.User;
-import com.sogonsogon.gonggomoon.domain.user.domain.User.Role;
-import com.sogonsogon.gonggomoon.domain.user.domain.User.Status;
 import com.sogonsogon.gonggomoon.domain.user.domain.UserRepository;
+import com.sogonsogon.gonggomoon.domain.user.domain.UserRole;
+import com.sogonsogon.gonggomoon.domain.user.domain.UserStatus;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -53,11 +53,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             .name(userInfo.getName())
             .profileImageUrl(userInfo.getImageUrl())
             .publicId(UUID.randomUUID())
-            .status(Status.ACTIVE)
+            .status(UserStatus.ACTIVE)
             // Enum 타입으로 관리하는 것을 강력히 권장합니다. (ex: AuthProvider.GOOGLE)
 //            .provider(registrationId) // TODO : 프로바이더는 oauth 테이블에서 관리해야하는거 같음.
 //            .providerId(userInfo.getProviderId())
-            .role(Role.USER) // 시스템 기본 권한 부여 (User 엔티티 설계에 맞게 추가)
+            .role(UserRole.USER) // 시스템 기본 권한 부여 (User 엔티티 설계에 맞게 추가)
             .build();
 
         return userRepository.save(newUser);
