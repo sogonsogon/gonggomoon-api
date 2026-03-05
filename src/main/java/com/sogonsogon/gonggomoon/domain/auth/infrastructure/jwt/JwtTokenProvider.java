@@ -153,13 +153,22 @@ public class JwtTokenProvider {
      */
     public String getTokenType(String token) {
         Claims claims = Jwts.parser()
-            .verifyWith((javax.crypto.SecretKey) key)
+            .verifyWith((SecretKey) key)
             .build()
             .parseSignedClaims(token)
             .getPayload();
 
         Object typ = claims.get(TOKEN_TYPE_KEY);
         return typ == null ? null : typ.toString();
+    }
+
+    public Claims parseToken(String token) {
+
+        return Jwts.parser()
+            .verifyWith((SecretKey) key)
+            .build()
+            .parseSignedClaims(token)
+            .getPayload();
     }
 
     public boolean isRefreshToken(String token) {

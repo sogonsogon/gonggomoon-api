@@ -14,12 +14,11 @@ public interface RefreshTokenJpaRepository extends JpaRepository<RefreshToken, L
 
     @Modifying
     @Query(value = """
-        INSERT INTO refresh_token (user_id, token, updated_at)
-        VALUES (:userId, :token, now())
+        INSERT INTO refresh_tokens (user_id, token)
+        VALUES (:userId, :token)
         ON CONFLICT (user_id)
         DO UPDATE SET
-            token = EXCLUDED.token,
-            updated_at = now()
+            token = EXCLUDED.token
         """, nativeQuery = true)
     void upsertByUserId(@Param("userId") Long userId, @Param("token") String token);
 }
