@@ -11,6 +11,8 @@ import com.sogonsogon.gonggomoon.domain.experience.application.result.UpdateExpe
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,11 +35,10 @@ public class ExperienceController {
      * @return
      */
     @PostMapping
-    public BaseResponse<CreateExperienceResponse> createExperience(@AuthenticationPrincipal AccessUser user,
-                                                                   @RequestBody @Valid CreateExperienceRequest req) {
+    public ResponseEntity<BaseResponse<CreateExperienceResponse>> createExperience(@AuthenticationPrincipal AccessUser user,
+                                                                                  @RequestBody @Valid CreateExperienceRequest req) {
         CreateExperienceResult result = experienceService.create(req);
-
-        return BaseResponse.success(CreateExperienceResponse.from(result));
+        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(CreateExperienceResponse.from(result)));
     }
 
     /**
@@ -47,12 +48,12 @@ public class ExperienceController {
      * @return
      */
     @PatchMapping("/{experienceId}")
-    public BaseResponse<UpdateExperienceResponse> updateExperience(@AuthenticationPrincipal AccessUser user,
+    public ResponseEntity<BaseResponse<UpdateExperienceResponse>> updateExperience(@AuthenticationPrincipal AccessUser user,
                                                                    @PathVariable("experienceId") Long experienceId,
                                                                    @RequestBody @Valid UpdateExperienceRequest req) {
         UpdateExperienceResult result = experienceService.update(experienceId, req);
 
-        return BaseResponse.success(UpdateExperienceResponse.from(result));
+        return ResponseEntity.ok(BaseResponse.success(UpdateExperienceResponse.from(result)));
     }
 
     /**
@@ -61,10 +62,10 @@ public class ExperienceController {
      * @return
      */
     @DeleteMapping("/{experienceId}")
-    public BaseResponse<Void> deleteExperience(@AuthenticationPrincipal AccessUser user,
+    public ResponseEntity<BaseResponse<Void>> deleteExperience(@AuthenticationPrincipal AccessUser user,
                                                @PathVariable("experienceId") Long experienceId) {
         experienceService.deleteExperience(experienceId);
 
-        return BaseResponse.success();
+        return ResponseEntity.ok(BaseResponse.success());
     }
 }
