@@ -71,7 +71,7 @@ public class Experience {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
-    // TODO 중복 코드 제거 필요
+    // TODO 중복 코드 제거 필요 & 커스텀 에러로 수정하기
     public static Experience create(
             String title,
             ExperienceType experienceType,
@@ -93,7 +93,7 @@ public class Experience {
                 .build();
     }
 
-    public void upsert(
+    public void update(
             String title,
             ExperienceType experienceType,
             String experienceContent,

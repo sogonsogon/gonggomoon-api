@@ -1,15 +1,19 @@
 package com.sogonsogon.gonggomoon.domain.experience.api;
 
+import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.experience.api.request.CreateExperienceRequest;
-import com.sogonsogon.gonggomoon.domain.experience.api.request.UpsertExperienceRequest;
+import com.sogonsogon.gonggomoon.domain.experience.api.request.UpdateExperienceRequest;
 import com.sogonsogon.gonggomoon.domain.experience.api.response.CreateExperienceResponse;
-import com.sogonsogon.gonggomoon.domain.experience.api.response.UpsertExperienceResponse;
+import com.sogonsogon.gonggomoon.domain.experience.api.response.UpdateExperienceResponse;
 import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceService;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.CreateExperienceResult;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.UpsertExperienceResult;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.UpdateExperienceResult;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/experiences")
 @RequiredArgsConstructor
 public class ExperienceController {
 
@@ -30,11 +34,11 @@ public class ExperienceController {
      * @param req
      * @return
      */
-    @PostMapping("/experiences")
-    public BaseResponse<CreateExperienceResponse> createExperience(@RequestBody @Valid CreateExperienceRequest req) {
+    @PostMapping
+    public ResponseEntity<BaseResponse<CreateExperienceResponse>> createExperience(@AuthenticationPrincipal AccessUser user,
+                                                                                  @RequestBody @Valid CreateExperienceRequest req) {
         CreateExperienceResult result = experienceService.create(req);
-
-        return BaseResponse.success(CreateExperienceResponse.from(result));
+        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(CreateExperienceResponse.from(result)));
     }
 
     /**
@@ -43,11 +47,13 @@ public class ExperienceController {
      * @param req
      * @return
      */
-    @PatchMapping("/experiences/{experienceId}")
-    public BaseResponse<UpsertExperienceResponse> upsertExperience(@PathVariable("experienceId") Long experienceId, @RequestBody @Valid UpsertExperienceRequest req) {
-        UpsertExperienceResult result = experienceService.upsert(experienceId, req);
+    @PatchMapping("/{experienceId}")
+    public ResponseEntity<BaseResponse<UpdateExperienceResponse>> updateExperience(@AuthenticationPrincipal AccessUser user,
+                                                                   @PathVariable("experienceId") Long experienceId,
+                                                                   @RequestBody @Valid UpdateExperienceRequest req) {
+        UpdateExperienceResult result = experienceService.update(experienceId, req);
 
-        return BaseResponse.success(UpsertExperienceResponse.from(result));
+        return ResponseEntity.ok(BaseResponse.success(UpdateExperienceResponse.from(result)));
     }
 
     /**
@@ -55,10 +61,11 @@ public class ExperienceController {
      * @param experienceId
      * @return
      */
-    @DeleteMapping("/experiences/{experienceId}")
-    public BaseResponse<Void> deleteExperience(@PathVariable("experienceId") Long experienceId) {
+    @DeleteMapping("/{experienceId}")
+    public ResponseEntity<BaseResponse<Void>> deleteExperience(@AuthenticationPrincipal AccessUser user,
+                                               @PathVariable("experienceId") Long experienceId) {
         experienceService.deleteExperience(experienceId);
 
-        return BaseResponse.success();
+        return ResponseEntity.ok(BaseResponse.success());
     }
 }

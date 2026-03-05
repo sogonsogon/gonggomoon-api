@@ -1,9 +1,9 @@
 package com.sogonsogon.gonggomoon.domain.experience.application;
 
 import com.sogonsogon.gonggomoon.domain.experience.api.request.CreateExperienceRequest;
-import com.sogonsogon.gonggomoon.domain.experience.api.request.UpsertExperienceRequest;
+import com.sogonsogon.gonggomoon.domain.experience.api.request.UpdateExperienceRequest;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.CreateExperienceResult;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.UpsertExperienceResult;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.UpdateExperienceResult;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,13 +23,13 @@ public class ExperienceService {
     }
 
     // TODO 커스텀 에러코드, Exception으로 수정 예정
-    public UpsertExperienceResult upsert(Long experienceId, UpsertExperienceRequest req) {
+    public UpdateExperienceResult update(Long experienceId, UpdateExperienceRequest req) {
         Experience experience = experienceRepository.findById(experienceId)
                 .orElseThrow(() -> new RuntimeException(String.valueOf(HttpStatus.NOT_FOUND)));
 
-        experience.upsert(req.title(), req.experienceType(), req.experienceContent(), req.startDate(), req.endDate());
+        experience.update(req.title(), req.experienceType(), req.experienceContent(), req.startDate(), req.endDate());
 
-        return UpsertExperienceResult.from(experience);
+        return UpdateExperienceResult.from(experience);
     }
 
     // TODO 커스텀 에러코드, Exception으로 수정 예정
