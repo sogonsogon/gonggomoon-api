@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ExperienceRepository {
-    Optional<Experience> findById(Long id);
+    Optional<Experience> findByIdAndUserId(Long id, Long userId);
 
     Experience save(Experience experience);
 
