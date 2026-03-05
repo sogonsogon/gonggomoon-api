@@ -4,9 +4,11 @@ import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.experience.api.request.CreateExperienceRequest;
 import com.sogonsogon.gonggomoon.domain.experience.api.request.UpdateExperienceRequest;
 import com.sogonsogon.gonggomoon.domain.experience.api.response.CreateExperienceResponse;
+import com.sogonsogon.gonggomoon.domain.experience.api.response.ExperienceListResponse;
 import com.sogonsogon.gonggomoon.domain.experience.api.response.UpdateExperienceResponse;
 import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceService;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.CreateExperienceResult;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceListResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.UpdateExperienceResult;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import jakarta.validation.Valid;
@@ -15,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -67,5 +70,15 @@ public class ExperienceController {
         experienceService.deleteExperience(experienceId);
 
         return ResponseEntity.ok(BaseResponse.success());
+    }
+
+    /**
+     * 경험 목록을 조회합니다.
+     */
+    @GetMapping
+    public ResponseEntity<BaseResponse<ExperienceListResponse>> getExperiencesList(@AuthenticationPrincipal AccessUser user) {
+        ExperienceListResult result = experienceService.getExperiencesList(user.getId());
+
+        return ResponseEntity.ok(BaseResponse.success(ExperienceListResponse.from(result)));
     }
 }

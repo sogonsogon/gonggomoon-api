@@ -2,13 +2,19 @@ package com.sogonsogon.gonggomoon.domain.experience.application;
 
 import com.sogonsogon.gonggomoon.domain.experience.api.request.CreateExperienceRequest;
 import com.sogonsogon.gonggomoon.domain.experience.api.request.UpdateExperienceRequest;
+import com.sogonsogon.gonggomoon.domain.experience.api.response.ExperienceListResultItem;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.CreateExperienceResult;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceListResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.UpdateExperienceResult;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -38,5 +44,11 @@ public class ExperienceService {
                 .orElseThrow(() -> new RuntimeException(String.valueOf(HttpStatus.NOT_FOUND)));
 
         experienceRepository.delete(experience);
+    }
+
+    public ExperienceListResult getExperiencesList(Long userId) {
+        List<Experience> experiences = experienceRepository.findAllByUserIdOrderByUpdatedAtDesc(userId);
+
+        return ExperienceListResult.from(experiences);
     }
 }
