@@ -1,5 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.auth.infrastructure.oauth2;
 
+import com.sogonsogon.gonggomoon.domain.auth.application.TokenService;
 import com.sogonsogon.gonggomoon.domain.auth.domain.OAuthAccount;
 import com.sogonsogon.gonggomoon.domain.auth.domain.OAuthAccountRepository;
 import com.sogonsogon.gonggomoon.domain.auth.domain.OAuthProvider;
@@ -27,6 +28,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private String REDIRECT_URI;
 
     private final OAuth2AuthorizedClientService authorizedClientService;
+    private final TokenService tokenService;
     private final OAuthAccountRepository oauthAccountRepository;
 
     private final JwtTokenProvider tokenProvider;
@@ -72,6 +74,9 @@ public void onAuthenticationSuccess(HttpServletRequest request,
     String accessToken = tokenProvider.createAccessToken(authentication);
     String refreshToken = tokenProvider.createRefreshToken(authentication);
 
+    // DB에 Refresh Token 저장 (로그아웃 시 검증 및 폐기 위해)
+    tokenService.issueRefreshToken(accessUser.getId(), refreshToken);
+
     // ✅ 1) refresh는 HttpOnly 쿠키로
     tokenCookieManager.addRefreshTokenCookie(response, refreshToken);
 
@@ -85,6 +90,7 @@ public void onAuthenticationSuccess(HttpServletRequest request,
     // TODO : 프론트 리다이렉트 주소 받아와야 할 듯 ? -> application.yml에서 수정하면 됨.
     String targetUrl = REDIRECT_URI;
     getRedirectStrategy().sendRedirect(request, response, targetUrl);
+
 }
 
     protected void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse response) {
