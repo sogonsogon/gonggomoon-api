@@ -60,7 +60,7 @@ public class SecurityConfig {
 
             // 4. API 경로별 인가(권한) 설정
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**", "/oauth2/**").permitAll() // 인증 진입점은 모두 허용
+                .requestMatchers("/api/v1/auth/social/login/**", "/oauth2/**").permitAll() // 인증 진입점은 모두 허용
                 .anyRequest().authenticated() // 나머지는 JWT 인증 필요
             )
 

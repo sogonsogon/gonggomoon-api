@@ -74,6 +74,9 @@ public void onAuthenticationSuccess(HttpServletRequest request,
     String accessToken = tokenProvider.createAccessToken(authentication);
     String refreshToken = tokenProvider.createRefreshToken(authentication);
 
+    // DB에 Refresh Token 저장 (로그아웃 시 검증 및 폐기 위해)
+    tokenService.issueRefreshToken(accessUser.getId(), refreshToken);
+
     // ✅ 1) refresh는 HttpOnly 쿠키로
     tokenCookieManager.addRefreshTokenCookie(response, refreshToken);
 
@@ -87,11 +90,6 @@ public void onAuthenticationSuccess(HttpServletRequest request,
     // TODO : 프론트 리다이렉트 주소 받아와야 할 듯 ? -> application.yml에서 수정하면 됨.
     String targetUrl = REDIRECT_URI;
     getRedirectStrategy().sendRedirect(request, response, targetUrl);
-
-    /*
-    * Refresh Token 테이블에 토큰을 저장
-    * */
-    tokenService.issueRefreshToken(accessUser.getId(), refreshToken);
 
 }
 

@@ -2,7 +2,6 @@ package com.sogonsogon.gonggomoon.domain.auth.application;
 
 import com.sogonsogon.gonggomoon.domain.auth.application.exception.RefreshTokenInvalidException;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.jwt.JwtTokenProvider;
-import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +17,9 @@ public class AuthService {
     @Transactional
     public void logout(Long userId, String refreshToken) {
 
-        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
+        if (refreshToken == null
+            || !jwtTokenProvider.validateToken(refreshToken)
+            || !jwtTokenProvider.isRefreshToken(refreshToken)) {
             throw new RefreshTokenInvalidException();
         }
 

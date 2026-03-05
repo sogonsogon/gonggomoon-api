@@ -2,8 +2,10 @@ package com.sogonsogon.gonggomoon.global.error;
 
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import java.util.List;
+import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -51,5 +53,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(errorCode.getStatus())
             .body(BaseResponse.fail(errorCode.getCode(), errorCode.getMessage(), errors));
+    }
+
+    @ExceptionHandler(MissingRequestCookieException.class)
+    public ResponseEntity<BaseResponse<?>> handleMissingRequestCookie(MissingRequestCookieException e) {
+        GlobalErrorCode errorCode = GlobalErrorCode.MISSING_REQUEST_COOKIE;
+
+        return ResponseEntity
+            .status(errorCode.getStatus())
+            .body(BaseResponse.fail(errorCode.getCode(), errorCode.getMessage()));
     }
 }

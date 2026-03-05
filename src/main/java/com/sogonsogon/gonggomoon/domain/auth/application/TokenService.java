@@ -15,11 +15,7 @@ public class TokenService {
 
     @Transactional
     public void issueRefreshToken(Long userId, String refreshToken) {
-        tokenRepository.findByUserId(userId)
-            .ifPresentOrElse(
-                existing -> existing.rotate(refreshToken),
-                () -> tokenRepository.save(RefreshToken.createToken(userId, refreshToken))
-            );
+        tokenRepository.upsertByUserId(userId, refreshToken);
     }
 
     @Transactional

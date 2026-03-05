@@ -19,6 +19,7 @@ public class AuthController {
 
     private final AuthService authService;
 
+    // TODO : 프론트에서 로그아웃시 브라우저에 쿠키를 삭제하도록 할건지 확인
     @PostMapping("/logout")
     public ResponseEntity<BaseResponse<Void>> logout(
         @AuthenticationPrincipal AccessUser user,

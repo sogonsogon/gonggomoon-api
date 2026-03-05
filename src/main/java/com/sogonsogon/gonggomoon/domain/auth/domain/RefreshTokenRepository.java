@@ -8,4 +8,6 @@ public interface RefreshTokenRepository {
     Optional<RefreshToken> findByUserId(Long userId);
 
     void delete(RefreshToken token);
+
+    void upsertByUserId(Long userId, String refreshToken);
 }
