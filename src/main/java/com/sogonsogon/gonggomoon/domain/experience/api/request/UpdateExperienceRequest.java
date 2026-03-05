@@ -7,7 +7,7 @@ import jakarta.validation.constraints.PastOrPresent;
 
 import java.time.LocalDate;
 
-public record UpsertExperienceRequest(
+public record UpdateExperienceRequest(
         @NotBlank(message = "제목은 필수입니다.") String title,
         /*
         Jackson이 자동으로 Enum으로 변환.

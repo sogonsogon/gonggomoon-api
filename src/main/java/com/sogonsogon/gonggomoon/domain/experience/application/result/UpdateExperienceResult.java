@@ -6,7 +6,7 @@ import lombok.Builder;
 import java.time.LocalDate;
 
 @Builder
-public record UpsertExperienceResult(
+public record UpdateExperienceResult(
         Long experienceId,
         String title,
         String experienceType,
@@ -14,8 +14,8 @@ public record UpsertExperienceResult(
         LocalDate startDate,
         LocalDate endDate
 ) {
-    public static UpsertExperienceResult from (Experience experience) {
-        return UpsertExperienceResult.builder()
+    public static UpdateExperienceResult from (Experience experience) {
+        return UpdateExperienceResult.builder()
                 .experienceId(experience.getId())
                 .title(experience.getTitle())
                 .experienceType(String.valueOf(experience.getExperienceType()))
