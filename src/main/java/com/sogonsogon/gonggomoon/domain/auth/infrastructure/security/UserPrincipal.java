@@ -47,6 +47,16 @@ public class UserPrincipal implements OAuth2User, UserDetails, AccessUser {
         return user.getId();
     }
 
+    @Override
+    public String getProviderId() {
+        // TODO : 네이버 전용 로직, 추후에 변경되어야 함
+        // 1. attributes에서 "response" 객체를 Map으로 캐스팅해서 꺼냅니다.
+        Map<String, Object> response = (Map<String, Object>) attributes.get("response");
+
+        // 2. 그 안에서 네이버의 고유 식별자인 "id"를 꺼내어 String으로 반환합니다.
+        return String.valueOf(response.get("id")); // 소셜 로그인 시 제공되는 고유 식별자 (예: 구글의 sub, 네이버의 id)
+    }
+
     public void setAttributes(Map<String, Object> attributes) {
         this.attributes = attributes;
     }
