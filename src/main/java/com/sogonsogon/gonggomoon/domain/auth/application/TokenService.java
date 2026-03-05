@@ -14,6 +14,15 @@ public class TokenService {
     private final RefreshTokenRepository tokenRepository;
 
     @Transactional
+    public void issueRefreshToken(Long userId, String refreshToken) {
+        tokenRepository.findByUserId(userId)
+            .ifPresentOrElse(
+                existing -> existing.rotate(refreshToken),
+                () -> tokenRepository.save(RefreshToken.createToken(userId, refreshToken))
+            );
+    }
+
+    @Transactional
     public void rotateRefreshToken(Long userId, String oldToken, String newToken) {
 
         RefreshToken token = tokenRepository.findByUserId(userId)
