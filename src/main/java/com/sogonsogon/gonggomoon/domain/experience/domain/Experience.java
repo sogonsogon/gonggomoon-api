@@ -11,6 +11,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -19,6 +21,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.Instant;
 import java.time.LocalDate;
 
+@Builder
+@Getter
 @Entity
 @Table(name = "experience")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -42,10 +46,11 @@ public class Experience {
     private String experienceRaw; // pdf 원문 내용
 
     @Enumerated(EnumType.STRING)
-    private ExperienceType experienceType;
+    @Column(nullable = false)
+    private ExperienceType experienceType; // 경험 유형
 
     @Column(nullable = false)
-    private String experienceContent;
+    private String experienceContent; // 경험 내용
 
     @Enumerated(EnumType.STRING)
     private ExperienceParticipantRole roleType;
@@ -65,4 +70,64 @@ public class Experience {
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
+
+    // TODO 중복 코드 제거 필요
+    public static Experience create(
+            String title,
+            ExperienceType experienceType,
+            String experienceContent,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        requireText(title);
+        requireNonNull(experienceType);
+        requireText(experienceContent);
+        validateDateRange(startDate, endDate);
+
+        return Experience.builder()
+                .title(title)
+                .experienceType(experienceType)
+                .experienceContent(experienceContent)
+                .startDate(startDate)
+                .endDate(endDate)
+                .build();
+    }
+
+    public void upsert(
+            String title,
+            ExperienceType experienceType,
+            String experienceContent,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        requireText(title);
+        requireNonNull(experienceType);
+        requireText(experienceContent);
+        validateDateRange(startDate, endDate);
+
+        this.title = title;
+        this.experienceType = experienceType;
+        this.experienceContent = experienceContent;
+        this.startDate = startDate;
+        this.endDate = endDate;
+
+    }
+
+    private static void requireText(String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("INVALID_ARGUMENT");
+        }
+    }
+
+    private static void requireNonNull(Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException("INVALID_ARGUMENT");
+        }
+    }
+
+    private static void validateDateRange(LocalDate startDate, LocalDate endDate) {
+        if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException("INVALID_ARGUMENT");
+        }
+    }
 }
