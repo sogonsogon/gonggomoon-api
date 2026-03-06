@@ -1,5 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.experience.domain;
 
+import com.sogonsogon.gonggomoon.domain.experience.error.ExperienceErrorCode;
+import com.sogonsogon.gonggomoon.global.error.BaseErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -71,7 +73,6 @@ public class Experience {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
-    // TODO 중복 코드 제거 필요 & 커스텀 에러로 수정하기
     public static Experience create(
             Long userId,
             String title,
@@ -80,10 +81,11 @@ public class Experience {
             LocalDate startDate,
             LocalDate endDate
     ) {
-        requireText(title);
-        requireNonNull(experienceType);
-        requireText(experienceContent);
-        validateDateRange(startDate, endDate);
+        requireNonNull(userId, ExperienceErrorCode.USERID_REQUIRED);
+        requireText(title, ExperienceErrorCode.TITLE_REQUIRED);
+        requireNonNull(experienceType, ExperienceErrorCode.TYPE_REQUIRED);
+        requireText(experienceContent, ExperienceErrorCode.CONTENT_REQUIRED);
+        validateDateRange(startDate, endDate, ExperienceErrorCode.INVALID_DATE_RANGE);
 
         return Experience.builder()
                 .userId(userId)
@@ -102,10 +104,10 @@ public class Experience {
             LocalDate startDate,
             LocalDate endDate
     ) {
-        requireText(title);
-        requireNonNull(experienceType);
-        requireText(experienceContent);
-        validateDateRange(startDate, endDate);
+        requireText(title, ExperienceErrorCode.TITLE_REQUIRED);
+        requireNonNull(experienceType, ExperienceErrorCode.TYPE_REQUIRED);
+        requireText(experienceContent, ExperienceErrorCode.CONTENT_REQUIRED);
+        validateDateRange(startDate, endDate, ExperienceErrorCode.INVALID_DATE_RANGE);
 
         this.title = title;
         this.experienceType = experienceType;
@@ -115,21 +117,21 @@ public class Experience {
 
     }
 
-    private static void requireText(String value) {
+    private static void requireText(String value, BaseErrorCode baseErrorCode) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("INVALID_ARGUMENT");
+            throw new IllegalArgumentException(baseErrorCode.getCode());
         }
     }
 
-    private static void requireNonNull(Object value) {
+    private static void requireNonNull(Object value, BaseErrorCode baseErrorCode) {
         if (value == null) {
-            throw new IllegalArgumentException("INVALID_ARGUMENT");
+            throw new IllegalArgumentException(baseErrorCode.getCode());
         }
     }
 
-    private static void validateDateRange(LocalDate startDate, LocalDate endDate) {
+    private static void validateDateRange(LocalDate startDate, LocalDate endDate, BaseErrorCode baseErrorCode) {
         if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException("INVALID_ARGUMENT");
+            throw new IllegalArgumentException(baseErrorCode.getCode());
         }
     }
 }
