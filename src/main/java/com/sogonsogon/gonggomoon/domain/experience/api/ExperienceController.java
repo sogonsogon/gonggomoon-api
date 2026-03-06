@@ -4,12 +4,12 @@ import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.experience.api.request.CreateExperienceRequest;
 import com.sogonsogon.gonggomoon.domain.experience.api.request.UpdateExperienceRequest;
 import com.sogonsogon.gonggomoon.domain.experience.api.response.CreateExperienceResponse;
+import com.sogonsogon.gonggomoon.domain.experience.api.response.ExperienceDetailResponse;
 import com.sogonsogon.gonggomoon.domain.experience.api.response.ExperienceListResponse;
-import com.sogonsogon.gonggomoon.domain.experience.api.response.UpdateExperienceResponse;
 import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceService;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.CreateExperienceResult;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceDetailResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceListResult;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.UpdateExperienceResult;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -51,12 +51,12 @@ public class ExperienceController {
      * @return
      */
     @PatchMapping("/{experienceId}")
-    public ResponseEntity<BaseResponse<UpdateExperienceResponse>> updateExperience(@AuthenticationPrincipal AccessUser user,
+    public ResponseEntity<BaseResponse<ExperienceDetailResponse>> updateExperience(@AuthenticationPrincipal AccessUser user,
                                                                    @PathVariable("experienceId") Long experienceId,
                                                                    @RequestBody @Valid UpdateExperienceRequest req) {
-        UpdateExperienceResult result = experienceService.update(experienceId, req);
+        ExperienceDetailResult result = experienceService.update(experienceId, user.getId(), req);
 
-        return ResponseEntity.ok(BaseResponse.success(UpdateExperienceResponse.from(result)));
+        return ResponseEntity.ok(BaseResponse.success(ExperienceDetailResponse.from(result)));
     }
 
     /**
@@ -67,7 +67,7 @@ public class ExperienceController {
     @DeleteMapping("/{experienceId}")
     public ResponseEntity<BaseResponse<Void>> deleteExperience(@AuthenticationPrincipal AccessUser user,
                                                @PathVariable("experienceId") Long experienceId) {
-        experienceService.deleteExperience(experienceId);
+        experienceService.deleteExperience(experienceId, user.getId());
 
         return ResponseEntity.ok(BaseResponse.success());
     }
@@ -80,5 +80,16 @@ public class ExperienceController {
         ExperienceListResult result = experienceService.getExperiencesList(user.getId());
 
         return ResponseEntity.ok(BaseResponse.success(ExperienceListResponse.from(result)));
+    }
+
+    /**
+     * 경험 상세를 조회합니다.
+     */
+    @GetMapping("/{experienceId}")
+    public ResponseEntity<BaseResponse<ExperienceDetailResponse>> getExperienceDetail(@AuthenticationPrincipal AccessUser user,
+                                                                                      @PathVariable("experienceId") Long experienceId) {
+        ExperienceDetailResult result = experienceService.getExperienceDetail(experienceId, user.getId());
+
+        return ResponseEntity.ok(BaseResponse.success(ExperienceDetailResponse.from(result)));
     }
 }

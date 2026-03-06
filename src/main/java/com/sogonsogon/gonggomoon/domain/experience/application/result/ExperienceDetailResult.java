@@ -4,9 +4,8 @@ import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import lombok.Builder;
 
 import java.time.LocalDate;
-
 @Builder
-public record UpdateExperienceResult(
+public record ExperienceDetailResult(
         Long experienceId,
         String title,
         String experienceType,
@@ -14,8 +13,8 @@ public record UpdateExperienceResult(
         LocalDate startDate,
         LocalDate endDate
 ) {
-    public static UpdateExperienceResult from (Experience experience) {
-        return UpdateExperienceResult.builder()
+    public static ExperienceDetailResult from (Experience experience) {
+        return ExperienceDetailResult.builder()
                 .experienceId(experience.getId())
                 .title(experience.getTitle())
                 .experienceType(String.valueOf(experience.getExperienceType()))

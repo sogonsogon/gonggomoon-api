@@ -1,12 +1,12 @@
 package com.sogonsogon.gonggomoon.domain.experience.api.response;
 
-import com.sogonsogon.gonggomoon.domain.experience.application.result.UpdateExperienceResult;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceDetailResult;
 import lombok.Builder;
 
 import java.time.LocalDate;
 
 @Builder
-public record UpdateExperienceResponse(
+public record ExperienceDetailResponse(
         Long experienceId,
         String title,
         String experienceType,
@@ -14,8 +14,8 @@ public record UpdateExperienceResponse(
         LocalDate startDate,
         LocalDate endDate
 ) {
-    public static UpdateExperienceResponse from (UpdateExperienceResult result) {
-        return UpdateExperienceResponse.builder()
+    public static ExperienceDetailResponse from (ExperienceDetailResult result) {
+        return ExperienceDetailResponse.builder()
                 .experienceId(result.experienceId())
                 .title(result.title())
                 .experienceType(result.experienceType())
