@@ -1,0 +1,115 @@
+@host = http://localhost:8080
+//http://localhost:8080/api/v1/auth/social/login/naver 로그인 후 개발자도구에서 access_token 복사
+@token =
+@experienceId = 1
+
+### 1. 경험 생성
+POST {{host}}/api/v1/experiences
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "대용량 업로드 프로젝트",
+  "experienceType": "PROJECT",
+  "experienceContent": "세션 기반 청크 업로드와 offset 검증을 구현했습니다.",
+  "startDate": "2025-01-01",
+  "endDate": "2025-02-01"
+}
+
+### 1. 경험 생성
+POST {{host}}/api/v1/experiences
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "LXP",
+  "experienceType": "PROJECT",
+  "experienceContent": "세션 기반 청크 업로드와 offset 검증을 구현했습니다.",
+  "startDate": "2025-01-01",
+  "endDate": "2025-02-01"
+}
+
+### 2. 경험 목록 조회
+GET {{host}}/api/v1/experiences
+Authorization: Bearer {{token}}
+
+### 3. 경험 상세 조회
+GET {{host}}/api/v1/experiences/{{experienceId}}
+Authorization: Bearer {{token}}
+
+### 4. 경험 수정
+PATCH {{host}}/api/v1/experiences/{{experienceId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "수정된 프로젝트 경험",
+  "experienceType": "CAREER",
+  "experienceContent": "업로드 안정성과 예외 처리 구조를 개선했습니다.",
+  "startDate": "2025-01-01",
+  "endDate": "2025-02-28"
+}
+
+### 5. 경험 삭제
+DELETE {{host}}/api/v1/experiences/{{experienceId}}
+Authorization: Bearer {{token}}
+
+### 6. 생성 실패 테스트 - 제목 공백
+POST {{host}}/api/v1/experiences
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": " ",
+  "experienceType": "PROJECT",
+  "experienceContent": "잘못된 요청 테스트",
+  "startDate": "2025-01-01",
+  "endDate": "2025-02-01"
+}
+
+### 7. 생성 실패 테스트 - type null
+POST {{host}}/api/v1/experiences
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "잘못된 요청",
+  "experienceType": null,
+  "experienceContent": "잘못된 요청 테스트",
+  "startDate": "2025-01-01",
+  "endDate": "2025-02-01"
+}
+
+### 8. 생성 실패 테스트 - 날짜 범위 오류
+POST {{host}}/api/v1/experiences
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "날짜 오류 테스트",
+  "experienceType": "PROJECT",
+  "experienceContent": "endDate가 startDate보다 빠름",
+  "startDate": "2025-02-01",
+  "endDate": "2025-01-01"
+}
+
+### 9. 없는 경험 상세 조회
+GET {{host}}/api/v1/experiences/999999
+Authorization: Bearer {{token}}
+
+### 10. 없는 경험 수정
+PATCH {{host}}/api/v1/experiences/999999
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "없는 경험 수정",
+  "experienceType": "PROJECT",
+  "experienceContent": "없는 경험 수정 테스트",
+  "startDate": "2025-01-01",
+  "endDate": "2025-02-01"
+}
+
+### 11. 없는 경험 삭제
+DELETE {{host}}/api/v1/experiences/999999
+Authorization: Bearer {{token}}
