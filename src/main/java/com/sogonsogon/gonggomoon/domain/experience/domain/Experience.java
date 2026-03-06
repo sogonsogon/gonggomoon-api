@@ -2,6 +2,7 @@ package com.sogonsogon.gonggomoon.domain.experience.domain;
 
 import com.sogonsogon.gonggomoon.domain.experience.error.ExperienceErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseErrorCode;
+import com.sogonsogon.gonggomoon.global.error.BaseException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -119,19 +120,19 @@ public class Experience {
 
     private static void requireText(String value, BaseErrorCode baseErrorCode) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(baseErrorCode.getCode());
+            throw new BaseException(baseErrorCode);
         }
     }
 
     private static void requireNonNull(Object value, BaseErrorCode baseErrorCode) {
         if (value == null) {
-            throw new IllegalArgumentException(baseErrorCode.getCode());
+            throw new BaseException(baseErrorCode);
         }
     }
 
     private static void validateDateRange(LocalDate startDate, LocalDate endDate, BaseErrorCode baseErrorCode) {
         if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException(baseErrorCode.getCode());
+            throw new BaseException(baseErrorCode);
         }
     }
 }
