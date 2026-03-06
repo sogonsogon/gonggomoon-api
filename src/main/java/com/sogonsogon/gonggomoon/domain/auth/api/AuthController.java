@@ -34,7 +34,6 @@ public class AuthController {
             .body(BaseResponse.success());
     }
 
-    @PermitAll
     @PostMapping("/reissue")
     public ResponseEntity<BaseResponse<ReissuanceResponse>> reissueToken(@CookieValue(name = "refresh_token") String refreshToken) {
 
