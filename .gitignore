@@ -36,6 +36,15 @@ out/
 ### VS Code ###
 .vscode/
 
+# IntelliJ HTTP Client request history / responses / cookies
+.idea/httpRequests/
+http-client.private.env.json
+http-client.cookies
+*.cookies
+
+# Saved HTTP response files
+*.html
+
 ### IntelliJ IDEA
 .idea/
 
