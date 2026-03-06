@@ -18,8 +18,8 @@ import java.util.List;
 public class ExperienceService {
     private final ExperienceRepository experienceRepository;
 
-    public CreateExperienceResult create(CreateExperienceRequest req) {
-        Experience experience = Experience.create(req.title(), req.experienceType(), req.experienceContent(), req.startDate(), req.endDate());
+    public CreateExperienceResult create(Long userId, CreateExperienceRequest req) {
+        Experience experience = Experience.create(userId, req.title(), req.experienceType(), req.experienceContent(), req.startDate(), req.endDate());
         Experience savedExperience = experienceRepository.save(experience);
 
         return CreateExperienceResult.from(savedExperience);
