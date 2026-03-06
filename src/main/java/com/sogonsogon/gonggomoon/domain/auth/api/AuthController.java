@@ -1,8 +1,10 @@
 package com.sogonsogon.gonggomoon.domain.auth.api;
 
+import com.sogonsogon.gonggomoon.domain.auth.api.dto.ReissuanceResponse;
 import com.sogonsogon.gonggomoon.domain.auth.application.AuthService;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import jakarta.annotation.security.PermitAll;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,5 +32,15 @@ public class AuthController {
         return ResponseEntity
             .status(HttpStatus.OK)
             .body(BaseResponse.success());
+    }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<BaseResponse<ReissuanceResponse>> reissueToken(@CookieValue(name = "refresh_token") String refreshToken) {
+
+        ReissuanceResponse response = authService.reissueToken(refreshToken);
+
+        return ResponseEntity
+            .status(HttpStatus.OK)
+            .body(BaseResponse.success(response));
     }
 }
