@@ -73,6 +73,7 @@ public class Experience {
 
     // TODO 중복 코드 제거 필요 & 커스텀 에러로 수정하기
     public static Experience create(
+            Long userId,
             String title,
             ExperienceType experienceType,
             String experienceContent,
@@ -85,6 +86,7 @@ public class Experience {
         validateDateRange(startDate, endDate);
 
         return Experience.builder()
+                .userId(userId)
                 .title(title)
                 .experienceType(experienceType)
                 .experienceContent(experienceContent)

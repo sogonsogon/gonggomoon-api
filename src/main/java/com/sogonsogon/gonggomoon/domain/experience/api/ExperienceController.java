@@ -40,7 +40,7 @@ public class ExperienceController {
     @PostMapping
     public ResponseEntity<BaseResponse<CreateExperienceResponse>> createExperience(@AuthenticationPrincipal AccessUser user,
                                                                                   @RequestBody @Valid CreateExperienceRequest req) {
-        CreateExperienceResult result = experienceService.create(req);
+        CreateExperienceResult result = experienceService.create(user.getId(), req);
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(CreateExperienceResponse.from(result)));
     }
 
