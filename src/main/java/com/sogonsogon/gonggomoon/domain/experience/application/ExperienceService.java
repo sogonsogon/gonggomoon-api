@@ -7,8 +7,9 @@ import com.sogonsogon.gonggomoon.domain.experience.application.result.Experience
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceListResult;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
+import com.sogonsogon.gonggomoon.domain.experience.error.ExperienceErrorCode;
+import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,6 +19,12 @@ import java.util.List;
 public class ExperienceService {
     private final ExperienceRepository experienceRepository;
 
+    /**
+     * 경험 생성 서비스
+     * @param userId
+     * @param req
+     * @return
+     */
     public CreateExperienceResult create(Long userId, CreateExperienceRequest req) {
         Experience experience = Experience.create(userId, req.title(), req.experienceType(), req.experienceContent(), req.startDate(), req.endDate());
         Experience savedExperience = experienceRepository.save(experience);
@@ -25,20 +32,30 @@ public class ExperienceService {
         return CreateExperienceResult.from(savedExperience);
     }
 
-    // TODO 커스텀 에러코드, Exception으로 수정 예정
+    /**
+     * 경험 수정 서비스
+     * @param experienceId
+     * @param userId
+     * @param req
+     * @return
+     */
     public ExperienceDetailResult update(Long experienceId, Long userId, UpdateExperienceRequest req) {
         Experience experience = experienceRepository.findByIdAndUserId(experienceId, userId)
-                .orElseThrow(() -> new RuntimeException(String.valueOf(HttpStatus.NOT_FOUND)));
+                .orElseThrow(() -> new BaseException(ExperienceErrorCode.NOT_FOUND));
 
         experience.update(req.title(), req.experienceType(), req.experienceContent(), req.startDate(), req.endDate());
 
         return ExperienceDetailResult.from(experience);
     }
 
-    // TODO 커스텀 에러코드, Exception으로 수정 예정
+    /**
+     * 경험 삭제 서비스
+     * @param experienceId
+     * @param userId
+     */
     public void deleteExperience(Long experienceId, Long userId) {
         Experience experience = experienceRepository.findByIdAndUserId(experienceId, userId)
-                .orElseThrow(() -> new RuntimeException(String.valueOf(HttpStatus.NOT_FOUND)));
+                .orElseThrow(() -> new BaseException(ExperienceErrorCode.NOT_FOUND));
 
         experienceRepository.delete(experience);
     }
@@ -62,7 +79,7 @@ public class ExperienceService {
      */
     public ExperienceDetailResult getExperienceDetail(Long experienceId, Long userId) {
         Experience experience = experienceRepository.findByIdAndUserId(experienceId, userId)
-                .orElseThrow(() -> new RuntimeException(String.valueOf(HttpStatus.NOT_FOUND)));
+                .orElseThrow(() -> new BaseException(ExperienceErrorCode.NOT_FOUND));
 
         return ExperienceDetailResult.from(experience);
     }
