@@ -18,6 +18,7 @@ public class TokenService {
         tokenRepository.upsertByUserId(userId, refreshToken);
     }
 
+    // TODO : 낙관적 락이 필요할 수도 ? (동시성 이슈 방지 위해)
     @Transactional
     public void rotateRefreshToken(Long userId, String oldToken, String newToken) {
 
