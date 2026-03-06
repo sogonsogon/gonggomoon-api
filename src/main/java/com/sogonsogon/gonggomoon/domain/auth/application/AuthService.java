@@ -43,7 +43,7 @@ public class AuthService {
     @Transactional
     public ReissuanceResponse reissueToken(String refreshToken) {
         // 1. 리프레시 토큰 유효성 및 Null 검증
-        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw new RefreshTokenInvalidException();
         }
 
