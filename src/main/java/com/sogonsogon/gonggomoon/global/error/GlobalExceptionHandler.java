@@ -2,13 +2,14 @@ package com.sogonsogon.gonggomoon.global.error;
 
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import java.util.List;
-import org.apache.coyote.Response;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -17,6 +18,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<BaseResponse<?>> handleBaseException(BaseException e) {
 
         BaseErrorCode errorCode = e.getErrorCode();
+
+        log.warn(
+            "BaseException occurred. code={}, message={}, exceptionMessage={}",
+            errorCode.getCode(),
+            errorCode.getMessage(),
+            e.getMessage(),
+            e
+        );
 
         return ResponseEntity
             .status(errorCode.getStatus())
@@ -28,6 +37,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<BaseResponse<?>> handleException(Exception e) {
 
         GlobalErrorCode error = GlobalErrorCode.INTERNAL_SERVER_ERROR;
+
+        log.error("Unhandled exception occurred", e);
 
         return ResponseEntity
             .status(error.getStatus())
@@ -50,6 +61,8 @@ public class GlobalExceptionHandler {
 
         GlobalErrorCode errorCode = GlobalErrorCode.INVALID_INPUT_VALUE;
 
+        log.warn("Validation failed. errors={}", errors, e);
+
         return ResponseEntity
             .status(errorCode.getStatus())
             .body(BaseResponse.fail(errorCode.getCode(), errorCode.getMessage(), errors));
@@ -58,6 +71,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingRequestCookieException.class)
     public ResponseEntity<BaseResponse<?>> handleMissingRequestCookie(MissingRequestCookieException e) {
         GlobalErrorCode errorCode = GlobalErrorCode.MISSING_REQUEST_COOKIE;
+
+        log.warn("Missing request cookie. cookieName={}", e.getCookieName(), e);
 
         return ResponseEntity
             .status(errorCode.getStatus())
