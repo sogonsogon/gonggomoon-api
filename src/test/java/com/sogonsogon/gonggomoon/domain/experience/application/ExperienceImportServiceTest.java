@@ -1,0 +1,190 @@
+package com.sogonsogon.gonggomoon.domain.experience.application;
+
+import com.sogonsogon.gonggomoon.domain.experience.api.request.ImportExperienceRequest;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.ImportExperienceResult;
+import com.sogonsogon.gonggomoon.domain.experience.domain.DocumentCategory;
+import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
+import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
+import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
+import com.sogonsogon.gonggomoon.global.config.MultipartProperties;
+import com.sogonsogon.gonggomoon.global.error.BaseException;
+import com.sogonsogon.gonggomoon.global.file.S3Uploader;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.util.unit.DataSize;
+
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+@ExtendWith(MockitoExtension.class)
+public class ExperienceImportServiceTest {
+    @Mock
+    private FileAssetRepository fileAssetRepository;
+
+    @Mock
+    private MultipartProperties multipartProperties;
+
+    @Mock
+    private S3Uploader s3Uploader;
+
+    @InjectMocks
+    private ExperienceImportService experienceImportService;
+
+    private static final Long USER_ID = 1L;
+    private static final DataSize MAX_FILE_SIZE = DataSize.ofMegabytes(10);
+
+    @Nested
+    @DisplayName("uploadFile")
+    class UploadFileTest {
+
+        @Test
+        @DisplayName("정상 파일이면 S3 업로드 후 FileAsset을 저장하고 결과를 반환한다")
+        void uploadFile_success() throws Exception {
+            // given
+            when(multipartProperties.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
+            ImportExperienceRequest req = createRequest();
+            MockMultipartFile file = new MockMultipartFile(
+                    "file",
+                    "resume.pdf",
+                    "application/pdf",
+                    "dummy-content".getBytes() // 빈 파일 방지
+            );
+
+            when(fileAssetRepository.save(any(FileAsset.class))).thenAnswer(invocation -> {
+                FileAsset saved = invocation.getArgument(0);
+                setField(saved, "id", 100L);
+                return saved;
+            });
+
+            // when
+            ImportExperienceResult result = experienceImportService.uploadFile(USER_ID, req, file);
+
+            // then
+            assertNotNull(result);
+            assertEquals(100L, result.fileAssetId());
+
+            verify(s3Uploader).upload(anyString(), same(file));
+            verify(fileAssetRepository).save(any(FileAsset.class));
+        }
+
+        @Test
+        @DisplayName("파일이 null이면 FILE_REQUIRED 예외가 발생한다")
+        void uploadFile_fail_whenFileIsNull() {
+            // given
+            ImportExperienceRequest req = createRequest();
+
+            // when
+            BaseException ex = assertThrows(
+                    BaseException.class,
+                    () -> experienceImportService.uploadFile(USER_ID, req, null)
+            );
+
+            // then
+            assertEquals(FileAssetErrorCode.FILE_REQUIRED, ex.getErrorCode());
+            verify(s3Uploader, never()).upload(anyString(), any());
+            verify(fileAssetRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("빈 파일이면 EMPTY_FILE_NOT_ALLOWED 예외가 발생한다")
+        void uploadFile_fail_whenFileIsEmpty() {
+            // given
+            ImportExperienceRequest req = createRequest();
+            MockMultipartFile emptyFile = new MockMultipartFile(
+                    "file",
+                    "resume.pdf",
+                    "application/pdf",
+                    new byte[0]
+            );
+
+            // when
+            BaseException ex = assertThrows(
+                    BaseException.class,
+                    () -> experienceImportService.uploadFile(USER_ID, req, emptyFile)
+            );
+
+            // then
+            assertEquals(FileAssetErrorCode.EMPTY_FILE_NOT_ALLOWED, ex.getErrorCode());
+            verify(s3Uploader, never()).upload(anyString(), any());
+            verify(fileAssetRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("파일명이 blank면 INVALID_FILE_NAME 예외가 발생한다")
+        void uploadFile_fail_whenOriginalFilenameIsBlank() {
+            // given
+            ImportExperienceRequest req = createRequest();
+            MockMultipartFile file = new MockMultipartFile(
+                    "file",
+                    " ",
+                    "application/pdf",
+                    "dummy-content".getBytes()
+            );
+
+            // when
+            BaseException ex = assertThrows(
+                    BaseException.class,
+                    () -> experienceImportService.uploadFile(USER_ID, req, file)
+            );
+
+            // then
+            assertEquals(FileAssetErrorCode.INVALID_FILE_NAME, ex.getErrorCode());
+            verify(s3Uploader, never()).upload(anyString(), any());
+            verify(fileAssetRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("최대 파일 크기를 초과하면 FILE_SIZE_EXCEEDED 예외가 발생한다")
+        void uploadFile_fail_whenFileSizeExceeded() {
+            // given
+            when(multipartProperties.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
+
+            ImportExperienceRequest req = createRequest();
+            byte[] oversized = new byte[(int) MAX_FILE_SIZE.toBytes() + 1];
+            MockMultipartFile file = new MockMultipartFile(
+                    "file",
+                    "resume.pdf",
+                    "application/pdf",
+                    oversized
+            );
+
+            // when
+            BaseException ex = assertThrows(
+                    BaseException.class,
+                    () -> experienceImportService.uploadFile(USER_ID, req, file)
+            );
+
+            // then
+            assertEquals(FileAssetErrorCode.FILE_SIZE_EXCEEDED, ex.getErrorCode());
+            verify(s3Uploader, never()).upload(anyString(), any());
+            verify(fileAssetRepository, never()).save(any());
+        }
+    }
+
+    private ImportExperienceRequest createRequest() {
+        return new ImportExperienceRequest(DocumentCategory.values()[0]);
+    }
+
+    private void setField(Object target, String fieldName, Object value) throws Exception {
+        Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
+    }
+
+}
