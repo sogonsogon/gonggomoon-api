@@ -2,6 +2,7 @@ package com.sogonsogon.gonggomoon.domain.experience.application;
 
 import com.sogonsogon.gonggomoon.domain.experience.api.request.ImportExperienceRequest;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ImportExperienceResult;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResult;
 import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
 import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
@@ -12,6 +13,8 @@ import com.sogonsogon.gonggomoon.global.file.S3Uploader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 
 @Service
@@ -69,5 +72,16 @@ public class ExperienceImportService {
         if (file.getSize() > multipartProperties.getMaxFileSize().toBytes()) {
             throw new BaseException(FileAssetErrorCode.FILE_SIZE_EXCEEDED);
         }
+    }
+
+    /**
+     * 파일 목록 조회 서비스
+     * @param userId
+     * @return
+     */
+    public UploadedFileListResult getFileList(Long userId) {
+        List<FileAsset> fileAssets = fileAssetRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
+
+        return UploadedFileListResult.from(fileAssets);
     }
 }
