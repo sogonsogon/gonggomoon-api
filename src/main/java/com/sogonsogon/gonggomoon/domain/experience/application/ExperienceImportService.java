@@ -8,6 +8,7 @@ import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
 import com.sogonsogon.gonggomoon.global.file.FileKeyGenerator;
 import com.sogonsogon.gonggomoon.global.config.MultipartProperties;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
+import com.sogonsogon.gonggomoon.global.file.S3Uploader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +20,7 @@ public class ExperienceImportService {
 
     private final FileAssetRepository fileAssetRepository;
     private final MultipartProperties multipartProperties;
+    private final S3Uploader s3Uploader;
 
     /**
      * 파일 업로드 서비스
@@ -32,6 +34,8 @@ public class ExperienceImportService {
         validateFile(file);
 
         String fileKey = FileKeyGenerator.generate(file.getOriginalFilename());
+
+        s3Uploader.upload(fileKey, file);
 
         FileAsset fileAsset = FileAsset.create(
                 userId,
