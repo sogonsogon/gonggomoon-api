@@ -65,7 +65,7 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}f
+          username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
@@ -79,5 +79,9 @@ jobs:
             docker run -d \
               --name ${{ env.CONTAINER_NAME }} \
               -p ${{ env.APP_PORT }}:${{ env.APP_PORT }} \
+              --env-file /home/ec2-user/gonggomoon/.env \
+              -v /home/ec2-user/gonggomoon/config:/app/config \
+              -e SPRING_PROFILES_ACTIVE=prod \
+              -e SPRING_CONFIG_ADDITIONAL_LOCATION=file:/app/config/ \
               --restart always \
               ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
