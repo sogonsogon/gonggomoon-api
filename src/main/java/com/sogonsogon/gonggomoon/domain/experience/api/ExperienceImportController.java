@@ -3,8 +3,10 @@ package com.sogonsogon.gonggomoon.domain.experience.api;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.experience.api.request.ImportExperienceRequest;
 import com.sogonsogon.gonggomoon.domain.experience.api.response.ImportExperienceResponse;
+import com.sogonsogon.gonggomoon.domain.experience.api.response.UploadedFileListResponse;
 import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceImportService;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ImportExperienceResult;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResult;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -47,5 +50,16 @@ public class ExperienceImportController {
                 file
         );
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(ImportExperienceResponse.from(result)));
+    }
+
+    /**
+     * 업로드된 파일 목록을 조회 합니다.
+     */
+    @GetMapping("/uploads/experiences")
+    public ResponseEntity<BaseResponse<UploadedFileListResponse>> getUploadFileList(
+            @AuthenticationPrincipal AccessUser user) {
+        UploadedFileListResult result = experienceImportService.getFileList(user.getId());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(UploadedFileListResponse.from(result)));
     }
 }
