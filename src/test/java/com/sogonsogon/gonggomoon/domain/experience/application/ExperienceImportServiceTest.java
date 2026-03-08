@@ -2,6 +2,8 @@ package com.sogonsogon.gonggomoon.domain.experience.application;
 
 import com.sogonsogon.gonggomoon.domain.experience.api.request.ImportExperienceRequest;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ImportExperienceResult;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResult;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResultItem;
 import com.sogonsogon.gonggomoon.domain.experience.domain.DocumentCategory;
 import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
 import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
@@ -9,7 +11,6 @@ import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
 import com.sogonsogon.gonggomoon.global.config.MultipartProperties;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import com.sogonsogon.gonggomoon.global.file.S3Uploader;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.util.unit.DataSize;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.lang.reflect.Field;
+import java.time.Instant;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -175,6 +180,104 @@ public class ExperienceImportServiceTest {
             verify(s3Uploader, never()).upload(anyString(), any());
             verify(fileAssetRepository, never()).save(any());
         }
+    }
+
+    @Nested
+    @DisplayName("getFileList")
+    class GetFileListTest {
+
+        @Test
+        @DisplayName("사용자의 업로드 파일 목록을 생성일시 내림차순 조회 결과로 반환한다")
+        void getFileList_success() throws Exception {
+            // given
+            Instant createdAt1 = Instant.parse("2026-03-08T10:15:30Z");
+            Instant createdAt2 = Instant.parse("2026-03-07T09:00:00Z");
+
+            FileAsset file1 = createFileAsset(
+                    100L,
+                    USER_ID,
+                    DocumentCategory.RESUME,
+                    "resume.pdf",
+                    1024L,
+                    createdAt1
+            );
+
+            FileAsset file2 = createFileAsset(
+                    101L,
+                    USER_ID,
+                    DocumentCategory.PORTFOLIO,
+                    "portfolio.pdf",
+                    2048L,
+                    createdAt2
+            );
+
+            when(fileAssetRepository.findAllByUserIdOrderByCreatedAtDesc(USER_ID))
+                    .thenReturn(List.of(file1, file2));
+
+            // when
+            UploadedFileListResult result = experienceImportService.getFileList(USER_ID);
+
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.totalCount()).isEqualTo(2);
+            assertThat(result.contents()).hasSize(2);
+
+            UploadedFileListResultItem first = result.contents().get(0);
+            assertThat(first.fileAssetId()).isEqualTo(100L);
+            assertThat(first.category()).isEqualTo(DocumentCategory.RESUME);
+            assertThat(first.originalFileName()).isEqualTo("resume.pdf");
+            assertThat(first.sizeBytes()).isEqualTo(1024L);
+            assertThat(first.createdAt()).isEqualTo(createdAt1);
+
+            UploadedFileListResultItem second = result.contents().get(1);
+            assertThat(second.fileAssetId()).isEqualTo(101L);
+            assertThat(second.category()).isEqualTo(DocumentCategory.PORTFOLIO);
+            assertThat(second.originalFileName()).isEqualTo("portfolio.pdf");
+            assertThat(second.sizeBytes()).isEqualTo(2048L);
+            assertThat(second.createdAt()).isEqualTo(createdAt2);
+
+            verify(fileAssetRepository).findAllByUserIdOrderByCreatedAtDesc(USER_ID);
+        }
+
+        @Test
+        @DisplayName("업로드한 파일이 없으면 빈 목록을 반환한다")
+        void getFileList_empty() {
+            // given
+            when(fileAssetRepository.findAllByUserIdOrderByCreatedAtDesc(USER_ID))
+                    .thenReturn(List.of());
+
+            // when
+            UploadedFileListResult result = experienceImportService.getFileList(USER_ID);
+
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.totalCount()).isZero();
+            assertThat(result.contents()).isEmpty();
+
+            verify(fileAssetRepository).findAllByUserIdOrderByCreatedAtDesc(USER_ID);
+        }
+    }
+
+    private FileAsset createFileAsset(
+            Long id,
+            Long userId,
+            DocumentCategory category,
+            String originalFileName,
+            Long sizeBytes,
+            Instant createdAt
+    ) throws Exception {
+        FileAsset fileAsset = FileAsset.create(
+                userId,
+                category,
+                originalFileName,
+                "test-file-key",
+                sizeBytes
+        );
+
+        setField(fileAsset, "id", id);
+        setField(fileAsset, "createdAt", createdAt);
+
+        return fileAsset;
     }
 
     private ImportExperienceRequest createRequest() {
