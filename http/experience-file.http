@@ -1,0 +1,139 @@
+@host = http://localhost:8080
+//http://localhost:8080/api/v1/auth/social/login/naver 로그인 후 개발자도구에서 access_token 복사
+@token =
+@fileAssetId = 1
+
+### 로컬 테스트 파일 경로: 해당 파일이 실제로 존재해야 합니다.
+@uploadFilePath = ../files/resume.pdf
+@emptyFilePath = ../files/empty.pdf
+
+### =========================================================
+### 1. 경험 파일 업로드 - 성공
+### category 값은 DocumentCategory enum 상수명으로 맞춰서 넣기
+### 예: RESUME, PORTFOLIO, CERTIFICATE ...
+### =========================================================
+POST {{host}}/api/v1/uploads/experiences
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="request"
+Content-Type: application/json
+
+{
+  "category": "RESUME"
+}
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="resume.pdf"
+Content-Type: application/pdf
+
+< /Users/munjuyeong/gonggomoon-api/files/resume.pdf
+--WebAppBoundary--
+
+### =========================================================
+### 2. 경험 파일 업로드 - 파일 누락
+### 기대: MissingServletRequestPartException: Required part 'file' is not present.
+### =========================================================
+POST {{host}}/api/v1/uploads/experiences
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="request"
+Content-Type: application/json
+
+{
+  "category": "RESUME"
+}
+--WebAppBoundary--
+
+### =========================================================
+### 3. 경험 파일 업로드 - 빈 파일 실패
+### 기대: EMPTY_FILE_NOT_ALLOWED 또는 4xx
+### 파일은 실제 0바이트 파일이어야 함
+### =========================================================
+
+POST {{host}}/api/v1/uploads/experiences
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="request"
+Content-Type: application/json
+
+{
+  "category": "RESUME"
+}
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="empty.pdf"
+Content-Type: application/pdf
+
+< /Users/munjuyeong/gonggomoon-api/files/empty.pdf
+--WebAppBoundary--
+
+### =========================================================
+### 4. 경험 파일 업로드 - 카테고리 누락 실패
+### 기대:
+### - @Valid / @NotNull 적용 시 400 Bad Request
+### - 또는 CATEGORY_REQUIRED / 4xx
+### =========================================================
+
+POST {{host}}/api/v1/uploads/experiences
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="request"
+Content-Type: application/json
+
+{
+}
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="resume.pdf"
+Content-Type: application/pdf
+
+< /Users/munjuyeong/gonggomoon-api/files/resume.pdf
+--WebAppBoundary--
+
+### =========================================================
+### 5. 경험 파일 업로드 - 용량 초과 실패
+### 기대: MaxUploadSizeExceededException: Maximum upload size exceeded
+### =========================================================
+
+POST {{host}}/api/v1/uploads/experiences
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="request"
+Content-Type: application/json
+
+{
+  "category": "RESUME"
+}
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="large.pdf"
+Content-Type: application/pdf
+
+< /Users/munjuyeong/gonggomoon-api/files/large.pdf
+--WebAppBoundary--
+
+### =========================================================
+### 6. 업로드 파일 목록 조회 - 성공
+### =========================================================
+GET {{host}}/api/v1/uploads/experiences
+Authorization: Bearer {{token}}
+
+### =========================================================
+### 7. 파일 삭제 - 성공
+### 업로드 응답으로 받은 fileAssetId 넣어서 테스트
+### =========================================================
+DELETE {{host}}/api/v1/uploads/experiences/{{fileAssetId}}
+Authorization: Bearer {{token}}
+
+### =========================================================
+### 8. 파일 삭제 - 존재하지 않는 파일
+### 기대: NOT_FOUND 또는 404
+### =========================================================
+DELETE {{host}}/api/v1/uploads/experiences/999999
+Authorization: Bearer {{token}}
