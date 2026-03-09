@@ -92,6 +92,7 @@ public class ExperienceImportService {
         FileAsset fileAsset = fileAssetRepository.findByIdAndUserId(fileAssetId, userId)
                 .orElseThrow(() -> new BaseException(FileAssetErrorCode.NOT_FOUND));
 
+        s3Uploader.delete(fileAsset.getFileKey());
         fileAssetRepository.delete(fileAsset);
     }
 }

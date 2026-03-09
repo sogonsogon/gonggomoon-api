@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.IOException;
@@ -36,6 +37,19 @@ public class S3Uploader {
             throw new BaseException(FileAssetErrorCode.FILE_STREAM_READ_FAILED);
         } catch (Exception e) {
             throw new BaseException(FileAssetErrorCode.S3_UPLOAD_FAILED);
+        }
+    }
+
+    public void delete(String key) {
+        try {
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(s3Properties.getBucket())
+                    .key(key)
+                    .build();
+
+            s3Client.deleteObject(deleteObjectRequest);
+        } catch (Exception e) {
+            throw new BaseException(FileAssetErrorCode.FILE_DELETE_FAILED);
         }
     }
 }

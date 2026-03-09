@@ -263,7 +263,7 @@ public class ExperienceImportServiceTest {
     class DeleteFileTest {
 
         @Test
-        @DisplayName("존재하는 파일이면 삭제한다.")
+        @DisplayName("존재하는 파일이면 S3와 DB에서 삭제한다.")
         void deleteFile_success() throws Exception{
             // given
             Long fileAssetId = 100L;
@@ -284,6 +284,7 @@ public class ExperienceImportServiceTest {
 
             // then
             verify(fileAssetRepository).findByIdAndUserId(fileAssetId, USER_ID);
+            verify(s3Uploader).delete(fileAsset.getFileKey());
             verify(fileAssetRepository).delete(fileAsset);
         }
 
@@ -305,6 +306,7 @@ public class ExperienceImportServiceTest {
             // then
             assertEquals(FileAssetErrorCode.NOT_FOUND, ex.getErrorCode());
             verify(fileAssetRepository).findByIdAndUserId(fileAssetId, USER_ID);
+            verify(s3Uploader, never()).delete((anyString()));
             verify(fileAssetRepository, never()).delete(any(FileAsset.class));
         }
     }
