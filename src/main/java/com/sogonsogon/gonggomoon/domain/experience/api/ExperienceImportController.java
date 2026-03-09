@@ -14,7 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -61,5 +63,17 @@ public class ExperienceImportController {
         UploadedFileListResult result = experienceImportService.getFileList(user.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(UploadedFileListResponse.from(result)));
+    }
+
+    /**
+     * 업로드된 파일을 삭제합니다.
+     */
+    @DeleteMapping("/uploads/experiences/{fileAssetId}")
+    public ResponseEntity<BaseResponse<Void>> deleteFile(
+            @AuthenticationPrincipal AccessUser user,
+            @PathVariable("fileAssetId") Long fileAssetId) {
+        experienceImportService.deleteFile(fileAssetId, user.getId());
+
+        return ResponseEntity.ok(BaseResponse.success());
     }
 }
