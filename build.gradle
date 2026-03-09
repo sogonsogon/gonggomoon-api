@@ -40,6 +40,9 @@ dependencies {
     // S3 AWS SDK v2
     implementation 'software.amazon.awssdk:s3:2.32.18'
 
+    // actuator
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-web'
