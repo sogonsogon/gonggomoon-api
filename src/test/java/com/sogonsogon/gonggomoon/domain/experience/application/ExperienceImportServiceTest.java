@@ -258,6 +258,57 @@ public class ExperienceImportServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("deleteFile")
+    class DeleteFileTest {
+
+        @Test
+        @DisplayName("존재하는 파일이면 삭제한다.")
+        void deleteFile_success() throws Exception{
+            // given
+            Long fileAssetId = 100L;
+            FileAsset fileAsset = createFileAsset(
+                    fileAssetId,
+                    USER_ID,
+                    DocumentCategory.RESUME,
+                    "resume.pdf",
+                    1024L,
+                    Instant.parse("2026-03-08T10:15:30Z")
+            );
+
+            when(fileAssetRepository.findByIdAndUserId(fileAssetId, USER_ID))
+                    .thenReturn(java.util.Optional.of(fileAsset));
+
+            // when
+            experienceImportService.deleteFile(fileAssetId, USER_ID);
+
+            // then
+            verify(fileAssetRepository).findByIdAndUserId(fileAssetId, USER_ID);
+            verify(fileAssetRepository).delete(fileAsset);
+        }
+
+        @Test
+        @DisplayName("사용자 소유의 파일이 없으면 NOT_FOUND 예외가 발생한다")
+        void deleteFile_fail_whenFileAssetNotFound() {
+            // given
+            Long fileAssetId = 100L;
+
+            when(fileAssetRepository.findByIdAndUserId(fileAssetId, USER_ID))
+                    .thenReturn(java.util.Optional.empty());
+
+            // when
+            BaseException ex = assertThrows(
+                    BaseException.class,
+                    () -> experienceImportService.deleteFile(fileAssetId, USER_ID)
+            );
+
+            // then
+            assertEquals(FileAssetErrorCode.NOT_FOUND, ex.getErrorCode());
+            verify(fileAssetRepository).findByIdAndUserId(fileAssetId, USER_ID);
+            verify(fileAssetRepository, never()).delete(any(FileAsset.class));
+        }
+    }
+
     private FileAsset createFileAsset(
             Long id,
             Long userId,
