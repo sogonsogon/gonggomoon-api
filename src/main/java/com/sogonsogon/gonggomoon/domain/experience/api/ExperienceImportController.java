@@ -38,7 +38,7 @@ public class ExperienceImportController {
      * @return
      */
     @PostMapping(
-            value = "/uploads/experience",
+            value = "/uploads/experiences",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<BaseResponse<ImportExperienceResponse>> uploadFile(
