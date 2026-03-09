@@ -4,6 +4,7 @@ import com.sogonsogon.gonggomoon.global.error.BaseErrorCode;
 import org.springframework.http.HttpStatus;
 
 public enum FileAssetErrorCode implements BaseErrorCode {
+    NOT_FOUND("FILE_ASSET_NOT_FOUND", HttpStatus.NOT_FOUND, "해당 파일을 찾을 수 없습니다."),
     FILE_REQUIRED("FILE_ASSET_FILE_REQUIRED", HttpStatus.BAD_REQUEST, "업로드 파일은 필수입니다."),
     EMPTY_FILE_NOT_ALLOWED("FILE_ASSET_EMPTY_FILE_NOT_ALLOWED", HttpStatus.BAD_REQUEST, "비어 있는 파일은 업로드할 수 없습니다."),
     INVALID_FILE_NAME("FILE_ASSET_INVALID_FILE_NAME", HttpStatus.BAD_REQUEST, "유효하지 않은 파일 이름입니다."),

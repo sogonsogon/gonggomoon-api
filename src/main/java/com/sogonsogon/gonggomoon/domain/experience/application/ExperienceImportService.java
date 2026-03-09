@@ -84,4 +84,14 @@ public class ExperienceImportService {
 
         return UploadedFileListResult.from(fileAssets);
     }
+
+    /**
+     * 파일 삭제 서비스
+     */
+    public void deleteFile(Long fileAssetId, Long userId) {
+        FileAsset fileAsset = fileAssetRepository.findByIdAndUserId(fileAssetId, userId)
+                .orElseThrow(() -> new BaseException(FileAssetErrorCode.NOT_FOUND));
+
+        fileAssetRepository.delete(fileAsset);
+    }
 }
