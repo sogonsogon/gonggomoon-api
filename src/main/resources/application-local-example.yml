@@ -56,3 +56,11 @@ app:
     secure: false # 개발 환경에서는 false, 운영 환경에서는 true로 설정하세요.
     http-only: true
     same-site: lax # 프론트/백엔드가 같은 localhost면 Lax로 테스트 가능
+
+  s3:
+    bucket: ggm-user-uploads-prod
+    region: ap-northeast-2
+    # 넣는 방식 예시) 상단 Edit Configurations -> Environment variables에서 실제 값 넣어주기
+    # ex)S3_ACCESS_KEY=...;S3_SECRET_KEY=...
+    access-key: ${S3_ACCESS_KEY}
+    secret-key: ${S3_SECRET_KEY}
