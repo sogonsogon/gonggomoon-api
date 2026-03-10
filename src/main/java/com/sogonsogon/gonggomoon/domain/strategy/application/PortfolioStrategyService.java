@@ -6,6 +6,7 @@ import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.api.request.GeneratePortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GeneratePortfolioStrategyResult;
+import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyDetailResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyListResult;
 import com.sogonsogon.gonggomoon.domain.strategy.content.PortfolioStrategyContent;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategy;
@@ -57,7 +58,8 @@ public class PortfolioStrategyService {
                 userId,
                 req.jobType(),
                 req.industryType(),
-                resultJson);
+                resultJson,
+                experiences.size());
 
         portfolioStrategyRepository.save(strategy);
 
@@ -71,5 +73,22 @@ public class PortfolioStrategyService {
         List<PortfolioStrategy> portfolioStrategies = portfolioStrategyRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
 
         return PortfolioStrategyListResult.from(portfolioStrategies);
+    }
+
+    /**
+     * 포트폴리오 전략 상세 조회 서비스
+     */
+    public PortfolioStrategyDetailResult getPortfolioStrategyDetail(Long strategyId, Long userId) {
+        PortfolioStrategy portfolioStrategy = portfolioStrategyRepository.findByIdAndUserId(strategyId, userId)
+                .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
+
+        PortfolioStrategyContent content;
+        try {
+            content = objectMapper.readValue(portfolioStrategy.getResultJson(), PortfolioStrategyContent.class);
+        } catch (JsonProcessingException e) {
+            throw new BaseException(PortfolioStrategyErrorCode.RESULT_JSON_DESERIALIZATION_FAILED);
+        }
+
+        return PortfolioStrategyDetailResult.of(portfolioStrategy, content);
     }
 }
