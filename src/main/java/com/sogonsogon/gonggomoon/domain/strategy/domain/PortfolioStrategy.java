@@ -51,11 +51,15 @@ public class PortfolioStrategy {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "experience_total_count", nullable = false)
+    private int selectedExperienceCount;
+
     public static PortfolioStrategy create(
             Long userId,
             JobType jobType,
             IndustryType industryType,
-            String resultJson
+            String resultJson,
+            int selectedExperienceCount
     ) {
         requireNonNull(userId, PortfolioStrategyErrorCode.USERID_REQUIRED);
         requireNonNull(jobType, PortfolioStrategyErrorCode.JOB_TYPE_REQUIRED);
@@ -65,6 +69,7 @@ public class PortfolioStrategy {
                 .jobType(jobType)
                 .industryType(industryType)
                 .resultJson(resultJson)
+                .selectedExperienceCount(selectedExperienceCount)
                 .build();
     }
 
