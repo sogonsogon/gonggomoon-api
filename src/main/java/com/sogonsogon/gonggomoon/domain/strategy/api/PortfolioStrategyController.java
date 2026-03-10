@@ -1,8 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.strategy.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
-import com.sogonsogon.gonggomoon.domain.experience.api.response.ExperienceListResponse;
 import com.sogonsogon.gonggomoon.domain.strategy.api.request.GeneratePortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.strategy.api.response.GeneratePortfolioStrategyResponse;
 import com.sogonsogon.gonggomoon.domain.strategy.api.response.PortfolioStrategyDetailResponse;
@@ -23,7 +21,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import software.amazon.awssdk.core.Response;
 
 @RestController
 @RequestMapping("/api/v1/portfolio-strategies")
