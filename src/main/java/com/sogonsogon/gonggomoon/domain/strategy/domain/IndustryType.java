@@ -1,6 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.strategy.domain;
 
 public enum IndustryType {
+    MASTER, // 범용 전략
     MEDIA_CONTENT,
     COMMERCE,
     FINTECH_FINANCIAL,

@@ -6,6 +6,7 @@ import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.api.request.GeneratePortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GeneratePortfolioStrategyResult;
+import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyListResult;
 import com.sogonsogon.gonggomoon.domain.strategy.content.PortfolioStrategyContent;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategyRepository;
@@ -61,5 +62,14 @@ public class PortfolioStrategyService {
         portfolioStrategyRepository.save(strategy);
 
         return GeneratePortfolioStrategyResult.of(strategy.getId());
+    }
+
+    /**
+     * 포트폴리오 전략 목록 조회 서비스
+     */
+    public PortfolioStrategyListResult getPortfolioStrategyList(Long userId) {
+        List<PortfolioStrategy> portfolioStrategies = portfolioStrategyRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
+
+        return PortfolioStrategyListResult.from(portfolioStrategies);
     }
 }
