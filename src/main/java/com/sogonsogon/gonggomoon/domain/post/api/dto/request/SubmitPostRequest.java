@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Positive;
 public record SubmitPostRequest(
 
         @NotBlank(message = "URL은 필수입니다.")
-        @Pattern(regexp = "^https?://.*", message = "올바른 형식의 URL이 아닙니다.")
+        @Pattern(regexp = "^https?://.+", message = "올바른 형식의 URL이 아닙니다.")
         String requestUrl,
 
         @NotNull(message = "플랫폼 ID는 필수입니다.")
