@@ -433,6 +433,57 @@ class PortfolioStrategyServiceTest {
 
     }
 
+    @Nested
+    @DisplayName("delete")
+    class DeleteTest {
+
+        @Test
+        @DisplayName("해당 사용자의 포트폴리오 전략이 존재하면 삭제한다")
+        void deletePortfolioStrategy_success() throws Exception {
+            // given
+            Long strategyId = 100L;
+
+            PortfolioStrategy portfolioStrategy = createPortfolioStrategy(
+                    strategyId,
+                    USER_ID,
+                    JobType.BACKEND,
+                    IndustryType.FINTECH_FINANCIAL,
+                    Instant.parse("2026-03-10T10:00:00Z")
+            );
+
+            when(portfolioStrategyRepository.findByIdAndUserId(strategyId, USER_ID))
+                    .thenReturn(Optional.of(portfolioStrategy));
+
+            // when
+            portfolioStrategyService.deletePortfolioStrategy(strategyId, USER_ID);
+
+            // then
+            verify(portfolioStrategyRepository).findByIdAndUserId(strategyId, USER_ID);
+            verify(portfolioStrategyRepository).delete(portfolioStrategy);
+        }
+
+        @Test
+        @DisplayName("해당 사용자의 포트폴리오 전략이 없으면 NOT_FOUND 예외가 발생한다")
+        void deletePortfolioStrategy_fail_whenStrategyNotFound() {
+            // given
+            Long strategyId = 100L;
+
+            when(portfolioStrategyRepository.findByIdAndUserId(strategyId, USER_ID))
+                    .thenReturn(Optional.empty());
+
+            // when
+            BaseException exception = assertThrows(
+                    BaseException.class,
+                    () -> portfolioStrategyService.deletePortfolioStrategy(strategyId, USER_ID)
+            );
+
+            // then
+            assertEquals(PortfolioStrategyErrorCode.NOT_FOUND, exception.getErrorCode());
+            verify(portfolioStrategyRepository).findByIdAndUserId(strategyId, USER_ID);
+            verify(portfolioStrategyRepository, never()).delete(any(PortfolioStrategy.class));
+        }
+    }
+
     private PortfolioStrategy createPortfolioStrategy(
             Long id,
             Long userId,
