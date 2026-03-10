@@ -8,5 +8,7 @@ public interface PortfolioStrategyRepository {
 
     PortfolioStrategy save(PortfolioStrategy portfolioStrategy);
 
+    void delete(PortfolioStrategy portfolioStrategy);
+
     List<PortfolioStrategy> findAllByUserIdOrderByCreatedAtDesc(Long userId);
 }

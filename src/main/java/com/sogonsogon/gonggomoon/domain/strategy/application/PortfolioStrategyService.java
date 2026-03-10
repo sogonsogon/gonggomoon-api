@@ -91,4 +91,14 @@ public class PortfolioStrategyService {
 
         return PortfolioStrategyDetailResult.of(portfolioStrategy, content);
     }
+
+    /**
+     * 포트폴리오 삭제 서비스
+     */
+    public void deletePortfolioStrategy(Long strategyId, Long userId) {
+        PortfolioStrategy portfolioStrategy = portfolioStrategyRepository.findByIdAndUserId(strategyId, userId)
+                .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
+
+        portfolioStrategyRepository.delete(portfolioStrategy);
+    }
 }

@@ -15,12 +15,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.sound.sampled.Port;
 
 @RestController
 @RequestMapping("/api/v1/portfolio-strategies")
@@ -63,5 +66,17 @@ public class PortfolioStrategyController {
         PortfolioStrategyDetailResult result = portfolioStrategyService.getPortfolioStrategyDetail(strategyId, user.getId());
 
         return ResponseEntity.ok(BaseResponse.success(PortfolioStrategyDetailResponse.from(result)));
+    }
+
+    /**
+     * 포트폴리오 전략을 삭제합니다.
+     */
+    @DeleteMapping("/{strategyId}")
+    public ResponseEntity<BaseResponse<Void>> deletePortfolioStrategy(
+            @AuthenticationPrincipal AccessUser user,
+            @PathVariable("strategyId") Long strategyId) {
+        portfolioStrategyService.deletePortfolioStrategy(strategyId, user.getId());
+
+        return ResponseEntity.ok(BaseResponse.success());
     }
 }
