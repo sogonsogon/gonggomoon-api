@@ -7,8 +7,12 @@ import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceType;
 import com.sogonsogon.gonggomoon.domain.strategy.api.request.GeneratePortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GeneratePortfolioStrategyResult;
+import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyDetailResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyListResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyListResultItem;
+import com.sogonsogon.gonggomoon.domain.strategy.content.ExperienceOrderingItem;
+import com.sogonsogon.gonggomoon.domain.strategy.content.ExperienceStrategyPoint;
+import com.sogonsogon.gonggomoon.domain.strategy.content.ImprovementGuide;
 import com.sogonsogon.gonggomoon.domain.strategy.content.PortfolioStrategyContent;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.IndustryType;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.JobType;
@@ -29,6 +33,7 @@ import java.lang.reflect.Field;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -286,6 +291,148 @@ class PortfolioStrategyServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("getDetail")
+    class GetDetailListTest {
+
+        @Test
+        @DisplayName("전략 상세 조회에 성공하면 메타 정보와 결과 본문을 반환한다")
+        void getPortfolioStrategyDetail_success() throws Exception {
+            // given
+            Long strategyId = 100L;
+            Instant createdAt = Instant.parse("2026-03-10T10:00:00Z");
+
+            PortfolioStrategy portfolioStrategy = createPortfolioStrategy(
+                    strategyId,
+                    USER_ID,
+                    JobType.BACKEND,
+                    IndustryType.FINTECH_FINANCIAL,
+                    createdAt
+            );
+
+            PortfolioStrategyContent content = PortfolioStrategyContent.of(
+                    "대규모 트래픽 환경에서 안정성과 데이터 기반 의사결정을 설계하는 백엔드 개발자",
+                    List.of(
+                            new ExperienceStrategyPoint(
+                                    ExperienceType.PROJECT,
+                                    "대용량 영상 업로드 시스템",
+                                    "청크 업로드, 재시도, 장애 복구를 중심으로 대용량 파일 처리 안정성을 개선한 경험으로 정리하세요."
+                            )
+                    ),
+                    List.of(
+                            new ExperienceOrderingItem(
+                                    1,
+                                    "대용량 영상 업로드 시스템",
+                                    "대규모 트래픽 처리와 안정성 설계 역량을 가장 강하게 보여줄 수 있는 핵심 경험이기 때문입니다."
+                            )
+                    ),
+                    List.of("트래픽 대응", "안정성"),
+                    List.of("대용량 파일 업로드 처리", "장애 대응 및 복구 설계"),
+                    List.of("업로드 실패율 감소 수치 제시"),
+                    List.of(
+                            new ImprovementGuide(
+                                    "성과 수치 보완",
+                                    "전후 비교가 가능한 수치를 함께 제시하면 설득력이 높아집니다."
+                            )
+                    )
+            );
+
+            when(portfolioStrategyRepository.findByIdAndUserId(strategyId, USER_ID))
+                    .thenReturn(Optional.of(portfolioStrategy));
+            when(objectMapper.readValue(portfolioStrategy.getResultJson(), PortfolioStrategyContent.class))
+                    .thenReturn(content);
+
+            // when
+            PortfolioStrategyDetailResult result =
+                    portfolioStrategyService.getPortfolioStrategyDetail(strategyId, USER_ID);
+
+            // then
+            assertNotNull(result);
+            assertEquals(strategyId, result.strategyId());
+            assertEquals(JobType.BACKEND, result.jobType());
+            assertEquals(IndustryType.FINTECH_FINANCIAL, result.industryType());
+            assertEquals(1, result.selectedExperienceCount());
+            assertEquals(createdAt, result.createdAt());
+
+            assertEquals("대규모 트래픽 환경에서 안정성과 데이터 기반 의사결정을 설계하는 백엔드 개발자",
+                    result.mainPositioningMessage());
+
+            assertNotNull(result.experienceStrategyPoints());
+            assertEquals(1, result.experienceStrategyPoints().size());
+            assertEquals(ExperienceType.PROJECT, result.experienceStrategyPoints().get(0).experienceType());
+            assertEquals("대용량 영상 업로드 시스템", result.experienceStrategyPoints().get(0).experienceTitle());
+
+            assertNotNull(result.experienceOrdering());
+            assertEquals(1, result.experienceOrdering().size());
+            assertEquals(1, result.experienceOrdering().get(0).order());
+            assertEquals("대용량 영상 업로드 시스템", result.experienceOrdering().get(0).title());
+
+            assertEquals(List.of("트래픽 대응", "안정성"), result.keywords());
+            assertEquals(List.of("대용량 파일 업로드 처리", "장애 대응 및 복구 설계"), result.strengths());
+            assertEquals(List.of("업로드 실패율 감소 수치 제시"), result.kpiCheckList());
+
+            assertNotNull(result.improvementGuides());
+            assertEquals(1, result.improvementGuides().size());
+            assertEquals("성과 수치 보완", result.improvementGuides().get(0).title());
+
+            verify(portfolioStrategyRepository).findByIdAndUserId(strategyId, USER_ID);
+            verify(objectMapper).readValue(portfolioStrategy.getResultJson(), PortfolioStrategyContent.class);
+        }
+
+        @Test
+        @DisplayName("해당 사용자의 전략이 없으면 NOT_FOUND 예외가 발생한다")
+        void getPortfolioStrategyDetail_fail_whenStrategyNotFound() {
+            // given
+            Long strategyId = 100L;
+
+            when(portfolioStrategyRepository.findByIdAndUserId(strategyId, USER_ID))
+                    .thenReturn(Optional.empty());
+
+            // when
+            BaseException exception = assertThrows(
+                    BaseException.class,
+                    () -> portfolioStrategyService.getPortfolioStrategyDetail(strategyId, USER_ID)
+            );
+
+            // then
+            assertEquals(PortfolioStrategyErrorCode.NOT_FOUND, exception.getErrorCode());
+            verify(portfolioStrategyRepository).findByIdAndUserId(strategyId, USER_ID);
+            verifyNoInteractions(objectMapper);
+        }
+
+        @Test
+        @DisplayName("전략 결과 JSON 역직렬화에 실패하면 RESULT_JSON_DESERIALIZATION_FAILED 예외가 발생한다")
+        void getPortfolioStrategyDetail_fail_whenJsonDeserializationFails() throws Exception {
+            // given
+            Long strategyId = 100L;
+
+            PortfolioStrategy portfolioStrategy = createPortfolioStrategy(
+                    strategyId,
+                    USER_ID,
+                    JobType.BACKEND,
+                    IndustryType.FINTECH_FINANCIAL,
+                    Instant.parse("2026-03-10T10:00:00Z")
+            );
+
+            when(portfolioStrategyRepository.findByIdAndUserId(strategyId, USER_ID))
+                    .thenReturn(Optional.of(portfolioStrategy));
+            when(objectMapper.readValue(portfolioStrategy.getResultJson(), PortfolioStrategyContent.class))
+                    .thenThrow(new JsonProcessingException("deserialization failed") {});
+
+            // when
+            BaseException exception = assertThrows(
+                    BaseException.class,
+                    () -> portfolioStrategyService.getPortfolioStrategyDetail(strategyId, USER_ID)
+            );
+
+            // then
+            assertEquals(PortfolioStrategyErrorCode.RESULT_JSON_DESERIALIZATION_FAILED, exception.getErrorCode());
+            verify(portfolioStrategyRepository).findByIdAndUserId(strategyId, USER_ID);
+            verify(objectMapper).readValue(portfolioStrategy.getResultJson(), PortfolioStrategyContent.class);
+        }
+
+    }
+
     private PortfolioStrategy createPortfolioStrategy(
             Long id,
             Long userId,
@@ -297,7 +444,8 @@ class PortfolioStrategyServiceTest {
                 userId,
                 jobType,
                 industryType,
-                "{}"
+                "{}",
+                1
         );
 
         setField(strategy, "id", id);
