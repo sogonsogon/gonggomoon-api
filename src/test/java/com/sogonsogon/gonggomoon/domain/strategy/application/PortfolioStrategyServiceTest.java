@@ -97,27 +97,6 @@ class PortfolioStrategyServiceTest {
         }
 
         @Test
-        @DisplayName("experienceIds가 3개 이상이면 TOO_MANY_EXPERIENCES 예외가 발생한다")
-        void generate_fail_whenExperienceIdsSizeExceedsTwo() {
-            // given
-            GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
-                    List.of(1L, 2L, 3L)
-            );
-
-            // when
-            BaseException exception = assertThrows(
-                    BaseException.class,
-                    () -> portfolioStrategyService.generate(USER_ID, req)
-            );
-
-            // then
-            assertEquals(PortfolioStrategyErrorCode.TOO_MANY_EXPERIENCES, exception.getErrorCode());
-            verifyNoInteractions(experienceRepository, portfolioStrategyContentGenerator, objectMapper, portfolioStrategyRepository);
-        }
-
-        @Test
         @DisplayName("선택한 경험 중 일부를 찾을 수 없으면 REQUESTED_EXPERIENCE_NOT_FOUND 예외가 발생한다")
         void generate_fail_whenSomeRequestedExperiencesAreNotFound() {
             // given

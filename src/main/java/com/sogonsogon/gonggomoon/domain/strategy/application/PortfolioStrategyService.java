@@ -35,10 +35,6 @@ public class PortfolioStrategyService {
             throw new BaseException(PortfolioStrategyErrorCode.EXPERIENCE_IDS_REQUIRED);
         }
 
-        if (req.experienceIds().size() > 2) {
-            throw new BaseException(PortfolioStrategyErrorCode.TOO_MANY_EXPERIENCES);
-        }
-
         List<Experience> experiences = experienceRepository.findAllByIdInAndUserId(req.experienceIds(), userId);
         if (experiences.size() != req.experienceIds().size()) {
             throw new BaseException(PortfolioStrategyErrorCode.REQUESTED_EXPERIENCE_NOT_FOUND);

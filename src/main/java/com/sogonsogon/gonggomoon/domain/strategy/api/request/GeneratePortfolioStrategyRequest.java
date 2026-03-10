@@ -12,7 +12,6 @@ public record GeneratePortfolioStrategyRequest(
         IndustryType industryType,
 
         @NotNull(message = "experienceIds는 필수입니다.") // 리스트 자체가 null 방지
-        @Size(min = 1, max = 2, message = "경험은 1개 이상 2개 이하로 선택해야 합니다.")
         List<@NotNull(message = "experienceId는 null일 수 없습니다.") Long> experienceIds // [1, null] 방지
 ) {
 }
