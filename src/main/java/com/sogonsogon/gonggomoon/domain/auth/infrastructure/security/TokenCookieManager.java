@@ -6,10 +6,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
-@Component // Bean으로 등록이 되어있어야 @Value를 사용할 수 있다.
+@Component
 public class TokenCookieManager {
 
-    // Cookie 관련 설정 값
     @Value("${app.cookie.secure}")
     private boolean cookieSecure;
 
@@ -19,6 +18,11 @@ public class TokenCookieManager {
     @Value("${app.cookie.same-site}")
     private String cookieSameSite;
 
+    @Value("${jwt.access-token-validity-in-seconds}")
+    private long accessTokenValiditySeconds;
+
+    @Value("${jwt.refresh-token-validity-in-seconds}")
+    private long refreshTokenValiditySeconds;
 
     /**
      * Refresh Token을 쿠키로 저장하는 메서드입니다.
@@ -26,13 +30,12 @@ public class TokenCookieManager {
     public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         ResponseCookie cookie = ResponseCookie.from("refresh_token", refreshToken)
             .path("/")
-            .maxAge(60 * 60 * 24 * 14) // 14일
+            .maxAge(refreshTokenValiditySeconds)
             .httpOnly(cookieHttpOnly)
-            .secure(cookieSecure)      // 동적 할당
-            .sameSite(cookieSameSite)  // 동적 할당
+            .secure(cookieSecure)
+            .sameSite(cookieSameSite)
             .build();
 
-        // 문자열 조립 대신 HttpHeaders.SET_COOKIE 상수와 ResponseCookie 객체 사용
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
@@ -42,12 +45,41 @@ public class TokenCookieManager {
     public void addAccessTokenCookie(HttpServletResponse response, String accessToken) {
         ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
             .path("/")
-            .maxAge(60 * 30) // 30분
+            .maxAge(accessTokenValiditySeconds)
             .httpOnly(cookieHttpOnly)
-            .secure(cookieSecure)      // 동적 할당
-            .sameSite(cookieSameSite)  // 동적 할당
+            .secure(cookieSecure)
+            .sameSite(cookieSameSite)
             .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    public void expireAccessTokenCookie(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("access_token", "")
+            .path("/")
+            .maxAge(0)
+            .httpOnly(cookieHttpOnly)
+            .secure(cookieSecure)
+            .sameSite(cookieSameSite)
+            .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    public void expireRefreshTokenCookie(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", "")
+            .path("/")
+            .maxAge(0)
+            .httpOnly(cookieHttpOnly)
+            .secure(cookieSecure)
+            .sameSite(cookieSameSite)
+            .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    public void expireAllTokenCookies(HttpServletResponse response) {
+        expireAccessTokenCookie(response);
+        expireRefreshTokenCookie(response);
     }
 }
