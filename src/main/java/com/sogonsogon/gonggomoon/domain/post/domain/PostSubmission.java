@@ -24,7 +24,7 @@ import java.time.Instant;
 @Getter
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "post_submissions")
-public class Submission {
+public class PostSubmission {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,7 +41,7 @@ public class Submission {
 
     @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
-    private SubmissionStatus status;
+    private PostSubmissionStatus status;
 
     @Column(name = "processed_by")
     private Long processedBy;
@@ -57,20 +57,20 @@ public class Submission {
     @Column(name = "processed_at", nullable = false)
     private Instant processedAt;
 
-    protected Submission() {}
+    protected PostSubmission() {}
 
     @Builder
-    private Submission(String url, Long userId, Long platformId) {
+    private PostSubmission(String url, Long userId, Long platformId) {
         validate(url, userId, platformId);
         // baseUrl 검증은 서비스에서
         this.url = url;
         this.userId = userId;
         this.platformId = platformId;
-        this.status = SubmissionStatus.PENDING;
+        this.status = PostSubmissionStatus.PENDING;
     }
 
-    public static Submission create(String url, Long userId, Long platformId) {
-        return Submission.builder()
+    public static PostSubmission create(String url, Long userId, Long platformId) {
+        return PostSubmission.builder()
                 .url(url)
                 .userId(userId)
                 .platformId(platformId)

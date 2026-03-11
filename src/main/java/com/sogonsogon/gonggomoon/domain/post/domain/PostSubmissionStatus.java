@@ -1,6 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.post.domain;
 
-public enum SubmissionStatus {
+public enum PostSubmissionStatus {
     PENDING,
     APPROVED,
     REJECTED

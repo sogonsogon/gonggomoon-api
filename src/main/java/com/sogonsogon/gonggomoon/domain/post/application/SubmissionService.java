@@ -4,9 +4,9 @@ import com.sogonsogon.gonggomoon.domain.post.dto.request.SubmitPostRequest;
 import com.sogonsogon.gonggomoon.domain.post.domain.Platform;
 import com.sogonsogon.gonggomoon.domain.post.domain.PlatformRepository;
 import com.sogonsogon.gonggomoon.domain.post.domain.PostRepository;
-import com.sogonsogon.gonggomoon.domain.post.domain.Submission;
-import com.sogonsogon.gonggomoon.domain.post.domain.SubmissionRepository;
-import com.sogonsogon.gonggomoon.domain.post.domain.SubmissionStatus;
+import com.sogonsogon.gonggomoon.domain.post.domain.PostSubmission;
+import com.sogonsogon.gonggomoon.domain.post.domain.PostSubmissionRepository;
+import com.sogonsogon.gonggomoon.domain.post.domain.PostSubmissionStatus;
 import com.sogonsogon.gonggomoon.domain.post.error.PlatformErrorCode;
 import com.sogonsogon.gonggomoon.domain.post.error.SubmissionErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
@@ -16,12 +16,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SubmissionService {
 
-    private final SubmissionRepository submissionRepository;
+    private final PostSubmissionRepository postSubmissionRepository;
     private final PlatformRepository platformRepository;
     private final PostRepository postRepository;
 
-    public SubmissionService(SubmissionRepository submissionRepository, PlatformRepository platformRepository, PostRepository postRepository) {
-        this.submissionRepository = submissionRepository;
+    public SubmissionService(PostSubmissionRepository postSubmissionRepository, PlatformRepository platformRepository, PostRepository postRepository) {
+        this.postSubmissionRepository = postSubmissionRepository;
         this.platformRepository = platformRepository;
         this.postRepository = postRepository;
     }
@@ -40,15 +40,15 @@ public class SubmissionService {
         if (postRepository.existsByUrl(request.requestUrl())) throw new BaseException(SubmissionErrorCode.DUPLICATE_URL);
 
         // 해당 유저가 동일한 요청을 했는지 검증
-        if (submissionRepository.existsByUrlAndUserIdAndStatus(request.requestUrl(), userId, SubmissionStatus.PENDING))
+        if (postSubmissionRepository.existsByUrlAndUserIdAndStatus(request.requestUrl(), userId, PostSubmissionStatus.PENDING))
             throw new BaseException(SubmissionErrorCode.DUPLICATE_SUBMISSION);
 
-        Submission submission = Submission.create(
+        PostSubmission postSubmission = PostSubmission.create(
                 request.requestUrl(),
                 userId,
                 request.platformId()
         );
 
-        submissionRepository.save(submission);
+        postSubmissionRepository.save(postSubmission);
     }
 }
