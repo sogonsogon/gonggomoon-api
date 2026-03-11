@@ -3,13 +3,16 @@ package com.sogonsogon.gonggomoon.domain.strategy.domain;
 import com.sogonsogon.gonggomoon.domain.strategy.error.InterviewStrategyErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -19,58 +22,54 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
-/**
- * 면접 전략 질문 세트와 질문은 1:N 관계입니다.
- */
-@Builder
 @Entity
 @Getter
-@Table(name = "interview_strategy")
+@Builder
+@Table(name = "interview_question")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-public class InterviewStrategy {
+public class InterviewQuestion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private Long userId;
+    private String question;
 
-    @Column(name = "portfolio_file_asset_id", nullable = false)
-    private Long portfolioFileAssetId;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private QuestionLevel questionLevel;
 
-    @Builder.Default
-    @OneToMany(mappedBy = "interviewStrategy",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true)
-    private List<InterviewQuestion> questions = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "interview_strategy_id")
+    private InterviewStrategy interviewStrategy;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    public static InterviewStrategy create(
-            Long userId,
-            Long portfolioFileAssetId
+    public static InterviewQuestion create(
+            String question,
+            QuestionLevel level
     ) {
-        requireNonNull(userId, InterviewStrategyErrorCode.USER_ID_REQUIRED);
-        requireNonNull(portfolioFileAssetId, InterviewStrategyErrorCode.PORTFOLIO_FILE_ASSET_ID_REQUIRED);
+        requireText(question, InterviewStrategyErrorCode.INVALID_INTERVIEW_QUESTION);
+        requireNonNull(level, InterviewStrategyErrorCode.INVALID_QUESTION_LEVEL);
 
-        return InterviewStrategy.builder()
-                .userId(userId)
-                .portfolioFileAssetId(portfolioFileAssetId)
+        return InterviewQuestion.builder()
+                .question(question)
+                .questionLevel(level)
                 .build();
     }
 
-    public void addQuestion(InterviewQuestion question) {
-        this.questions.add(question);
-        question.assignStrategy(this);
+    public void assignStrategy(InterviewStrategy interviewStrategy) {
+        this.interviewStrategy = interviewStrategy;
     }
-    public void addQuestions(List<InterviewQuestion> questions) {
-        questions.forEach(this::addQuestion);
+
+    private static void requireText(String value, BaseErrorCode baseErrorCode) {
+        if (value == null || value.isBlank()) {
+            throw new BaseException(baseErrorCode);
+        }
     }
 
     private static void requireNonNull(Object value, BaseErrorCode baseErrorCode) {
