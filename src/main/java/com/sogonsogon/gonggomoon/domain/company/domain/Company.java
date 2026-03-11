@@ -15,7 +15,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
-import java.time.Year;
 
 @Entity
 @Getter
@@ -47,7 +46,7 @@ public class Company {
     private String description;
 
     @Column(name = "founded_year")
-    private Year foundedYear;
+    private Integer foundedYear;
 
     @Column(name = "website_url")
     private String websiteUrl;
