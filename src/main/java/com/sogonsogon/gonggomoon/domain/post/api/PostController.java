@@ -2,13 +2,19 @@ package com.sogonsogon.gonggomoon.domain.post.api;
 
 import com.sogonsogon.gonggomoon.domain.post.dto.request.SearchPostRequest;
 import com.sogonsogon.gonggomoon.domain.post.application.PostService;
+import com.sogonsogon.gonggomoon.domain.post.dto.response.PostResponse;
+import com.sogonsogon.gonggomoon.domain.post.dto.response.PostsResponse;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/posts")
@@ -21,10 +27,27 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<BaseResponse<Void>> searchPosts(
+    public ResponseEntity<BaseResponse<List<PostsResponse>>> searchPosts(
             @ModelAttribute SearchPostRequest request,
             Pageable pageable
     ) {
-        return ResponseEntity.ok(BaseResponse.success());
+
+        Page<PostsResponse> page = postService.searchPosts(request, pageable);
+
+        return ResponseEntity.ok(BaseResponse.success(
+                page.getContent(),
+                BaseResponse.PageInfo.builder()
+                        .currentPage(page.getNumber())
+                        .totalPages(page.getTotalPages())
+                        .totalElements(page.getTotalElements())
+                        .hasNext(page.hasNext())
+                        .build()
+        ));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<BaseResponse<PostResponse>> getPost(@PathVariable Long id) {
+
+        return ResponseEntity.ok(BaseResponse.success(postService.getPost(id)));
     }
 }

@@ -31,7 +31,7 @@ public class Company {
     private Long industryId;
 
     @Column(name = "name", nullable = false)
-    private String title;
+    private String name;
 
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
