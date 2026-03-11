@@ -39,12 +39,15 @@ public class Post {
     @Column(name = "title", nullable = false)
     private String title;
 
+    @Column(name = "url")
+    private String url;
+
     @Column(name = "experience_level")
     private Integer experienceLevel;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "post_status", nullable = false)
-    private PostStatus postStatus;
+    @Column(name = "status", nullable = false)
+    private PostStatus status;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "job_type", nullable = false)
