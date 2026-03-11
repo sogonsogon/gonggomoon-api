@@ -27,7 +27,7 @@ public class PostController {
     }
 
     @GetMapping
-    public ResponseEntity<BaseResponse<List<PostsResponse>>> searchPosts(
+    public ResponseEntity<BaseResponse<BaseResponse.PageResponse<PostsResponse>>> searchPosts(
             @ModelAttribute SearchPostRequest request,
             Pageable pageable
     ) {
@@ -35,14 +35,16 @@ public class PostController {
         Page<PostsResponse> page = postService.searchPosts(request, pageable);
 
         return ResponseEntity.ok(BaseResponse.success(
-                page.getContent(),
-                BaseResponse.PageInfo.builder()
-                        .currentPage(page.getNumber())
-                        .totalPages(page.getTotalPages())
-                        .totalElements(page.getTotalElements())
-                        .hasNext(page.hasNext())
-                        .build()
-        ));
+                BaseResponse.PageResponse.<PostsResponse>builder()
+                        .content(page.getContent())
+                        .pageInfo(BaseResponse.PageInfo.builder()
+                                .currentPage(page.getNumber())
+                                .totalPages(page.getTotalPages())
+                                .totalElements(page.getTotalElements())
+                                .hasNext(page.hasNext())
+                                .build())
+                        .build())
+        );
     }
 
     @GetMapping("/{id}")
