@@ -1,9 +1,13 @@
 package com.sogonsogon.gonggomoon.global.error;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.JobType;
+import com.sogonsogon.gonggomoon.domain.strategy.error.PortfolioStrategyErrorCode;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -66,6 +70,40 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(errorCode.getStatus())
             .body(BaseResponse.fail(errorCode.getCode(), errorCode.getMessage(), errors));
+    }
+
+    // 4. enum 바인딩 실패 처리
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<BaseResponse<?>> handleHttpMessageNotReadable(HttpMessageNotReadableException e) {
+
+        Throwable cause = e.getCause();
+
+        if (cause instanceof InvalidFormatException invalidFormatException) {
+            String fieldName = invalidFormatException.getPath().isEmpty()
+                    ? null
+                    : invalidFormatException.getPath().get(0).getFieldName();
+
+            Class<?> targetType = invalidFormatException.getTargetType();
+
+            if ("jobType".equals(fieldName) && targetType == JobType.class) {
+                log.warn("Invalid enum value for jobType. value={}", invalidFormatException.getValue(), e);
+
+                return ResponseEntity
+                        .status(PortfolioStrategyErrorCode.INVALID_JOB_TYPE.getStatus())
+                        .body(BaseResponse.fail(
+                                PortfolioStrategyErrorCode.INVALID_JOB_TYPE.getCode(),
+                                PortfolioStrategyErrorCode.INVALID_JOB_TYPE.getMessage()
+                        ));
+            }
+        }
+
+        GlobalErrorCode errorCode = GlobalErrorCode.INVALID_INPUT_VALUE;
+
+        log.warn("Http message not readable", e);
+
+        return ResponseEntity
+                .status(errorCode.getStatus())
+                .body(BaseResponse.fail(errorCode.getCode(), errorCode.getMessage()));
     }
 
     @ExceptionHandler(MissingRequestCookieException.class)
