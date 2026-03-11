@@ -1,0 +1,56 @@
+package com.sogonsogon.gonggomoon.domain.strategy.application;
+
+import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
+import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
+import com.sogonsogon.gonggomoon.domain.strategy.api.request.GenerateInterviewQuestionSetRequest;
+import com.sogonsogon.gonggomoon.domain.strategy.application.result.GenerateInterviewQuestionSetResult;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewQuestion;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
+import com.sogonsogon.gonggomoon.domain.strategy.error.InterviewStrategyErrorCode;
+import com.sogonsogon.gonggomoon.domain.strategy.generator.InterviewStrategyQuestionSetGenerator;
+import com.sogonsogon.gonggomoon.domain.strategy.generator.result.InterviewStrategyQuestionSet;
+import com.sogonsogon.gonggomoon.global.error.BaseException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class InterviewStrategyService {
+
+    private final FileAssetRepository fileAssetRepository;
+    private final InterviewStrategyRepository interviewStrategyRepository;
+    private final InterviewStrategyQuestionSetGenerator interviewStrategyQuestionSetGenerator;
+
+    /**
+     * 면접 전략 질문 생성 서비스
+     */
+    public GenerateInterviewQuestionSetResult generate(Long userId, GenerateInterviewQuestionSetRequest req) {
+
+        if (req.fileAssetId() == null) {
+            throw new BaseException(InterviewStrategyErrorCode.PORTFOLIO_FILE_ASSET_ID_REQUIRED);
+        }
+
+        FileAsset fileAsset = fileAssetRepository.findByIdAndUserId(req.fileAssetId(), userId)
+                .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.FILE_ASSET_NOT_FOUND));
+
+        // 면접 질문 생성
+        InterviewStrategyQuestionSet questionSet = interviewStrategyQuestionSetGenerator.generate(fileAsset.getId());
+
+        List<InterviewQuestion> questions = questionSet.questions().stream()
+                .map(item -> InterviewQuestion.create(
+                        item.question(),
+                        item.questionLevel()
+                ))
+                .toList();
+
+        InterviewStrategy interviewStrategy = InterviewStrategy.create(userId, req.fileAssetId());
+        interviewStrategy.addQuestions(questions);
+
+        InterviewStrategy savedInterviewStrategy = interviewStrategyRepository.save(interviewStrategy);
+
+        return GenerateInterviewQuestionSetResult.from(savedInterviewStrategy);
+    }
+}
