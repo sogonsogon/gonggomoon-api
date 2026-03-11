@@ -1,6 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.post.application;
 
-import com.sogonsogon.gonggomoon.domain.post.api.dto.request.SubmitPostRequest;
+import com.sogonsogon.gonggomoon.domain.post.dto.request.SubmitPostRequest;
 import com.sogonsogon.gonggomoon.domain.post.domain.Platform;
 import com.sogonsogon.gonggomoon.domain.post.domain.PlatformRepository;
 import com.sogonsogon.gonggomoon.domain.post.domain.PostRepository;

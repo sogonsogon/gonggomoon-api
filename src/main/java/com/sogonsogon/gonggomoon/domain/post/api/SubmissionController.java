@@ -1,7 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.post.api;
 
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
-import com.sogonsogon.gonggomoon.domain.post.api.dto.request.SubmitPostRequest;
+import com.sogonsogon.gonggomoon.domain.post.dto.request.SubmitPostRequest;
 import com.sogonsogon.gonggomoon.domain.post.application.SubmissionService;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import jakarta.validation.Valid;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/subssions")
+@RequestMapping("/api/v1/submssions")
 public class SubmissionController {
 
     private final SubmissionService submissionService;

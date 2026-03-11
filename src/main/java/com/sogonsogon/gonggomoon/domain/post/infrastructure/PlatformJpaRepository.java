@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PlatformJpaRepositoryImpl extends JpaRepository<Platform, Long>, PlatformRepository {
+public interface PlatformJpaRepository extends JpaRepository<Platform, Long>, PlatformRepository {
 }

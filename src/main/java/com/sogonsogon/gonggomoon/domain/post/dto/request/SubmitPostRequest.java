@@ -1,4 +1,4 @@
-package com.sogonsogon.gonggomoon.domain.post.api.dto.request;
+package com.sogonsogon.gonggomoon.domain.post.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
