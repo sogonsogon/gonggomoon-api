@@ -9,4 +9,6 @@ public interface InterviewStrategyRepository {
     List<InterviewStrategy> findAllByUserIdOrderByCreatedAtDesc(Long userId);
 
     InterviewStrategy save(InterviewStrategy interviewStrategy);
+
+    void delete(InterviewStrategy interviewStrategy);
 }
