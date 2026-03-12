@@ -39,8 +39,8 @@ public class InterviewStrategy {
     @Column(nullable = false)
     private Long userId;
 
-    @Column(name = "portfolio_file_asset_id", nullable = false)
-    private Long portfolioFileAssetId;
+    @Column(name = "file_asset_id", nullable = false)
+    private Long fileAssetId;
 
     @Builder.Default
     @OneToMany(mappedBy = "interviewStrategy",
@@ -54,14 +54,14 @@ public class InterviewStrategy {
 
     public static InterviewStrategy create(
             Long userId,
-            Long portfolioFileAssetId
+            Long fileAssetId
     ) {
         requireNonNull(userId, InterviewStrategyErrorCode.USER_ID_REQUIRED);
-        requireNonNull(portfolioFileAssetId, InterviewStrategyErrorCode.PORTFOLIO_FILE_ASSET_ID_REQUIRED);
+        requireNonNull(fileAssetId, InterviewStrategyErrorCode.FILE_ASSET_ID_REQUIRED);
 
         return InterviewStrategy.builder()
                 .userId(userId)
-                .portfolioFileAssetId(portfolioFileAssetId)
+                .fileAssetId(fileAssetId)
                 .build();
     }
 

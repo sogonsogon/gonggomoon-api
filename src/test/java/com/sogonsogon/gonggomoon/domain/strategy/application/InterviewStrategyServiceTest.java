@@ -6,6 +6,8 @@ import com.sogonsogon.gonggomoon.domain.strategy.api.request.GenerateInterviewQu
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GenerateInterviewQuestionSetResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewQuestionSetListResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewStrategiesResultItem;
+import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewStrategyDetailResult;
+import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewStrategyDetailResultItem;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
@@ -47,6 +49,8 @@ public class InterviewStrategyServiceTest {
 
     private static final Long USER_ID = 1L;
     private static final Long FILE_ASSET_ID = 10L;
+    private static final Long INTERVIEW_STRATEGY_ID = 100L;
+    private static final Long PORTFOLIO_FILE_ASSET_ID = 200L;
 
     @Nested
     @DisplayName("generate")
@@ -65,7 +69,7 @@ public class InterviewStrategyServiceTest {
             );
 
             // then
-            assertEquals(InterviewStrategyErrorCode.PORTFOLIO_FILE_ASSET_ID_REQUIRED, exception.getErrorCode());
+            assertEquals(InterviewStrategyErrorCode.FILE_ASSET_ID_REQUIRED, exception.getErrorCode());
             then(fileAssetRepository).shouldHaveNoInteractions();
             then(interviewStrategyQuestionSetGenerator).shouldHaveNoInteractions();
         }
@@ -197,6 +201,119 @@ public class InterviewStrategyServiceTest {
 
             verify(interviewStrategyRepository, times(1))
                     .findAllByUserIdOrderByCreatedAtDesc(USER_ID);
+        }
+    }
+
+    @Nested
+    @DisplayName("GetInterviewStrategyDetailTest")
+    class GetInterviewStrategyDetailTest {
+
+        @Test
+        @DisplayName("면접 전략 질문 세트 상세를 정상 조회한다")
+        void getInterviewStrategyDetail_success() {
+            // given
+            Instant createdAt = Instant.parse("2026-03-12T01:00:00Z");
+
+            InterviewQuestion question1 = mock(InterviewQuestion.class);
+            InterviewQuestion question2 = mock(InterviewQuestion.class);
+
+            when(question1.getId()).thenReturn(1L);
+            when(question1.getQuestion()).thenReturn("프로젝트에서 가장 어려웠던 문제는 무엇인가요?");
+            when(question1.getQuestionLevel()).thenReturn(QuestionLevel.LOWER);
+
+            when(question2.getId()).thenReturn(2L);
+            when(question2.getQuestion()).thenReturn("트래픽 증가 상황에서 어떻게 대응하시겠습니까?");
+            when(question2.getQuestionLevel()).thenReturn(QuestionLevel.HIGH);
+
+            InterviewStrategy interviewStrategy = mock(InterviewStrategy.class);
+            when(interviewStrategy.getId()).thenReturn(INTERVIEW_STRATEGY_ID);
+            when(interviewStrategy.getFileAssetId()).thenReturn(PORTFOLIO_FILE_ASSET_ID);
+            when(interviewStrategy.getCreatedAt()).thenReturn(createdAt);
+            when(interviewStrategy.getQuestions()).thenReturn(List.of(question1, question2));
+
+            FileAsset fileAsset = mock(FileAsset.class);
+            when(fileAsset.getOriginalFileName()).thenReturn("backend_portfolio.pdf");
+
+            when(interviewStrategyRepository.findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID))
+                    .thenReturn(Optional.of(interviewStrategy));
+            when(fileAssetRepository.findById(PORTFOLIO_FILE_ASSET_ID))
+                    .thenReturn(Optional.of(fileAsset));
+
+            // when
+            InterviewStrategyDetailResult result =
+                    interviewStrategyService.getInterviewStrategyDetail(INTERVIEW_STRATEGY_ID, USER_ID);
+
+            // then
+            assertNotNull(result);
+            assertEquals(INTERVIEW_STRATEGY_ID, result.interviewStrategyId());
+            assertEquals("backend_portfolio.pdf", result.basePortfolio());
+            assertEquals(createdAt, result.createdAt());
+            assertEquals(2, result.questionTotalCount());
+            assertEquals(2, result.contents().size());
+
+            InterviewStrategyDetailResultItem first = result.contents().get(0);
+            assertEquals(1L, first.questionId());
+            assertEquals("프로젝트에서 가장 어려웠던 문제는 무엇인가요?", first.question());
+            assertEquals(QuestionLevel.LOWER, first.questionLevel());
+
+            InterviewStrategyDetailResultItem second = result.contents().get(1);
+            assertEquals(2L, second.questionId());
+            assertEquals("트래픽 증가 상황에서 어떻게 대응하시겠습니까?", second.question());
+            assertEquals(QuestionLevel.HIGH, second.questionLevel());
+
+            verify(interviewStrategyRepository, times(1))
+                    .findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID);
+            verify(fileAssetRepository, times(1))
+                    .findById(PORTFOLIO_FILE_ASSET_ID);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 면접 전략 질문 세트면 예외가 발생한다")
+        void getInterviewStrategyDetail_notFound() {
+            // given
+            when(interviewStrategyRepository.findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID))
+                    .thenReturn(Optional.empty());
+
+            // when
+            BaseException exception = assertThrows(
+                    BaseException.class,
+                    () -> interviewStrategyService.getInterviewStrategyDetail(INTERVIEW_STRATEGY_ID, USER_ID)
+            );
+
+            // then
+            assertEquals(InterviewStrategyErrorCode.NOT_FOUND, exception.getErrorCode());
+
+            verify(interviewStrategyRepository, times(1))
+                    .findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID);
+            verify(fileAssetRepository, never()).findById(anyLong());
+        }
+
+        @Test
+        @DisplayName("연결된 파일(포트폴리오)이 없으면 예외가 발생한다")
+        void getInterviewStrategyDetail_fileAssetNotFound() {
+            // given
+            InterviewStrategy interviewStrategy = mock(InterviewStrategy.class);
+
+            when(interviewStrategy.getFileAssetId()).thenReturn(PORTFOLIO_FILE_ASSET_ID);
+
+            when(interviewStrategyRepository.findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID))
+                    .thenReturn(Optional.of(interviewStrategy));
+            when(fileAssetRepository.findById(PORTFOLIO_FILE_ASSET_ID))
+                    .thenReturn(Optional.empty());
+
+            // when
+            BaseException exception = assertThrows(
+                    BaseException.class,
+                    () -> interviewStrategyService.getInterviewStrategyDetail(INTERVIEW_STRATEGY_ID, USER_ID)
+            );
+
+            // then
+            assertEquals(InterviewStrategyErrorCode.FILE_ASSET_NOT_FOUND, exception.getErrorCode());
+
+            verify(interviewStrategyRepository, times(1))
+                    .findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID);
+            verify(fileAssetRepository, times(1))
+                    .findById(PORTFOLIO_FILE_ASSET_ID);
         }
     }
 }

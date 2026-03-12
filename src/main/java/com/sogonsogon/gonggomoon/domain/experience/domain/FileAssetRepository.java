@@ -6,6 +6,8 @@ import java.util.Optional;
 public interface FileAssetRepository {
     Optional<FileAsset> findByIdAndUserId(Long id, Long userId);
 
+    Optional<FileAsset> findById(Long id);
+
     FileAsset save(FileAsset fileAsset);
 
     void delete(FileAsset fileAsset);
