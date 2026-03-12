@@ -27,6 +27,8 @@ repositories {
 dependencies {
     // JWT 의존성 (버전은 프로젝트 환경에 맞춰 최신 버전 사용 권장)
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    testImplementation 'io.projectreactor:reactor-test'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
