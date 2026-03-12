@@ -118,4 +118,12 @@ public class BaseResponse<T> {
         private final long totalElements;
         private final boolean hasNext;
     }
+
+    @Getter
+    @Builder
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    public static class PageResponse<T> {
+        private final List<T> content;
+        private final BaseResponse.PageInfo pageInfo;
+    }
 }
