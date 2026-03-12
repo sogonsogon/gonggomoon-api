@@ -5,6 +5,7 @@ import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.api.request.GenerateInterviewQuestionSetRequest;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GenerateInterviewQuestionSetResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewQuestionSetListResult;
+import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewStrategyDetailResult;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
@@ -31,7 +32,7 @@ public class InterviewStrategyService {
     public GenerateInterviewQuestionSetResult generate(Long userId, GenerateInterviewQuestionSetRequest req) {
 
         if (req.fileAssetId() == null) {
-            throw new BaseException(InterviewStrategyErrorCode.PORTFOLIO_FILE_ASSET_ID_REQUIRED);
+            throw new BaseException(InterviewStrategyErrorCode.FILE_ASSET_ID_REQUIRED);
         }
 
         FileAsset fileAsset = fileAssetRepository.findByIdAndUserId(req.fileAssetId(), userId)
@@ -62,5 +63,18 @@ public class InterviewStrategyService {
         List<InterviewStrategy> interviewStrategies = interviewStrategyRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
 
         return InterviewQuestionSetListResult.from(interviewStrategies);
+    }
+
+    /**
+     * 면접 전략 질문 상세 조회 서비스
+     */
+    public InterviewStrategyDetailResult getInterviewStrategyDetail(Long interviewStrategyId, Long userId) {
+        InterviewStrategy interviewStrategy = interviewStrategyRepository.findByIdAndUserId(interviewStrategyId, userId)
+                .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.NOT_FOUND));
+
+        FileAsset fileAsset = fileAssetRepository.findById(interviewStrategy.getFileAssetId())
+                .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.FILE_ASSET_NOT_FOUND));
+
+        return InterviewStrategyDetailResult.of(interviewStrategy, fileAsset);
     }
 }
