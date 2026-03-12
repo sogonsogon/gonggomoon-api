@@ -29,8 +29,8 @@ public class IndustryReport {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "industry_category_id", nullable = false)
-    private Long industryCategoryId;
+    @Column(name = "industry_id", nullable = false)
+    private Long industryId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
