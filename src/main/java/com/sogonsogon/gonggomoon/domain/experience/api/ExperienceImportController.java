@@ -7,6 +7,7 @@ import com.sogonsogon.gonggomoon.domain.experience.api.response.UploadedFileList
 import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceImportService;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ImportExperienceResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResult;
+import com.sogonsogon.gonggomoon.domain.experience.domain.DocumentCategory;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -59,8 +61,9 @@ public class ExperienceImportController {
      */
     @GetMapping("/uploads/experiences")
     public ResponseEntity<BaseResponse<UploadedFileListResponse>> getUploadFileList(
-            @AuthenticationPrincipal AccessUser user) {
-        UploadedFileListResult result = experienceImportService.getFileList(user.getId());
+            @AuthenticationPrincipal AccessUser user,
+            @RequestParam(required = false) DocumentCategory documentCategory) {
+        UploadedFileListResult result = experienceImportService.getFileList(user.getId(), documentCategory);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(UploadedFileListResponse.from(result)));
     }

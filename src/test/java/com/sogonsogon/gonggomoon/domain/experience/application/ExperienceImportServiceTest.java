@@ -30,6 +30,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.when;
@@ -187,8 +188,8 @@ public class ExperienceImportServiceTest {
     class GetFileListTest {
 
         @Test
-        @DisplayName("사용자의 업로드 파일 목록을 생성일시 내림차순 조회 결과로 반환한다")
-        void getFileList_success() throws Exception {
+        @DisplayName("documentCategory가 null이면 사용자의 업로드 파일 목록을 생성일시 내림차순 조회 결과로 반환한다")
+        void getFileList_withoutCategory_success() throws Exception {
             // given
             Instant createdAt1 = Instant.parse("2026-03-08T10:15:30Z");
             Instant createdAt2 = Instant.parse("2026-03-07T09:00:00Z");
@@ -215,7 +216,7 @@ public class ExperienceImportServiceTest {
                     .thenReturn(List.of(file1, file2));
 
             // when
-            UploadedFileListResult result = experienceImportService.getFileList(USER_ID);
+            UploadedFileListResult result = experienceImportService.getFileList(USER_ID, null);
 
             // then
             assertThat(result).isNotNull();
@@ -237,24 +238,85 @@ public class ExperienceImportServiceTest {
             assertThat(second.createdAt()).isEqualTo(createdAt2);
 
             verify(fileAssetRepository).findAllByUserIdOrderByCreatedAtDesc(USER_ID);
+            verify(fileAssetRepository, never())
+                    .findAllByUserIdAndCategoryOrderByCreatedAtDesc(anyLong(), any());
+        }
+
+        @Test
+        @DisplayName("documentCategory가 있으면 해당 카테고리의 업로드 파일 목록만 생성일시 내림차순으로 반환한다")
+        void getFileList_withCategory_success() throws Exception {
+            // given
+            Instant createdAt1 = Instant.parse("2026-03-08T10:15:30Z");
+            Instant createdAt2 = Instant.parse("2026-03-07T09:00:00Z");
+
+            FileAsset file1 = createFileAsset(
+                    101L,
+                    USER_ID,
+                    DocumentCategory.PORTFOLIO,
+                    "portfolio-1.pdf",
+                    2048L,
+                    createdAt1
+            );
+
+            FileAsset file2 = createFileAsset(
+                    102L,
+                    USER_ID,
+                    DocumentCategory.PORTFOLIO,
+                    "portfolio-2.pdf",
+                    4096L,
+                    createdAt2
+            );
+
+            when(fileAssetRepository.findAllByUserIdAndCategoryOrderByCreatedAtDesc(
+                    USER_ID, DocumentCategory.PORTFOLIO))
+                    .thenReturn(List.of(file1, file2));
+
+            // when
+            UploadedFileListResult result = experienceImportService.getFileList(USER_ID, DocumentCategory.PORTFOLIO);
+
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.totalCount()).isEqualTo(2);
+            assertThat(result.contents()).hasSize(2);
+
+            UploadedFileListResultItem first = result.contents().get(0);
+            assertThat(first.fileAssetId()).isEqualTo(101L);
+            assertThat(first.category()).isEqualTo(DocumentCategory.PORTFOLIO);
+            assertThat(first.originalFileName()).isEqualTo("portfolio-1.pdf");
+            assertThat(first.sizeBytes()).isEqualTo(2048L);
+            assertThat(first.createdAt()).isEqualTo(createdAt1);
+
+            UploadedFileListResultItem second = result.contents().get(1);
+            assertThat(second.fileAssetId()).isEqualTo(102L);
+            assertThat(second.category()).isEqualTo(DocumentCategory.PORTFOLIO);
+            assertThat(second.originalFileName()).isEqualTo("portfolio-2.pdf");
+            assertThat(second.sizeBytes()).isEqualTo(4096L);
+            assertThat(second.createdAt()).isEqualTo(createdAt2);
+
+            verify(fileAssetRepository).findAllByUserIdAndCategoryOrderByCreatedAtDesc(
+                    USER_ID, DocumentCategory.PORTFOLIO);
+            verify(fileAssetRepository, never()).findAllByUserIdOrderByCreatedAtDesc(anyLong());
         }
 
         @Test
         @DisplayName("업로드한 파일이 없으면 빈 목록을 반환한다")
         void getFileList_empty() {
             // given
-            when(fileAssetRepository.findAllByUserIdOrderByCreatedAtDesc(USER_ID))
+            when(fileAssetRepository.findAllByUserIdAndCategoryOrderByCreatedAtDesc(
+                    USER_ID, DocumentCategory.OTHER))
                     .thenReturn(List.of());
 
             // when
-            UploadedFileListResult result = experienceImportService.getFileList(USER_ID);
+            UploadedFileListResult result = experienceImportService.getFileList(USER_ID, DocumentCategory.OTHER);
 
             // then
             assertThat(result).isNotNull();
             assertThat(result.totalCount()).isZero();
             assertThat(result.contents()).isEmpty();
 
-            verify(fileAssetRepository).findAllByUserIdOrderByCreatedAtDesc(USER_ID);
+            verify(fileAssetRepository).findAllByUserIdAndCategoryOrderByCreatedAtDesc(
+                    USER_ID, DocumentCategory.OTHER);
+            verify(fileAssetRepository, never()).findAllByUserIdOrderByCreatedAtDesc(anyLong());
         }
     }
 

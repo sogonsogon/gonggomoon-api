@@ -13,4 +13,6 @@ public interface FileAssetRepository {
     void delete(FileAsset fileAsset);
 
     List<FileAsset> findAllByUserIdOrderByCreatedAtDesc(Long userId);
+
+    List<FileAsset> findAllByUserIdAndCategoryOrderByCreatedAtDesc(Long userId, DocumentCategory category);
 }

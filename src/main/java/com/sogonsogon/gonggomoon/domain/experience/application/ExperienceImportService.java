@@ -3,6 +3,7 @@ package com.sogonsogon.gonggomoon.domain.experience.application;
 import com.sogonsogon.gonggomoon.domain.experience.api.request.ImportExperienceRequest;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ImportExperienceResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResult;
+import com.sogonsogon.gonggomoon.domain.experience.domain.DocumentCategory;
 import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
 import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
@@ -79,11 +80,14 @@ public class ExperienceImportService {
      * @param userId
      * @return
      */
-    public UploadedFileListResult getFileList(Long userId) {
-        List<FileAsset> fileAssets = fileAssetRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
+    public UploadedFileListResult getFileList(Long userId, DocumentCategory documentCategory) {
+        List<FileAsset> fileAssets = (documentCategory == null)
+                ? fileAssetRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
+                : fileAssetRepository.findAllByUserIdAndCategoryOrderByCreatedAtDesc(userId, documentCategory);
 
         return UploadedFileListResult.from(fileAssets);
     }
+
 
     /**
      * 파일 삭제 서비스
