@@ -34,17 +34,18 @@ public class SubmissionService {
                 .orElseThrow(() -> new BaseException(PlatformErrorCode.PLATFORM_NOT_FOUND));
 
         // baseUrl 검증
-        if (!request.requestUrl().startsWith(platform.getBaseUrl())) throw new BaseException(SubmissionErrorCode.URL_PLATFORM_MISMATCH);
+        if (!request.postUrl().contains("://" + platform.getBaseUrl()) &&
+        !request.postUrl().contains("." + platform.getBaseUrl())) throw new BaseException(SubmissionErrorCode.URL_PLATFORM_MISMATCH);
 
         // 해당 url을 가지고 있는 공고 있는지 확인
-        if (postRepository.existsByUrl(request.requestUrl())) throw new BaseException(SubmissionErrorCode.DUPLICATE_URL);
+        if (postRepository.existsByUrl(request.postUrl())) throw new BaseException(SubmissionErrorCode.DUPLICATE_URL);
 
         // 해당 유저가 동일한 요청을 했는지 검증
-        if (postSubmissionRepository.existsByUrlAndUserIdAndStatus(request.requestUrl(), userId, PostSubmissionStatus.PENDING))
+        if (postSubmissionRepository.existsByUrlAndUserIdAndStatus(request.postUrl(), userId, PostSubmissionStatus.PENDING))
             throw new BaseException(SubmissionErrorCode.DUPLICATE_SUBMISSION);
 
         PostSubmission postSubmission = PostSubmission.create(
-                request.requestUrl(),
+                request.postUrl(),
                 userId,
                 request.platformId()
         );
