@@ -48,8 +48,8 @@ public class Company {
     @Column(name = "founded_year")
     private Integer foundedYear;
 
-    @Column(name = "website_url")
-    private String websiteUrl;
+    @Column(name = "url")
+    private String url;
 
     @Column(name = "created_by", nullable = false, updatable = false)
     private Long createdBy;
