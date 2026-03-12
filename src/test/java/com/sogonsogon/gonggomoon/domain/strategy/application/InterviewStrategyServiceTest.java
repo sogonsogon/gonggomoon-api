@@ -316,4 +316,49 @@ public class InterviewStrategyServiceTest {
                     .findById(PORTFOLIO_FILE_ASSET_ID);
         }
     }
+
+    @Nested
+    @DisplayName("deleteInterviewStrategy")
+    class DeleteInterviewStrategyTest {
+        @Test
+        @DisplayName("면접 전략 질문 세트를 정상 삭제한다")
+        void deleteInterviewStrategy_success() {
+            // given
+            InterviewStrategy interviewStrategy = mock(InterviewStrategy.class);
+
+            when(interviewStrategyRepository.findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID))
+                    .thenReturn(Optional.of(interviewStrategy));
+
+            // when
+            interviewStrategyService.deleteInterviewStrategy(INTERVIEW_STRATEGY_ID, USER_ID);
+
+            // then
+            verify(interviewStrategyRepository, times(1))
+                    .findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID);
+            verify(interviewStrategyRepository, times(1))
+                    .delete(interviewStrategy);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 면접 전략 질문 세트면 예외가 발생한다")
+        void deleteInterviewStrategy_notFound() {
+            // given
+            when(interviewStrategyRepository.findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID))
+                    .thenReturn(Optional.empty());
+
+            // when
+            BaseException exception = assertThrows(
+                    BaseException.class,
+                    () -> interviewStrategyService.deleteInterviewStrategy(INTERVIEW_STRATEGY_ID, USER_ID)
+            );
+
+            // then
+            assertEquals(InterviewStrategyErrorCode.NOT_FOUND, exception.getErrorCode());
+
+            verify(interviewStrategyRepository, times(1))
+                    .findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID);
+            verify(interviewStrategyRepository, never())
+                    .delete(any(InterviewStrategy.class));
+        }
+    }
 }
