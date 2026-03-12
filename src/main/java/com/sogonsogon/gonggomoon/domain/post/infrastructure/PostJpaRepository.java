@@ -57,11 +57,13 @@ public interface PostJpaRepository extends JpaRepository<Post, Long>, PostReposi
     @Query(
             value = """
                 SELECT new com.sogonsogon.gonggomoon.domain.post.dto.response.PostResponse(
+                    p.id,
                     c.id,
                     i.id,
                     c.name,
                     i.name,
                     p.title,
+                    p.url,
                     p.experienceLevel,
                     p.originalContent,
                     p.jobType,
