@@ -16,7 +16,7 @@ public record IndustryReportResponse(
         List<String> regulation,
         List<String> keyword,
         List<String> hiring,
-        List<String> investments,
+        List<String> investment,
         Instant createdAt,
         Instant updatedAt
         ) {
