@@ -4,6 +4,8 @@ import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
 import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.api.request.GenerateInterviewQuestionSetRequest;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GenerateInterviewQuestionSetResult;
+import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewQuestionSetListResult;
+import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewStrategiesResultItem;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
@@ -22,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -129,6 +132,71 @@ public class InterviewStrategyServiceTest {
             then(fileAssetRepository).should().findByIdAndUserId(FILE_ASSET_ID, USER_ID);
             then(interviewStrategyQuestionSetGenerator).should().generate(FILE_ASSET_ID);
             then(interviewStrategyRepository).should().save(any(InterviewStrategy.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("getInterviewStrategiesListTest")
+    class GetInterviewStrategiesListTest {
+
+        @Test
+        @DisplayName("사용자의 면접 전략 질문 세트 목록을 생성일 내림차순으로 조회한다")
+        void getInterviewStrategiesList_success() {
+            // given
+            Instant createdAt1 = Instant.parse("2026-03-12T01:00:00Z");
+            Instant createdAt2 = Instant.parse("2026-03-11T01:00:00Z");
+
+            InterviewStrategy strategy1 = mock(InterviewStrategy.class);
+            InterviewStrategy strategy2 = mock(InterviewStrategy.class);
+
+            when(strategy1.getId()).thenReturn(10L);
+            when(strategy1.getCreatedAt()).thenReturn(createdAt1);
+
+            when(strategy2.getId()).thenReturn(20L);
+            when(strategy2.getCreatedAt()).thenReturn(createdAt2);
+
+            when(interviewStrategyRepository.findAllByUserIdOrderByCreatedAtDesc(USER_ID))
+                    .thenReturn(List.of(strategy1, strategy2));
+
+            // when
+            InterviewQuestionSetListResult result =
+                    interviewStrategyService.getInterviewStrategiesList(USER_ID);
+
+            // then
+            assertNotNull(result);
+            assertEquals(2, result.totalCount());
+            assertEquals(2, result.contents().size());
+
+            InterviewStrategiesResultItem first = result.contents().get(0);
+            assertEquals(10L, first.interviewStrategyId());
+            assertEquals(createdAt1, first.createdAt());
+
+            InterviewStrategiesResultItem second = result.contents().get(1);
+            assertEquals(20L, second.interviewStrategyId());
+            assertEquals(createdAt2, second.createdAt());
+
+            verify(interviewStrategyRepository, times(1))
+                    .findAllByUserIdOrderByCreatedAtDesc(USER_ID);
+        }
+
+        @Test
+        @DisplayName("조회된 면접 전략 질문 세트가 없으면 빈 목록을 반환한다")
+        void getInterviewStrategiesList_empty() {
+            // given
+            when(interviewStrategyRepository.findAllByUserIdOrderByCreatedAtDesc(USER_ID))
+                    .thenReturn(List.of());
+
+            // when
+            InterviewQuestionSetListResult result =
+                    interviewStrategyService.getInterviewStrategiesList(USER_ID);
+
+            // then
+            assertNotNull(result);
+            assertEquals(0, result.totalCount());
+            assertTrue(result.contents().isEmpty());
+
+            verify(interviewStrategyRepository, times(1))
+                    .findAllByUserIdOrderByCreatedAtDesc(USER_ID);
         }
     }
 }

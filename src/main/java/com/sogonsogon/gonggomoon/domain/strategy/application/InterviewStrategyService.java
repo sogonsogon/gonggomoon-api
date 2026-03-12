@@ -4,6 +4,7 @@ import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
 import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.api.request.GenerateInterviewQuestionSetRequest;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GenerateInterviewQuestionSetResult;
+import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewQuestionSetListResult;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
@@ -52,5 +53,14 @@ public class InterviewStrategyService {
         InterviewStrategy savedInterviewStrategy = interviewStrategyRepository.save(interviewStrategy);
 
         return GenerateInterviewQuestionSetResult.from(savedInterviewStrategy);
+    }
+
+    /**
+     * 면접 전략 질문 목록 조회 서비스
+     */
+    public InterviewQuestionSetListResult getInterviewStrategiesList(Long userId) {
+        List<InterviewStrategy> interviewStrategies = interviewStrategyRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
+
+        return InterviewQuestionSetListResult.from(interviewStrategies);
     }
 }
