@@ -59,3 +59,8 @@ app:
     http-only: true
     same-site: lax
 
+ai:
+  server:
+    base-url: http://localhost:8000
+    internal-api-key: "test-internal-api-key"
+
