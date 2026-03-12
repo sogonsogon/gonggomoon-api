@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -63,5 +64,16 @@ public class InterviewStrategyController {
         InterviewStrategyDetailResult result = interviewStrategyService.getInterviewStrategyDetail(interviewStrategyId, user.getId());
 
         return ResponseEntity.ok(BaseResponse.success(InterviewStrategyDetailResponse.from(result)));
+    }
+
+    /**
+     * 면접 전략 질문 세트를 삭제합니다.
+     */
+    @DeleteMapping("/interviews/{interviewStrategyId}")
+    public ResponseEntity<BaseResponse<Void>> deleteInterviewStrategy(@AuthenticationPrincipal AccessUser user,
+                                                                      @PathVariable("interviewStrategyId") Long interviewStrategyId) {
+        interviewStrategyService.deleteInterviewStrategy(interviewStrategyId, user.getId());
+
+        return ResponseEntity.ok(BaseResponse.success());
     }
 }
