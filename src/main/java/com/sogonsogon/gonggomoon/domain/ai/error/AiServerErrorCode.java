@@ -19,16 +19,16 @@ public enum AiServerErrorCode implements BaseErrorCode {
 
     @Override
     public String getCode() {
-        return "";
+        return code;
     }
 
     @Override
     public HttpStatus getStatus() {
-        return null;
+        return httpStatus;
     }
 
     @Override
     public String getMessage() {
-        return "";
+        return message;
     }
 }

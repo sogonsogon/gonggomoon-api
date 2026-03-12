@@ -3,6 +3,7 @@ package com.sogonsogon.gonggomoon.domain.ai.controller;
 import com.sogonsogon.gonggomoon.domain.ai.application.AiCallbackService;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractionCallbackRequest;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +20,7 @@ public class AiCallbackController {
 
     @PostMapping("/experience_extraction")
     public ResponseEntity<BaseResponse<String>> handleExperienceExtractionCallback(
-        @RequestBody ExperienceExtractionCallbackRequest request
+        @RequestBody @Valid ExperienceExtractionCallbackRequest request
     ) {
         aiCallbackService.createExtractedExperience(request);
 
