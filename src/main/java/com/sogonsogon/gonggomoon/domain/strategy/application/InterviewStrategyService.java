@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -76,5 +77,14 @@ public class InterviewStrategyService {
                 .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.FILE_ASSET_NOT_FOUND));
 
         return InterviewStrategyDetailResult.of(interviewStrategy, fileAsset);
+    }
+
+    /**
+     * 면접 전략 질문 삭제 서비스
+     */
+    public void deleteInterviewStrategy(Long interviewStrategyId, Long userId) {
+        InterviewStrategy interviewStrategy = interviewStrategyRepository.findByIdAndUserId(interviewStrategyId, userId)
+                .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.NOT_FOUND));
+        interviewStrategyRepository.delete(interviewStrategy);
     }
 }
