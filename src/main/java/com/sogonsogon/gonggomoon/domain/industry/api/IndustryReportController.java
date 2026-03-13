@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/industries/reports")
+@RequestMapping("/api/v1/industries")
 public class IndustryReportController {
 
     private final IndustryReportService industryReportService;
@@ -17,7 +17,7 @@ public class IndustryReportController {
         this.industryReportService = industryReportService;
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id}/reports")
     public IndustryReportResponse getIndustryReport(@PathVariable Long id) {
 
         return industryReportService.getIndustryReport(id);
