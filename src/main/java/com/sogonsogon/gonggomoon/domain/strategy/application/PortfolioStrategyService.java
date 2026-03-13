@@ -57,7 +57,7 @@ public class PortfolioStrategyService {
         PortfolioStrategy strategy = PortfolioStrategy.create(
                 userId,
                 req.jobType(),
-                req.industryType(),
+                req.industryId(),
                 resultJson,
                 experiences.size());
 

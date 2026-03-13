@@ -44,8 +44,7 @@ public class PortfolioStrategy {
     @Column(nullable = false)
     private JobType jobType;
 
-    @Enumerated(EnumType.STRING)
-    private IndustryType industryType;
+    private Long industryId;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -57,7 +56,7 @@ public class PortfolioStrategy {
     public static PortfolioStrategy create(
             Long userId,
             JobType jobType,
-            IndustryType industryType,
+            Long industryId,
             String resultJson,
             int selectedExperienceCount
     ) {
@@ -67,7 +66,7 @@ public class PortfolioStrategy {
         return PortfolioStrategy.builder()
                 .userId(userId)
                 .jobType(jobType)
-                .industryType(industryType)
+                .industryId(industryId)
                 .resultJson(resultJson)
                 .selectedExperienceCount(selectedExperienceCount)
                 .build();

@@ -14,7 +14,6 @@ import com.sogonsogon.gonggomoon.domain.strategy.content.ExperienceOrderingItem;
 import com.sogonsogon.gonggomoon.domain.strategy.content.ExperienceStrategyPoint;
 import com.sogonsogon.gonggomoon.domain.strategy.content.ImprovementGuide;
 import com.sogonsogon.gonggomoon.domain.strategy.content.PortfolioStrategyContent;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.IndustryType;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.JobType;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategyRepository;
@@ -59,6 +58,9 @@ class PortfolioStrategyServiceTest {
 
     private static final Long USER_ID = 1L;
 
+    private static final Long INDUSTRY_ID = 1L;
+    private static final Long INDUSTRY_ID_MASTER = 2L;
+
     @Nested
     @DisplayName("generate")
     class GenerateTest {
@@ -69,7 +71,7 @@ class PortfolioStrategyServiceTest {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     null
             );
 
@@ -90,7 +92,7 @@ class PortfolioStrategyServiceTest {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     List.of()
             );
 
@@ -111,7 +113,7 @@ class PortfolioStrategyServiceTest {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     List.of(1L, 2L)
             );
 
@@ -138,7 +140,7 @@ class PortfolioStrategyServiceTest {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     List.of(1L, 2L)
             );
 
@@ -180,7 +182,7 @@ class PortfolioStrategyServiceTest {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     List.of(1L)
             );
 
@@ -231,7 +233,7 @@ class PortfolioStrategyServiceTest {
                     100L,
                     USER_ID,
                     JobType.BACKEND,
-                    IndustryType.AI,
+                    INDUSTRY_ID,
                     Instant.parse("2026-03-10T10:00:00Z")
             );
 
@@ -239,7 +241,7 @@ class PortfolioStrategyServiceTest {
                     99L,
                     USER_ID,
                     JobType.BACKEND,
-                    IndustryType.MASTER,
+                    INDUSTRY_ID_MASTER,
                     Instant.parse("2026-03-09T10:00:00Z")
             );
 
@@ -259,13 +261,13 @@ class PortfolioStrategyServiceTest {
             PortfolioStrategyListResultItem first = result.contents().get(0);
             assertEquals(100L, first.strategyId());
             assertEquals(JobType.BACKEND, first.jobType());
-            assertEquals(IndustryType.AI, first.industryType());
+            assertEquals(INDUSTRY_ID, first.industryId());
             assertEquals(Instant.parse("2026-03-10T10:00:00Z"), first.createdAt());
 
             PortfolioStrategyListResultItem second = result.contents().get(1);
             assertEquals(99L, second.strategyId());
             assertEquals(JobType.BACKEND, second.jobType());
-            assertEquals(IndustryType.MASTER, second.industryType());
+            assertEquals(INDUSTRY_ID_MASTER, second.industryId());
             assertEquals(Instant.parse("2026-03-09T10:00:00Z"), second.createdAt());
 
             verify(portfolioStrategyRepository).findAllByUserIdOrderByCreatedAtDesc(USER_ID);
@@ -306,7 +308,7 @@ class PortfolioStrategyServiceTest {
                     strategyId,
                     USER_ID,
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     createdAt
             );
 
@@ -350,7 +352,7 @@ class PortfolioStrategyServiceTest {
             assertNotNull(result);
             assertEquals(strategyId, result.strategyId());
             assertEquals(JobType.BACKEND, result.jobType());
-            assertEquals(IndustryType.FINTECH_FINANCIAL, result.industryType());
+            assertEquals(INDUSTRY_ID, result.industryId());
             assertEquals(1, result.selectedExperienceCount());
             assertEquals(createdAt, result.createdAt());
 
@@ -410,7 +412,7 @@ class PortfolioStrategyServiceTest {
                     strategyId,
                     USER_ID,
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     Instant.parse("2026-03-10T10:00:00Z")
             );
 
@@ -447,7 +449,7 @@ class PortfolioStrategyServiceTest {
                     strategyId,
                     USER_ID,
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     Instant.parse("2026-03-10T10:00:00Z")
             );
 
@@ -488,13 +490,13 @@ class PortfolioStrategyServiceTest {
             Long id,
             Long userId,
             JobType jobType,
-            IndustryType industryType,
+            Long industryId,
             Instant createdAt
     ) throws Exception {
         PortfolioStrategy strategy = PortfolioStrategy.create(
                 userId,
                 jobType,
-                industryType,
+                industryId,
                 "{}",
                 1
         );
