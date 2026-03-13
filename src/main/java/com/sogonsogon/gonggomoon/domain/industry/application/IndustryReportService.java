@@ -22,16 +22,13 @@ public class IndustryReportService {
         this.industryRepository = industryRepository;
     }
 
-    public IndustryReportResponse getIndustryReport(Long id) {
+    public IndustryReportResponse getIndustryReport(Long industryId) {
 
-        IndustryReport report = industryReportRepository.findById(id)
-                .orElseThrow(() -> new BaseException(IndustryReportErrorCode.INDUSTRY_REPORT_NOT_FOUND));
-
-        if (report.getStatus() != IndustryReportStatus.PUBLISHED) throw new BaseException(IndustryReportErrorCode.INDUSTRY_REPORT_NOT_PUBLISHED);
-
-        Industry industry = industryRepository.findById(report.getIndustryId())
+        Industry industry = industryRepository.findById(industryId)
                 .orElseThrow(() -> new BaseException(IndustryErrorCode.INDUSTRY_NOT_FOUND));
 
+        IndustryReport report = industryReportRepository.findByIndustryIdAndStatus(industryId, IndustryReportStatus.PUBLISHED)
+                .orElseThrow(() -> new BaseException(IndustryReportErrorCode.INDUSTRY_REPORT_NOT_FOUND));
 
         return new IndustryReportResponse(
                 report.getId(),
