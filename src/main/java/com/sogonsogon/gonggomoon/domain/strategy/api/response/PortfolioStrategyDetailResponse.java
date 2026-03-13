@@ -14,7 +14,7 @@ import java.util.List;
 public record PortfolioStrategyDetailResponse(
         Long strategyId,
         JobType jobType,
-        Long industryId,
+        String industryName,
         int selectedExperienceCount,
         Instant createdAt,
         String mainPositioningMessage,
@@ -29,7 +29,7 @@ public record PortfolioStrategyDetailResponse(
         return PortfolioStrategyDetailResponse.builder()
                 .strategyId(result.strategyId())
                 .jobType(result.jobType())
-                .industryId(result.industryId())
+                .industryName(result.industryName())
                 .selectedExperienceCount(result.selectedExperienceCount())
                 .createdAt(result.createdAt())
                 .mainPositioningMessage(result.mainPositioningMessage())

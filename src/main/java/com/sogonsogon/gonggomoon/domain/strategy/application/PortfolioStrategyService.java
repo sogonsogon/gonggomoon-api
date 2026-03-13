@@ -4,10 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
+import com.sogonsogon.gonggomoon.domain.industry.domain.Industry;
+import com.sogonsogon.gonggomoon.domain.industry.domain.IndustryRepository;
+import com.sogonsogon.gonggomoon.domain.industry.error.IndustryErrorCode;
 import com.sogonsogon.gonggomoon.domain.strategy.api.request.GeneratePortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GeneratePortfolioStrategyResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyDetailResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyListResult;
+import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyListResultItem;
 import com.sogonsogon.gonggomoon.domain.strategy.content.PortfolioStrategyContent;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategyRepository;
@@ -18,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +30,7 @@ public class PortfolioStrategyService {
 
     private final PortfolioStrategyRepository portfolioStrategyRepository;
     private final ExperienceRepository experienceRepository;
+    private final IndustryRepository industryRepository;
     private final PortfolioStrategyContentGenerator portfolioStrategyContentGenerator;
     private final ObjectMapper objectMapper;
 
@@ -70,9 +76,9 @@ public class PortfolioStrategyService {
      * 포트폴리오 전략 목록 조회 서비스
      */
     public PortfolioStrategyListResult getPortfolioStrategyList(Long userId) {
-        List<PortfolioStrategy> portfolioStrategies = portfolioStrategyRepository.findAllByUserIdOrderByCreatedAtDesc(userId);
+        List<PortfolioStrategyListResultItem> items = portfolioStrategyRepository.findPortfolioStrategyListByUserId(userId);
 
-        return PortfolioStrategyListResult.from(portfolioStrategies);
+        return PortfolioStrategyListResult.from(items);
     }
 
     /**
@@ -89,7 +95,10 @@ public class PortfolioStrategyService {
             throw new BaseException(PortfolioStrategyErrorCode.RESULT_JSON_DESERIALIZATION_FAILED);
         }
 
-        return PortfolioStrategyDetailResult.of(portfolioStrategy, content);
+        Industry industry = industryRepository.findById(portfolioStrategy.getIndustryId())
+                .orElseThrow(() -> new BaseException(IndustryErrorCode.INDUSTRY_NOT_FOUND));
+
+        return PortfolioStrategyDetailResult.of(portfolioStrategy, content, industry.getName());
     }
 
     /**

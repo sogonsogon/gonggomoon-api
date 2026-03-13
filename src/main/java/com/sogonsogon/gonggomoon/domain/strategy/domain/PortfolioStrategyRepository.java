@@ -1,5 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.strategy.domain;
 
+import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyListResultItem;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -10,5 +12,5 @@ public interface PortfolioStrategyRepository {
 
     void delete(PortfolioStrategy portfolioStrategy);
 
-    List<PortfolioStrategy> findAllByUserIdOrderByCreatedAtDesc(Long userId);
+    List<PortfolioStrategyListResultItem> findPortfolioStrategyListByUserId(Long userId);
 }
