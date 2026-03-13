@@ -19,10 +19,14 @@ import com.sogonsogon.gonggomoon.domain.strategy.error.PortfolioStrategyErrorCod
 import com.sogonsogon.gonggomoon.domain.strategy.generator.PortfolioStrategyContentGenerator;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -34,13 +38,32 @@ public class PortfolioStrategyService {
     private final PortfolioStrategyContentGenerator portfolioStrategyContentGenerator;
     private final ObjectMapper objectMapper;
 
+    @Value("${strategy.portfolio.daily-limit-enabled:true}")
+    private boolean dailyLimitEnabled;
+
     /**
      * 포트폴리오 전략 생성 서비스
+     * save 후 예외가 나면 insert도 롤백되게 한다.
      */
+    @Transactional
     public GeneratePortfolioStrategyResult generate(Long userId, GeneratePortfolioStrategyRequest req) {
 
         if (req.experienceIds() == null || req.experienceIds().isEmpty()) {
             throw new BaseException(PortfolioStrategyErrorCode.EXPERIENCE_IDS_REQUIRED);
+        }
+
+        /**
+         * now : 기준 시각 1개
+         * today : 그 시각에서 파생된 날짜
+         */
+        Instant now = Instant.now();
+        LocalDate today = now.atZone(ZoneId.of("Asia/Seoul")).toLocalDate();
+
+        /**
+         * 전략이 이미 있는지 검증
+         */
+        if (dailyLimitEnabled && portfolioStrategyRepository.existsByUserIdAndGeneratedDate(userId, today)) {
+            throw new BaseException(PortfolioStrategyErrorCode.ALREADY_CREATED_TODAY);
         }
 
         List<Experience> experiences = experienceRepository.findAllByIdInAndUserId(req.experienceIds(), userId);
@@ -65,7 +88,9 @@ public class PortfolioStrategyService {
                 req.jobType(),
                 req.industryId(),
                 resultJson,
-                experiences.size());
+                experiences.size(),
+                now,
+                today);
 
         portfolioStrategyRepository.save(strategy);
 
