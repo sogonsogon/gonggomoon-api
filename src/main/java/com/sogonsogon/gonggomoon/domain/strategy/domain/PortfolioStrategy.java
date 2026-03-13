@@ -17,10 +17,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -46,9 +47,11 @@ public class PortfolioStrategy {
 
     private Long industryId;
 
-    @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    @Column(name = "generated_date", nullable = false, updatable = false)
+    private LocalDate generatedDate;
 
     @Column(name = "experience_total_count", nullable = false)
     private int selectedExperienceCount;
@@ -58,10 +61,16 @@ public class PortfolioStrategy {
             JobType jobType,
             Long industryId,
             String resultJson,
-            int selectedExperienceCount
+            int selectedExperienceCount,
+            Instant now,
+            LocalDate generatedDate
     ) {
         requireNonNull(userId, PortfolioStrategyErrorCode.USERID_REQUIRED);
         requireNonNull(jobType, PortfolioStrategyErrorCode.JOB_TYPE_REQUIRED);
+
+        // 프로그래밍 오류
+        Objects.requireNonNull(now, "now must not be null");
+        Objects.requireNonNull(generatedDate, "generatedDate must not be null");
 
         return PortfolioStrategy.builder()
                 .userId(userId)
@@ -69,6 +78,8 @@ public class PortfolioStrategy {
                 .industryId(industryId)
                 .resultJson(resultJson)
                 .selectedExperienceCount(selectedExperienceCount)
+                .createdAt(now)
+                .generatedDate(generatedDate)
                 .build();
     }
 
