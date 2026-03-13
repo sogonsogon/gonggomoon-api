@@ -4,7 +4,6 @@ import com.sogonsogon.gonggomoon.domain.strategy.content.ExperienceOrderingItem;
 import com.sogonsogon.gonggomoon.domain.strategy.content.ExperienceStrategyPoint;
 import com.sogonsogon.gonggomoon.domain.strategy.content.ImprovementGuide;
 import com.sogonsogon.gonggomoon.domain.strategy.content.PortfolioStrategyContent;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.IndustryType;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.JobType;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategy;
 import lombok.Builder;
@@ -16,7 +15,7 @@ import java.util.List;
 public record PortfolioStrategyDetailResult(
         Long strategyId,
         JobType jobType,
-        IndustryType industryType,
+        String industryName,
         int selectedExperienceCount,
         Instant createdAt,
         String mainPositioningMessage,
@@ -29,12 +28,13 @@ public record PortfolioStrategyDetailResult(
 ) {
     public static PortfolioStrategyDetailResult of (
             PortfolioStrategy portfolioStrategy,
-            PortfolioStrategyContent content
+            PortfolioStrategyContent content,
+            String industryName
     ) {
         return PortfolioStrategyDetailResult.builder()
                 .strategyId(portfolioStrategy.getId())
                 .jobType(portfolioStrategy.getJobType())
-                .industryType(portfolioStrategy.getIndustryType())
+                .industryName(industryName)
                 .selectedExperienceCount(portfolioStrategy.getSelectedExperienceCount())
                 .createdAt(portfolioStrategy.getCreatedAt())
                 .mainPositioningMessage(content.mainPositioningMessage())

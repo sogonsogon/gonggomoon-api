@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceType;
+import com.sogonsogon.gonggomoon.domain.industry.domain.Industry;
+import com.sogonsogon.gonggomoon.domain.industry.domain.IndustryRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.api.request.GeneratePortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GeneratePortfolioStrategyResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyDetailResult;
@@ -14,7 +16,6 @@ import com.sogonsogon.gonggomoon.domain.strategy.content.ExperienceOrderingItem;
 import com.sogonsogon.gonggomoon.domain.strategy.content.ExperienceStrategyPoint;
 import com.sogonsogon.gonggomoon.domain.strategy.content.ImprovementGuide;
 import com.sogonsogon.gonggomoon.domain.strategy.content.PortfolioStrategyContent;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.IndustryType;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.JobType;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategyRepository;
@@ -49,6 +50,9 @@ class PortfolioStrategyServiceTest {
     private ExperienceRepository experienceRepository;
 
     @Mock
+    private IndustryRepository industryRepository;
+
+    @Mock
     private PortfolioStrategyContentGenerator portfolioStrategyContentGenerator;
 
     @Mock
@@ -58,6 +62,9 @@ class PortfolioStrategyServiceTest {
     private PortfolioStrategyService portfolioStrategyService;
 
     private static final Long USER_ID = 1L;
+
+    private static final Long INDUSTRY_ID = 1L;
+    private static final Long INDUSTRY_ID_MASTER = 2L;
 
     @Nested
     @DisplayName("generate")
@@ -69,7 +76,7 @@ class PortfolioStrategyServiceTest {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     null
             );
 
@@ -90,7 +97,7 @@ class PortfolioStrategyServiceTest {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     List.of()
             );
 
@@ -111,7 +118,7 @@ class PortfolioStrategyServiceTest {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     List.of(1L, 2L)
             );
 
@@ -138,7 +145,7 @@ class PortfolioStrategyServiceTest {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     List.of(1L, 2L)
             );
 
@@ -180,7 +187,7 @@ class PortfolioStrategyServiceTest {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     List.of(1L)
             );
 
@@ -227,26 +234,24 @@ class PortfolioStrategyServiceTest {
         @DisplayName("사용자의 포트폴리오 전략 목록을 조회하면 totalCount와 contents를 반환한다")
         void getPortfolioStrategyList_success() throws Exception {
             // given
-            PortfolioStrategy strategy1 = createPortfolioStrategy(
+            PortfolioStrategyListResultItem strategy1 = createPortfolioStrategyListItem(
                     100L,
-                    USER_ID,
                     JobType.BACKEND,
-                    IndustryType.AI,
+                    "핀테크",
                     Instant.parse("2026-03-10T10:00:00Z")
             );
 
-            PortfolioStrategy strategy2 = createPortfolioStrategy(
+            PortfolioStrategyListResultItem strategy2 = createPortfolioStrategyListItem(
                     99L,
-                    USER_ID,
                     JobType.BACKEND,
-                    IndustryType.MASTER,
+                    "마스터",
                     Instant.parse("2026-03-09T10:00:00Z")
             );
 
-            List<PortfolioStrategy> strategies = List.of(strategy1, strategy2);
+            List<PortfolioStrategyListResultItem> items = List.of(strategy1, strategy2);
 
-            when(portfolioStrategyRepository.findAllByUserIdOrderByCreatedAtDesc(USER_ID))
-                    .thenReturn(strategies);
+            when(portfolioStrategyRepository.findPortfolioStrategyListByUserId(USER_ID))
+                    .thenReturn(items);
 
             // when
             PortfolioStrategyListResult result = portfolioStrategyService.getPortfolioStrategyList(USER_ID);
@@ -259,23 +264,23 @@ class PortfolioStrategyServiceTest {
             PortfolioStrategyListResultItem first = result.contents().get(0);
             assertEquals(100L, first.strategyId());
             assertEquals(JobType.BACKEND, first.jobType());
-            assertEquals(IndustryType.AI, first.industryType());
+            assertEquals("핀테크", first.industryName());
             assertEquals(Instant.parse("2026-03-10T10:00:00Z"), first.createdAt());
 
             PortfolioStrategyListResultItem second = result.contents().get(1);
             assertEquals(99L, second.strategyId());
             assertEquals(JobType.BACKEND, second.jobType());
-            assertEquals(IndustryType.MASTER, second.industryType());
+            assertEquals("마스터", second.industryName());
             assertEquals(Instant.parse("2026-03-09T10:00:00Z"), second.createdAt());
 
-            verify(portfolioStrategyRepository).findAllByUserIdOrderByCreatedAtDesc(USER_ID);
+            verify(portfolioStrategyRepository).findPortfolioStrategyListByUserId(USER_ID);
         }
 
         @Test
         @DisplayName("조회된 포트폴리오 전략이 없으면 빈 목록을 반환한다")
         void getPortfolioStrategyList_empty() {
             // given
-            when(portfolioStrategyRepository.findAllByUserIdOrderByCreatedAtDesc(USER_ID))
+            when(portfolioStrategyRepository.findPortfolioStrategyListByUserId(USER_ID))
                     .thenReturn(List.of());
 
             // when
@@ -287,7 +292,7 @@ class PortfolioStrategyServiceTest {
             assertNotNull(result.contents());
             assertTrue(result.contents().isEmpty());
 
-            verify(portfolioStrategyRepository).findAllByUserIdOrderByCreatedAtDesc(USER_ID);
+            verify(portfolioStrategyRepository).findPortfolioStrategyListByUserId(USER_ID);
         }
     }
 
@@ -306,7 +311,7 @@ class PortfolioStrategyServiceTest {
                     strategyId,
                     USER_ID,
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     createdAt
             );
 
@@ -337,10 +342,15 @@ class PortfolioStrategyServiceTest {
                     )
             );
 
+            Industry industry = mock(Industry.class);
+            when(industry.getName()).thenReturn("핀테크");
+
             when(portfolioStrategyRepository.findByIdAndUserId(strategyId, USER_ID))
                     .thenReturn(Optional.of(portfolioStrategy));
             when(objectMapper.readValue(portfolioStrategy.getResultJson(), PortfolioStrategyContent.class))
                     .thenReturn(content);
+            when(industryRepository.findById(INDUSTRY_ID))
+                    .thenReturn(Optional.of(industry));
 
             // when
             PortfolioStrategyDetailResult result =
@@ -350,7 +360,7 @@ class PortfolioStrategyServiceTest {
             assertNotNull(result);
             assertEquals(strategyId, result.strategyId());
             assertEquals(JobType.BACKEND, result.jobType());
-            assertEquals(IndustryType.FINTECH_FINANCIAL, result.industryType());
+            assertEquals("핀테크", result.industryName());
             assertEquals(1, result.selectedExperienceCount());
             assertEquals(createdAt, result.createdAt());
 
@@ -410,7 +420,7 @@ class PortfolioStrategyServiceTest {
                     strategyId,
                     USER_ID,
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     Instant.parse("2026-03-10T10:00:00Z")
             );
 
@@ -447,7 +457,7 @@ class PortfolioStrategyServiceTest {
                     strategyId,
                     USER_ID,
                     JobType.BACKEND,
-                    IndustryType.FINTECH_FINANCIAL,
+                    INDUSTRY_ID,
                     Instant.parse("2026-03-10T10:00:00Z")
             );
 
@@ -484,17 +494,31 @@ class PortfolioStrategyServiceTest {
         }
     }
 
+    private PortfolioStrategyListResultItem createPortfolioStrategyListItem(
+            Long id,
+            JobType jobType,
+            String industryName,
+            Instant createdAt
+    ) {
+        return PortfolioStrategyListResultItem.builder()
+                .strategyId(id)
+                .jobType(jobType)
+                .industryName(industryName)
+                .createdAt(createdAt)
+                .build();
+    }
+
     private PortfolioStrategy createPortfolioStrategy(
             Long id,
             Long userId,
             JobType jobType,
-            IndustryType industryType,
+            Long industryId,
             Instant createdAt
     ) throws Exception {
         PortfolioStrategy strategy = PortfolioStrategy.create(
                 userId,
                 jobType,
-                industryType,
+                industryId,
                 "{}",
                 1
         );
