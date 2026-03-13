@@ -120,10 +120,17 @@ public class PortfolioStrategyService {
             throw new BaseException(PortfolioStrategyErrorCode.RESULT_JSON_DESERIALIZATION_FAILED);
         }
 
-        Industry industry = industryRepository.findById(portfolioStrategy.getIndustryId())
-                .orElseThrow(() -> new BaseException(IndustryErrorCode.INDUSTRY_NOT_FOUND));
+        Long industryId = portfolioStrategy.getIndustryId();
+        String industryName;
+        if (industryId == null) {
+            industryName = "마스터";
+        } else {
+            Industry industry = industryRepository.findById(portfolioStrategy.getIndustryId())
+                    .orElseThrow(() -> new BaseException(IndustryErrorCode.INDUSTRY_NOT_FOUND));
+            industryName = industry.getName();
+        }
 
-        return PortfolioStrategyDetailResult.of(portfolioStrategy, content, industry.getName());
+        return PortfolioStrategyDetailResult.of(portfolioStrategy, content, industryName);
     }
 
     /**
