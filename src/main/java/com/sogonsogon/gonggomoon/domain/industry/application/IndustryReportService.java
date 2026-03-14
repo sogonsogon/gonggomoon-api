@@ -32,6 +32,7 @@ public class IndustryReportService {
 
         return new IndustryReportResponse(
                 report.getId(),
+                industry.getId(),
                 industry.getName(),
                 report.getStatus(),
                 report.getReportYear(),
