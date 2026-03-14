@@ -7,6 +7,7 @@ import java.util.List;
 
 public record IndustryReportResponse(
         Long industryReportId,
+        Long industryId,
         String industryName,
         IndustryReportStatus reportStatus,
         Integer reportYear,

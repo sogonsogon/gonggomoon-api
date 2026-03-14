@@ -8,6 +8,7 @@ public record CompanyResponse(
         Long companyId,
         Long industryId,
         String companyName,
+        String industryName,
         CompanyType companyType,
         Integer employeeCount,
         String address,
