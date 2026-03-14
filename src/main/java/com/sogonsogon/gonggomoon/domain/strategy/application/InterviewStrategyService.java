@@ -14,8 +14,13 @@ import com.sogonsogon.gonggomoon.domain.strategy.generator.InterviewStrategyQues
 import com.sogonsogon.gonggomoon.domain.strategy.generator.result.InterviewStrategyQuestionSet;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -26,13 +31,31 @@ public class InterviewStrategyService {
     private final InterviewStrategyRepository interviewStrategyRepository;
     private final InterviewStrategyQuestionSetGenerator interviewStrategyQuestionSetGenerator;
 
+    @Value("${strategy.interview.daily-limit-enabled:true}")
+    private boolean dailyLimitEnabled;
+
     /**
      * 면접 전략 질문 생성 서비스
      */
+    @Transactional
     public GenerateInterviewQuestionSetResult generate(Long userId, GenerateInterviewQuestionSetRequest req) {
 
         if (req.fileAssetId() == null) {
             throw new BaseException(InterviewStrategyErrorCode.FILE_ASSET_ID_REQUIRED);
+        }
+
+        /**
+         * now : 기준 시각 1개
+         * today : 그 시각에서 파생된 날짜
+         */
+        Instant now = Instant.now();
+        LocalDate today = now.atZone(ZoneId.of("Asia/Seoul")).toLocalDate();
+
+        /**
+         * 질문이 이미 있는지 검증
+         */
+        if (dailyLimitEnabled && interviewStrategyRepository.existsByUserIdAndGeneratedDate(userId, today)) {
+            throw new BaseException(InterviewStrategyErrorCode.ALREADY_CREATED_TODAY);
         }
 
         FileAsset fileAsset = fileAssetRepository.findByIdAndUserId(req.fileAssetId(), userId)
@@ -48,7 +71,7 @@ public class InterviewStrategyService {
                 ))
                 .toList();
 
-        InterviewStrategy interviewStrategy = InterviewStrategy.create(userId, req.fileAssetId());
+        InterviewStrategy interviewStrategy = InterviewStrategy.create(userId, req.fileAssetId(), now, today);
         interviewStrategy.addQuestions(questions);
 
         InterviewStrategy savedInterviewStrategy = interviewStrategyRepository.save(interviewStrategy);
