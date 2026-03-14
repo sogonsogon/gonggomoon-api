@@ -2,6 +2,8 @@ package com.sogonsogon.gonggomoon.domain.industry.api;
 
 import com.sogonsogon.gonggomoon.domain.industry.application.IndustryReportService;
 import com.sogonsogon.gonggomoon.domain.industry.dto.response.IndustryReportResponse;
+import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,8 +20,8 @@ public class IndustryReportController {
     }
 
     @GetMapping("/{id}/reports")
-    public IndustryReportResponse getIndustryReport(@PathVariable Long id) {
+    public ResponseEntity<BaseResponse<IndustryReportResponse>> getIndustryReport(@PathVariable Long id) {
 
-        return industryReportService.getIndustryReport(id);
+        return ResponseEntity.ok(BaseResponse.success(industryReportService.getIndustryReport(id)));
     }
 }
