@@ -1,5 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.strategy.domain;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,4 +12,8 @@ public interface InterviewStrategyRepository {
     InterviewStrategy save(InterviewStrategy interviewStrategy);
 
     void delete(InterviewStrategy interviewStrategy);
+
+    boolean existsByUserIdAndGeneratedDate(Long userId, LocalDate today);
+
+    int countByUserIdAndGeneratedDate(Long userId, LocalDate generatedDate);
 }

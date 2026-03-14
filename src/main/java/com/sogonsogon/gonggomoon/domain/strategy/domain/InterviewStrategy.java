@@ -21,8 +21,10 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 면접 전략 질문 세트와 질문은 1:N 관계입니다.
@@ -51,20 +53,30 @@ public class InterviewStrategy {
             orphanRemoval = true)
     private List<InterviewQuestion> questions = new ArrayList<>();
 
-    @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "generated_date", nullable = false, updatable = false)
+    private LocalDate generatedDate;
+
     public static InterviewStrategy create(
             Long userId,
-            Long fileAssetId
+            Long fileAssetId,
+            Instant now,
+            LocalDate generatedDate
     ) {
         requireNonNull(userId, InterviewStrategyErrorCode.USER_ID_REQUIRED);
         requireNonNull(fileAssetId, InterviewStrategyErrorCode.FILE_ASSET_ID_REQUIRED);
 
+        // 프로그래밍 오류
+        Objects.requireNonNull(now, "now must not be null");
+        Objects.requireNonNull(generatedDate, "generatedDate must not be null");
+
         return InterviewStrategy.builder()
                 .userId(userId)
                 .fileAssetId(fileAssetId)
+                .createdAt(now)
+                .generatedDate(generatedDate)
                 .build();
     }
 
