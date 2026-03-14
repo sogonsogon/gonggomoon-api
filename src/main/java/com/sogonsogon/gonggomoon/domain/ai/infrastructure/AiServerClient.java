@@ -1,6 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.ai.infrastructure;
 
 
+import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractionAiServerRequest;
 import com.sogonsogon.gonggomoon.domain.ai.error.AiServerErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,7 @@ public class AiServerClient {
     /*
     * 경험 추출 요청을 AI 서버로 전송하는 메서드
     * */
-    public void requestExperienceExtraction(Long extractedExperienceId) {
+    public void requestExperienceExtraction(ExperienceExtractionAiServerRequest request) {
         WebClient webClient = webClientBuilder
             .baseUrl(aiServerBaseUrl)
             .build();
@@ -36,7 +37,7 @@ public class AiServerClient {
             .uri("/api/v1/jobs/experience-extraction")
             .header("x-internal-api-key", internalApiKey)
             .header(HttpHeaders.CONTENT_TYPE, "application/json")
-            .bodyValue(extractedExperienceId)
+            .bodyValue(request)
             .retrieve()
             .onStatus(
                 HttpStatusCode::isError,
