@@ -2,6 +2,8 @@ package com.sogonsogon.gonggomoon.domain.industry.api;
 
 import com.sogonsogon.gonggomoon.domain.industry.application.IndustryService;
 import com.sogonsogon.gonggomoon.domain.industry.dto.response.IndustryListResponse;
+import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,8 +19,8 @@ public class IndustryController {
     }
 
     @GetMapping
-    public IndustryListResponse getIndustries() {
+    public ResponseEntity<BaseResponse<IndustryListResponse>> getIndustries() {
 
-        return industryService.getIndustries();
+        return ResponseEntity.ok(BaseResponse.success(industryService.getIndustries()));
     }
 }
