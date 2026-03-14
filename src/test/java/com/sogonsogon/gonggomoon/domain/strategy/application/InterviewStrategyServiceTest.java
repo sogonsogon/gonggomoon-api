@@ -27,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -110,7 +111,10 @@ public class InterviewStrategyServiceTest {
                     )
             );
 
-            InterviewStrategy savedStrategy = InterviewStrategy.create(USER_ID, FILE_ASSET_ID);
+            Instant now = Instant.parse("2026-03-14T00:00:00Z");
+            LocalDate generatedDate = LocalDate.of(2026, 3, 14);
+
+            InterviewStrategy savedStrategy = InterviewStrategy.create(USER_ID, FILE_ASSET_ID, now, generatedDate);
             ReflectionTestUtils.setField(savedStrategy, "id", 100L);
             savedStrategy.addQuestions(
                     questionSet.questions().stream()
