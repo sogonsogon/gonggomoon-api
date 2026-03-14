@@ -18,7 +18,7 @@ public class AiCallbackController {
 
     private final AiCallbackService aiCallbackService;
 
-    @PostMapping("/experience_extraction")
+    @PostMapping("/experience-extraction")
     public ResponseEntity<BaseResponse<String>> handleExperienceExtractionCallback(
         @RequestBody @Valid ExperienceExtractionCallbackRequest request
     ) {
