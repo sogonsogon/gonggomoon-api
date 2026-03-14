@@ -4,6 +4,7 @@ import com.sogonsogon.gonggomoon.domain.ai.domain.AiCallingType;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractRequest;
+import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractionAiServerRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.response.ExperienceExtractResponse;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.AiServerClient;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +29,9 @@ public class AiService {
         ExtractedExperience newExtractedExperience = ExtractedExperience.create(request.userId(), request.fileAssetId());
         ExtractedExperience savedExtractedExperience = extractedExperienceRepository.save(newExtractedExperience);
 
-
-        aiServerClient.requestExperienceExtraction(savedExtractedExperience.getId());
+        // AI 서버에 경험 추출 요청 전송
+        ExperienceExtractionAiServerRequest aiServerRequest = new ExperienceExtractionAiServerRequest(savedExtractedExperience.getId());
+        aiServerClient.requestExperienceExtraction(aiServerRequest);
 
         return new ExperienceExtractResponse(AiCallingType.EXTRACT_EXPERIENCE.name(),savedExtractedExperience.getId());
     }
