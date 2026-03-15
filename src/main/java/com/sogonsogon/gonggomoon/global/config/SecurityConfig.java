@@ -7,6 +7,7 @@ import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.JwtAuthenti
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -61,11 +62,12 @@ public class SecurityConfig {
 
             // 4. API 경로별 인가(권한) 설정
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health").permitAll() // 헬스체크는 모두 허용
-                .requestMatchers("/api/v1/auth/social/login/**", "/oauth2/**").permitAll() // 인증 진입점은 모두 허용
-                .requestMatchers("/api/v1/auth/reissue").permitAll()
-                .requestMatchers("/api/v1/callbacks/**").permitAll() // AI 서버에서 콜백하기 위해 풀어둠.
-                .anyRequest().authenticated() // 나머지는 JWT 인증 필요
+                    .requestMatchers("/actuator/health").permitAll() // 헬스체크는 모두 허용
+                    .requestMatchers("/api/v1/auth/social/login/**", "/oauth2/**").permitAll() // 인증 진입점은 모두 허용
+                    .requestMatchers("/api/v1/auth/reissue").permitAll()
+                    .requestMatchers("/api/v1/callbacks/**").permitAll() // AI 서버에서 콜백하기 위해 풀어둠.
+                    .requestMatchers(HttpMethod.GET, "/api/v1/posts/**", "api/v1/companies/**", "/api/v1/industries/*/reports").permitAll() // 조회에 한해서만 (공고, 기업, 산업(리포트만))
+                    .anyRequest().authenticated() // 나머지는 JWT 인증 필요
             )
 
             // 5. 일반적인 API 요청을 처리할 JWT 커스텀 필터 등록
