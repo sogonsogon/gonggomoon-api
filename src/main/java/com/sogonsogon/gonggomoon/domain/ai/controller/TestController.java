@@ -26,7 +26,9 @@ public class TestController {
     public ResponseEntity<BaseResponse<ExperienceExtractResponse>> createExtractExperienceJob(
         @RequestBody ExperienceExtractRequest request
         ) {
-        ExperienceExtractResponse response = aiService.requestExperienceExtraction(request);
+        ExperienceExtractResponse response = aiService.requestExperienceExtraction(
+            request.userId(),
+            request.fileAssetId());
         return ResponseEntity.ok(BaseResponse.success(response));
     }
 }
