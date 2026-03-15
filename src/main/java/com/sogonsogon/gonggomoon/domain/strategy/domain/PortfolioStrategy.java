@@ -38,7 +38,10 @@ public class PortfolioStrategy {
     @Column(nullable = false)
     private Long userId;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    /**
+     * AI 서버에서 생성된 전략 결과 (nullable)
+     */
+    @Column(columnDefinition = "TEXT")
     private String resultJson;
 
     @Enumerated(EnumType.STRING)
@@ -46,6 +49,13 @@ public class PortfolioStrategy {
     private JobType jobType;
 
     private Long industryId;
+
+    /**
+     * 전략 생성 상태
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private GenerateStatus status;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -56,6 +66,10 @@ public class PortfolioStrategy {
     @Column(name = "experience_total_count", nullable = false)
     private int selectedExperienceCount;
 
+    /**
+     * 기본 포트폴리오 전략 데이터를 생성합니다.
+     * - resultJson 없이 생성하는 메서드.
+     * */
     public static PortfolioStrategy create(
             Long userId,
             JobType jobType,
@@ -81,6 +95,14 @@ public class PortfolioStrategy {
                 .createdAt(now)
                 .generatedDate(generatedDate)
                 .build();
+    }
+
+    public void addResult(String resultJson) {
+        if (resultJson == null || resultJson.isEmpty()) {
+            throw new BaseException(PortfolioStrategyErrorCode.RESULT_JSON_EMPTY);
+        }
+        this.resultJson = resultJson;
+        this.status = GenerateStatus.READY;
     }
 
     private static void requireNonNull(Object value, BaseErrorCode baseErrorCode) {
