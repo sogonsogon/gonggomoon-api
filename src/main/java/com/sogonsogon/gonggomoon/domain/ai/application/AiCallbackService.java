@@ -1,5 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.ai.application;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sogonsogon.gonggomoon.domain.ai.domain.Experiences;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
@@ -10,9 +11,15 @@ import com.sogonsogon.gonggomoon.domain.ai.infrastructure.ExperienceResultMapper
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategyRepository;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -24,22 +31,50 @@ public class AiCallbackService {
 
     @Transactional
     public void createExtractedExperience(BaseCallbackRequest request) {
+        JsonNode resultsNode = request.result();
 
-        // id 값으로 찾아오기
-        ExtractedExperience foundExperience =extractedExperienceRepository.findById(request.id()).orElseThrow(
-            () -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND)
-        );
+        if (resultsNode == null || !resultsNode.isArray()) {
+            throw new BaseException(ExtractedExperienceErrorCode.INVALID_RESULT_FORMAT);
+        }
 
-        // Experiences로 맵핑해주고, foundExperience에 Experiences 추가하기
-        Experiences experiences = experienceResultMapper.toExperiences(request.result());
-        foundExperience.updateExperiences(experiences);
+        List<JsonNode> callbackItems = new ArrayList<>();
+        List<Long> ids = new ArrayList<>();
 
-        // status를 READY로 업데이트 (완전히 추출이 완료된 상태)
-        foundExperience.updateStatus(ExtractionStatus.READY);
+        for (JsonNode itemNode : resultsNode) {
+            long extractedExperienceId = itemNode.path("extracted_experience_id").asLong(0);
 
-        // 명시적으로 업데이트를 표현하기 위해 save() 호출 (영속성 컨텍스트에 의해 자동으로 업데이트가 될 수 있지만, 명시적으로 표현)
-        extractedExperienceRepository.save(foundExperience);
+            if (extractedExperienceId == 0) {
+                throw new BaseException(ExtractedExperienceErrorCode.INVALID_RESULT_FORMAT);
+            }
 
+            callbackItems.add(itemNode);
+            ids.add(extractedExperienceId);
+        }
+
+        List<ExtractedExperience> foundExperiences = extractedExperienceRepository.findAllById(ids);
+
+        Map<Long, ExtractedExperience> experienceMap = foundExperiences.stream()
+            .collect(Collectors.toMap(ExtractedExperience::getId, Function.identity()));
+
+        List<ExtractedExperience> entitiesToSave = new ArrayList<>();
+
+        for (JsonNode itemNode : callbackItems) {
+            long extractedExperienceId = itemNode.path("extracted_experience_id").asLong();
+
+            ExtractedExperience foundExperience = experienceMap.get(extractedExperienceId);
+            if (foundExperience == null) {
+                throw new BaseException(ExtractedExperienceErrorCode.NOT_FOUND);
+            }
+
+            Experiences experiences = experienceResultMapper.toExperiencesFromCallbackItem(itemNode);
+
+            foundExperience.updateExperiences(experiences);
+            foundExperience.updateStatus(ExtractionStatus.READY);
+
+            entitiesToSave.add(foundExperience);
+        }
+
+        extractedExperienceRepository.saveAll(entitiesToSave);
     }
 
     @Transactional
