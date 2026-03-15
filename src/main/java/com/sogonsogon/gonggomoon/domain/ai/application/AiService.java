@@ -86,7 +86,7 @@ public class AiService {
      * @param fileAssetId 면접 전략 생성에 필요한 파일 자산 ID
      * @return void (전략 생성 결과는 AI 서버에서 비동기로 처리될 예정)
      * */
-    public void requestPortfolioStrategyGeneration(Long userId, Long interviewStrategyId) {
+    public void requestInterviewStrategyGeneration(Long userId, Long interviewStrategyId) {
 
         // DTO 생성
         InterviewStrategyRequest request = new InterviewStrategyRequest(userId, interviewStrategyId);
