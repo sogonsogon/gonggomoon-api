@@ -15,4 +15,6 @@ public interface FileAssetRepository {
     List<FileAsset> findAllByUserIdOrderByCreatedAtDesc(Long userId);
 
     List<FileAsset> findAllByUserIdAndCategoryOrderByCreatedAtDesc(Long userId, DocumentCategory category);
+
+    List<FileAsset> findAllByIdInAndUserId(List<Long> ids, Long userid);
 }
