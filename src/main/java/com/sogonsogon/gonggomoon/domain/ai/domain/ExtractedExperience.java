@@ -39,7 +39,7 @@ public class ExtractedExperience {
      * 참조한 파일 ID
      */
     @Column(name = "file_asset_id", nullable = false)
-    private List<Long> fileAssetIds;
+    private Long fileAssetId;
 
     /**
      * 경험 추출 상태
@@ -72,18 +72,18 @@ public class ExtractedExperience {
     @Builder
     private ExtractedExperience(
         Long userId,
-        List<Long> fileAssetIds,
+        Long fileAssetId,
         ExtractionStatus status
     ) {
         this.userId = userId;
-        this.fileAssetIds = fileAssetIds;
+        this.fileAssetId = fileAssetId;
         this.status = status;
     }
 
-    public static ExtractedExperience create(Long userId, List<Long> fileAssetIds) {
+    public static ExtractedExperience create(Long userId, Long fileAssetId) {
         return ExtractedExperience.builder()
             .userId(userId)
-            .fileAssetIds(fileAssetIds)
+            .fileAssetId(fileAssetId)
             .status(ExtractionStatus.PROCESSING)
             .build();
     }
