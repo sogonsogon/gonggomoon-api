@@ -2,6 +2,8 @@ package com.sogonsogon.gonggomoon.domain.strategy.application;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sogonsogon.gonggomoon.domain.ai.application.AiService;
+import com.sogonsogon.gonggomoon.domain.ai.dto.request.PortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.industry.domain.Industry;
@@ -32,6 +34,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PortfolioStrategyService {
 
+    private final AiService aiService;
     private final PortfolioStrategyRepository portfolioStrategyRepository;
     private final ExperienceRepository experienceRepository;
     private final IndustryRepository industryRepository;
@@ -71,30 +74,57 @@ public class PortfolioStrategyService {
             throw new BaseException(PortfolioStrategyErrorCode.REQUESTED_EXPERIENCE_NOT_FOUND);
         }
 
-        // 전략 생성
-        PortfolioStrategyContent content = portfolioStrategyContentGenerator.generate(experiences, req);
+        // TODO : 여기서부터 세훈 작업
+        // NOTE : AI에게 industry name을 넘겨주기 위해서 조회합니다.
+        Industry industry = industryRepository.findById(req.industryId()).orElseThrow(
+            () -> new BaseException(IndustryErrorCode.INDUSTRY_NOT_FOUND));
 
-        // 전략 결과 JSON 반환
-        String resultJson;
-        try {
-            resultJson = objectMapper.writeValueAsString(content);
-        } catch (JsonProcessingException e) {
-            throw new BaseException(PortfolioStrategyErrorCode.RESULT_JSON_SERIALIZATION_FAILED);
-        }
-
-        // 전략 엔티티 생성
+        // 전략 엔티티 생성 (result Json이 없는 전략 엔티티를 생성합니다.)
         PortfolioStrategy strategy = PortfolioStrategy.create(
-                userId,
-                req.jobType(),
-                req.industryId(),
-                resultJson,
-                experiences.size(),
-                now,
-                today);
+            userId,
+            req.jobType(),
+            req.industryId(),
+            experiences.size(),
+            now,
+            today
+        );
 
-        portfolioStrategyRepository.save(strategy);
+        // NOTE : 포폴 전략을 저장하여 ID값을 받아옵니다.
+        PortfolioStrategy newStrategy = portfolioStrategyRepository.save(strategy);
 
-        return GeneratePortfolioStrategyResult.of(strategy.getId());
+        // AI Service에 포폴 전략 생성 요청을 보냅니다.
+        aiService.requestPortfolioStrategyGeneration(
+            userId,
+            newStrategy.getId(),
+            experiences,
+            req.jobType().name(),
+            industry.getName()
+        );
+
+        // TODO : 이전에 주영님이 만들어주신 내용 주석 처리
+//        // 전략 생성
+//        PortfolioStrategyContent content = portfolioStrategyContentGenerator.generate(experiences, req);
+//
+//        // 전략 결과 JSON 반환
+//        String resultJson;
+//        try {
+//            resultJson = objectMapper.writeValueAsString(content);
+//        } catch (JsonProcessingException e) {
+//            throw new BaseException(PortfolioStrategyErrorCode.RESULT_JSON_SERIALIZATION_FAILED);
+//        }
+//
+//        // 전략 엔티티 생성
+//        PortfolioStrategy strategy = PortfolioStrategy.create(
+//                userId,
+//                req.positionType(),
+//                req.industryId(),
+//                resultJson,
+//                experiences.size(),
+//                now,
+//                today);
+
+
+        return GeneratePortfolioStrategyResult.of(newStrategy.getId());
     }
 
     /**
