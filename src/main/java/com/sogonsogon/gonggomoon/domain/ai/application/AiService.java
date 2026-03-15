@@ -26,20 +26,20 @@ public class AiService {
     * @param request 경험 추출 요청 DTO
     * @return 경험 추출 응답 DTO
     * */
-    public ExperienceExtractResponse requestExperienceExtraction(Long userId, Long fileAssetId) {
+    public ExperienceExtractResponse requestExperienceExtraction(Long userId, List<Long> fileAssetIds) {
 
          // DTO 생성
-        ExperienceExtractRequest request = new ExperienceExtractRequest(userId, fileAssetId);
+        ExperienceExtractRequest request = new ExperienceExtractRequest(userId, fileAssetIds);
 
         // ExtractedExperience 엔티티 생성
-        ExtractedExperience newExtractedExperience = ExtractedExperience.create(request.userId(), request.fileAssetId());
+        ExtractedExperience newExtractedExperience = ExtractedExperience.create(request.userId(), request.fileAssetIds());
         ExtractedExperience savedExtractedExperience = extractedExperienceRepository.save(newExtractedExperience);
 
         // AI 서버에 경험 추출 요청 전송
         ExperienceExtractionAiServerRequest aiServerRequest = new ExperienceExtractionAiServerRequest(savedExtractedExperience.getId());
         aiServerClient.requestExperienceExtraction(aiServerRequest);
 
-        return new ExperienceExtractResponse(AiCallingType.EXTRACT_EXPERIENCE.name(),savedExtractedExperience.getId());
+        return new ExperienceExtractResponse(savedExtractedExperience.getId());
     }
 
     /*

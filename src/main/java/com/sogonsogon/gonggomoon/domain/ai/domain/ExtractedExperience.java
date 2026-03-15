@@ -12,6 +12,8 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
+import java.util.List;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -37,7 +39,7 @@ public class ExtractedExperience {
      * 참조한 파일 ID
      */
     @Column(name = "file_asset_id", nullable = false)
-    private Long fileAssetId;
+    private List<Long> fileAssetIds;
 
     /**
      * 경험 추출 상태
@@ -70,18 +72,18 @@ public class ExtractedExperience {
     @Builder
     private ExtractedExperience(
         Long userId,
-        Long fileAssetId,
+        List<Long> fileAssetIds,
         ExtractionStatus status
     ) {
         this.userId = userId;
-        this.fileAssetId = fileAssetId;
+        this.fileAssetIds = fileAssetIds;
         this.status = status;
     }
 
-    public static ExtractedExperience create(Long userId, Long fileAssetId) {
+    public static ExtractedExperience create(Long userId, List<Long> fileAssetIds) {
         return ExtractedExperience.builder()
             .userId(userId)
-            .fileAssetId(fileAssetId)
+            .fileAssetIds(fileAssetIds)
             .status(ExtractionStatus.PROCESSING)
             .build();
     }
