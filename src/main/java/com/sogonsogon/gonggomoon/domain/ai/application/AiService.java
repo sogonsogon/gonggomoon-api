@@ -1,6 +1,5 @@
 package com.sogonsogon.gonggomoon.domain.ai.application;
 
-import com.sogonsogon.gonggomoon.domain.ai.domain.AiCallingType;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractRequest;
@@ -11,7 +10,9 @@ import com.sogonsogon.gonggomoon.domain.ai.infrastructure.AiServerClient;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 @Service
 @RequiredArgsConstructor
@@ -26,20 +27,30 @@ public class AiService {
     * @param request 경험 추출 요청 DTO
     * @return 경험 추출 응답 DTO
     * */
-    public ExperienceExtractResponse requestExperienceExtraction(Long userId, Long fileAssetId) {
+    public ExperienceExtractResponse requestExperienceExtraction(Long userId, List<Long> fileAssetIds) {
 
          // DTO 생성
-        ExperienceExtractRequest request = new ExperienceExtractRequest(userId, fileAssetId);
+        ExperienceExtractRequest request = new ExperienceExtractRequest(userId, fileAssetIds);
 
         // ExtractedExperience 엔티티 생성
-        ExtractedExperience newExtractedExperience = ExtractedExperience.create(request.userId(), request.fileAssetId());
-        ExtractedExperience savedExtractedExperience = extractedExperienceRepository.save(newExtractedExperience);
+
+        List<ExtractedExperience> extractedExperiences = request.fileAssetIds().stream()
+            .map(fileAssetId -> ExtractedExperience.create(request.userId(), fileAssetId))
+            .toList();
+        Iterable<ExtractedExperience> savedExtractedExperienceIterable = extractedExperienceRepository.saveAll(extractedExperiences);
+        List<ExtractedExperience> savedExtractedExperiences = StreamSupport
+            .stream(savedExtractedExperienceIterable.spliterator(), false)
+            .toList();
+
+        List<Long> savedExtractedExperienceIds = savedExtractedExperiences.stream()
+            .map(ExtractedExperience::getId)
+            .toList();
 
         // AI 서버에 경험 추출 요청 전송
-        ExperienceExtractionAiServerRequest aiServerRequest = new ExperienceExtractionAiServerRequest(savedExtractedExperience.getId());
+        ExperienceExtractionAiServerRequest aiServerRequest = new ExperienceExtractionAiServerRequest(savedExtractedExperienceIds);
         aiServerClient.requestExperienceExtraction(aiServerRequest);
 
-        return new ExperienceExtractResponse(AiCallingType.EXTRACT_EXPERIENCE.name(),savedExtractedExperience.getId());
+        return new ExperienceExtractResponse(savedExtractedExperienceIds);
     }
 
     /*

@@ -1,7 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.ai.dto.response;
+import java.util.List;
 
 public record ExperienceExtractResponse(
-    String type,
-    Long extractedExperienceId
+    List<Long> extractedExperienceIds
 ) {
 }
