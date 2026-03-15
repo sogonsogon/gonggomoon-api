@@ -2,14 +2,15 @@ package com.sogonsogon.gonggomoon.domain.experience.api.response;
 
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionResult;
 import lombok.Builder;
+import java.util.List;
 
 @Builder
 public record ExperienceExtractionResponse(
-        Long extractedExperienceId
+        List<Long> extractedExperienceIds
 ) {
     public static ExperienceExtractionResponse from (ExperienceExtractionResult result) {
         return ExperienceExtractionResponse.builder()
-                .extractedExperienceId(result.extractedExperienceId())
+                .extractedExperienceIds(result.extractedExperienceIds())
                 .build();
     }
 }

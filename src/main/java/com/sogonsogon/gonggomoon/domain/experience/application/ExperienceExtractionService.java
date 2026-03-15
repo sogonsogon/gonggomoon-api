@@ -35,7 +35,7 @@ public class ExperienceExtractionService {
 
         ExperienceExtractResponse aiResponse = aiService.requestExperienceExtraction(userId, req.fileAssetIds());
 
-        return ExperienceExtractionResult.from(aiResponse.extractedExperienceId());
+        return ExperienceExtractionResult.from(aiResponse.extractedExperienceIds());
     }
 
     private void validateRequestFileAssetIds(List<Long> fileAssetIds) {

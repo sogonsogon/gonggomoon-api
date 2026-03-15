@@ -30,7 +30,7 @@ public class ExperienceExtractionServiceTest {
     private static final Long USER_ID = 1L;
     private static final Long FILE_ASSET_ID_1 = 10L;
     private static final Long FILE_ASSET_ID_2 = 11L;
-    private static final Long EXTRACTED_EXPERIENCE_ID = 100L;
+    private static final List<Long> EXTRACTED_EXPERIENCE_IDS = List.of(100L, 101L);
 
     @Mock
     private AiService aiService;
@@ -59,14 +59,14 @@ public class ExperienceExtractionServiceTest {
                     .thenReturn(List.of(fileAsset1, fileAsset2));
 
             when(aiService.requestExperienceExtraction(USER_ID, request.fileAssetIds()))
-                    .thenReturn(new ExperienceExtractResponse(EXTRACTED_EXPERIENCE_ID));
+                    .thenReturn(new ExperienceExtractResponse(EXTRACTED_EXPERIENCE_IDS));
 
             // when
             ExperienceExtractionResult result =
                     experienceExtractionService.startExperienceExtraction(request, USER_ID);
 
             // then
-            assertEquals(EXTRACTED_EXPERIENCE_ID, result.extractedExperienceId());
+            assertEquals(EXTRACTED_EXPERIENCE_IDS, result.extractedExperienceIds());
 
             verify(fileAssetRepository).findAllByIdInAndUserId(request.fileAssetIds(), USER_ID);
             verify(aiService).requestExperienceExtraction(USER_ID, request.fileAssetIds());
