@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 
-public record ExperienceExtractionCallbackRequest(
+public record BaseCallbackRequest(
     @NotBlank(message = "type은 필수입니다.")
     String type,
 
