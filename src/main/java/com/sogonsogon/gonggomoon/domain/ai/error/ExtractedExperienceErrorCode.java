@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 
 public enum ExtractedExperienceErrorCode implements BaseErrorCode {
     NOT_FOUND("EXTRACTED_EXPERIENCE_NOT_FOUND", HttpStatus.NOT_FOUND, "추출된 경험을 찾을 수 없습니다."),
+    INVALID_RESULT_FORMAT("INVALID_RESULT_FORMAT", HttpStatus.BAD_REQUEST, "결과 형식이 올바르지 않습니다.")
     ;
 
     private final String code;
