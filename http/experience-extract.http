@@ -144,20 +144,3 @@ Content-Type: application/json
 }
 
 ###
-
-### =========================================================
-### 경험 추출 상태 조회 API
-### GET /api/v1/experiences/extractions/{extractionId}
-### =========================================================
-
-### 9. 경험 추출 상태 조회 - 성공
-GET {{host}}/api/v1/experiences/extractions/{{extractedExperienceId}}
-Authorization: Bearer {{token}}
-
-###
-
-### 10. 경험 추출 상태 조회 - 실패 (존재하지 않는 extractionId)
-GET {{host}}/api/v1/experiences/extractions/9999
-Authorization: Bearer {{token}}
-
-###
