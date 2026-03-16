@@ -53,4 +53,10 @@ public class OAuthAccount {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    public void updateToken(String providerId, String accessToken, String refreshToken) {
+        this.providerId = providerId;
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+    }
+
 }
