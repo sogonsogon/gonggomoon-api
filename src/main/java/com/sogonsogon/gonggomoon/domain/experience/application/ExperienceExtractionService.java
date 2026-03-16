@@ -1,9 +1,15 @@
 package com.sogonsogon.gonggomoon.domain.experience.application;
 
 import com.sogonsogon.gonggomoon.domain.ai.application.AiService;
+import com.sogonsogon.gonggomoon.domain.ai.domain.ExperienceItem;
+import com.sogonsogon.gonggomoon.domain.ai.domain.Experiences;
+import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
+import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.dto.response.ExperienceExtractResponse;
+import com.sogonsogon.gonggomoon.domain.ai.error.ExtractedExperienceErrorCode;
 import com.sogonsogon.gonggomoon.domain.experience.api.request.ExperienceExtractRequest;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionResult;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionSearchResult;
 import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
 import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.experience.error.ExperienceErrorCode;
@@ -22,7 +28,11 @@ public class ExperienceExtractionService {
 
     private final AiService aiService;
     private final FileAssetRepository fileAssetRepository;
+    private final ExtractedExperienceRepository extractedExperienceRepository;
 
+    /*
+    * AI 경험 추출 요청 처리
+    * */
     public ExperienceExtractionResult startExperienceExtraction (ExperienceExtractRequest req, Long userId) {
         validateRequestFileAssetIds(req.fileAssetIds());
 
@@ -36,6 +46,24 @@ public class ExperienceExtractionService {
         ExperienceExtractResponse aiResponse = aiService.requestExperienceExtraction(userId, req.fileAssetIds());
 
         return ExperienceExtractionResult.from(aiResponse.extractedExperienceIds());
+    }
+
+    /*
+    * 추출된 경험 조회 요청 처리
+    * */
+    public ExperienceExtractionSearchResult getExperienceExtraction(Long extractionId, Long userId) {
+        ExtractedExperience foundData = extractedExperienceRepository.findByUserIdAndId(userId, extractionId).orElseThrow(
+            () -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND)
+        );
+
+        Experiences experiences = foundData.getExperiences();
+
+        if (experiences == null) {
+            throw new BaseException(ExtractedExperienceErrorCode.EXPERIENCES_IS_EMPTY);
+        }
+
+        List<ExperienceItem> experience_items = experiences.getExperiences();
+        return ExperienceExtractionSearchResult.of(experience_items);
     }
 
     private void validateRequestFileAssetIds(List<Long> fileAssetIds) {
