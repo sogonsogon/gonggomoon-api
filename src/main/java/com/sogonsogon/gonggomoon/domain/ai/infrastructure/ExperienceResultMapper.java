@@ -34,6 +34,16 @@ public class ExperienceResultMapper {
         return Experiences.of(items);
     }
 
+    public Experiences toExperiencesFromCallbackItem(JsonNode itemNode) {
+        JsonNode resultNode = itemNode.path("result");
+
+        if (resultNode.isMissingNode() || resultNode.isNull()) {
+            throw new BaseException(ExperienceResultMapperError.EXPERIENCES_ONLY_ARRAY);
+        }
+
+        return toExperiences(resultNode);
+    }
+
     private ExperienceItem toExperienceItem(JsonNode node) {
         return ExperienceItem.builder()
             .title(getText(node, "title"))
@@ -83,8 +93,6 @@ public class ExperienceResultMapper {
 
         try {
             return YearMonth.parse(value.trim(), YEAR_MONTH_FORMATTER);
-
-            // TODO : CustomException으로 변경하기
         } catch (DateTimeParseException e) {
             throw new BaseException(ExperienceResultMapperError.DATE_FORMAT_ERROR);
         }

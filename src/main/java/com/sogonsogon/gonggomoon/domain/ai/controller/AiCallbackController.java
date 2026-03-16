@@ -36,4 +36,12 @@ public class AiCallbackController {
         return ResponseEntity.ok(BaseResponse.success("AI 포폴 전략 생성 콜백 처리 완료"));
     }
 
+    @PostMapping("/interview-strategy-generation")
+    public ResponseEntity<BaseResponse<String>> handleInterviewStrategyGenerationCallback(
+        @RequestBody @Valid BaseCallbackRequest request
+    ) {
+        aiCallbackService.updateInterviewStrategy(request);
+        return ResponseEntity.ok(BaseResponse.success("AI 면접 전략 생성 콜백 처리 완료"));
+    }
+
 }

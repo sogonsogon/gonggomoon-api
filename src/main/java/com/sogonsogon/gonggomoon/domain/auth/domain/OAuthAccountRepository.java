@@ -7,5 +7,9 @@ public interface OAuthAccountRepository {
 
     Optional<OAuthAccount> findByUserId(Long id);
 
+    Optional<OAuthAccount> findByUserIdAndProvider(Long userId, OAuthProvider provider);
+
+    Optional<OAuthAccount> findByProviderAndProviderId(OAuthProvider provider, String providerId);
+
     void deleteByUserId(Long userId);
 }

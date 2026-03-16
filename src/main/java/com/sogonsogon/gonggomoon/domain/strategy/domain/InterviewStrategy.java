@@ -7,6 +7,8 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -47,6 +49,10 @@ public class InterviewStrategy {
     @Column(name = "file_asset_id", nullable = false)
     private Long fileAssetId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private GenerateStatus status;
+
     @Builder.Default
     @OneToMany(mappedBy = "interviewStrategy",
             cascade = CascadeType.ALL,
@@ -77,6 +83,7 @@ public class InterviewStrategy {
                 .fileAssetId(fileAssetId)
                 .createdAt(now)
                 .generatedDate(generatedDate)
+                .status(GenerateStatus.PROCESSING)
                 .build();
     }
 
@@ -88,6 +95,9 @@ public class InterviewStrategy {
         questions.forEach(this::addQuestion);
     }
 
+    public void updateStatusReady() {
+        this.status = GenerateStatus.READY;
+    }
     private static void requireNonNull(Object value, BaseErrorCode baseErrorCode) {
         if (value == null) {
             throw new BaseException(baseErrorCode);
