@@ -6,7 +6,7 @@ import lombok.Builder;
 public record GeneratePortfolioStrategyResult(
         Long strategyId
 ) {
-    public static GeneratePortfolioStrategyResult of (Long strategyId) {
+    public static GeneratePortfolioStrategyResult from (Long strategyId) {
         return GeneratePortfolioStrategyResult.builder()
                 .strategyId(strategyId)
                 .build();
