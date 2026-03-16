@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -21,7 +22,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(
-    name = "oauth_accounts"
+    name = "oauth_accounts",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_oauth_account_user_provider", columnNames = {"user_id", "provider"})
+    }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
