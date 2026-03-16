@@ -14,13 +14,12 @@ import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyReposit
 import com.sogonsogon.gonggomoon.domain.strategy.domain.QuestionLevel;
 import com.sogonsogon.gonggomoon.domain.strategy.error.InterviewStrategyErrorCode;
 import com.sogonsogon.gonggomoon.domain.strategy.generator.InterviewStrategyQuestionSetGenerator;
-import com.sogonsogon.gonggomoon.domain.strategy.generator.result.InterviewQuestionItem;
-import com.sogonsogon.gonggomoon.domain.strategy.generator.result.InterviewStrategyQuestionSet;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -97,49 +96,67 @@ public class InterviewStrategyServiceTest {
         }
 
         @Test
-        @DisplayName("정상 요청이면 면접 전략을 생성하고 interviewStrategyId를 반환한다")
-        void generate_success() {
+        @DisplayName("정상 요청이면 질문 초안을 저장하고 AI 생성 요청을 보낸다")
+        void generate_success_saveDraftAndRequestAi() {
             // given
             GenerateInterviewQuestionSetRequest req = new GenerateInterviewQuestionSetRequest(FILE_ASSET_ID);
+
             FileAsset fileAsset = mock(FileAsset.class);
 
-            InterviewStrategyQuestionSet questionSet = InterviewStrategyQuestionSet.of(
-                    List.of(
-                            new InterviewQuestionItem("질문1", QuestionLevel.HIGH),
-                            new InterviewQuestionItem("질문2", QuestionLevel.MIDDLE),
-                            new InterviewQuestionItem("질문3", QuestionLevel.HIGH)
-                    )
-            );
+            when(fileAssetRepository.findByIdAndUserId(FILE_ASSET_ID, USER_ID))
+                    .thenReturn(Optional.of(fileAsset));
 
-            Instant now = Instant.parse("2026-03-14T00:00:00Z");
-            LocalDate generatedDate = LocalDate.of(2026, 3, 14);
-
-            InterviewStrategy savedStrategy = InterviewStrategy.create(USER_ID, FILE_ASSET_ID, now, generatedDate);
-            ReflectionTestUtils.setField(savedStrategy, "id", 100L);
-            savedStrategy.addQuestions(
-                    questionSet.questions().stream()
-                            .map(item -> InterviewQuestion.create(item.question(), item.questionLevel()))
-                            .toList()
-            );
-
-            given(fileAssetRepository.findByIdAndUserId(FILE_ASSET_ID, USER_ID))
-                    .willReturn(Optional.of(fileAsset));
-            given(fileAsset.getId()).willReturn(FILE_ASSET_ID);
-            given(interviewStrategyQuestionSetGenerator.generate(FILE_ASSET_ID))
-                    .willReturn(questionSet);
-            given(interviewStrategyRepository.save(any(InterviewStrategy.class)))
-                    .willReturn(savedStrategy);
+            when(interviewStrategyRepository.save(any(InterviewStrategy.class)))
+                    .thenAnswer(invocation -> {
+                        InterviewStrategy strategy = invocation.getArgument(0);
+                        ReflectionTestUtils.setField(strategy, "id", INTERVIEW_STRATEGY_ID);
+                        return strategy;
+                    });
 
             // when
-            GenerateInterviewQuestionSetResult result = interviewStrategyService.generate(USER_ID, req);
+            GenerateInterviewQuestionSetResult result =
+                    interviewStrategyService.generate(USER_ID, req);
 
             // then
-            assertNotNull(result);
-            assertEquals(100L, result.interviewStrategyId());
+            ArgumentCaptor<InterviewStrategy> strategyCaptor =
+                    ArgumentCaptor.forClass(InterviewStrategy.class);
 
-            then(fileAssetRepository).should().findByIdAndUserId(FILE_ASSET_ID, USER_ID);
-            then(interviewStrategyQuestionSetGenerator).should().generate(FILE_ASSET_ID);
-            then(interviewStrategyRepository).should().save(any(InterviewStrategy.class));
+            verify(interviewStrategyRepository, times(1)).save(strategyCaptor.capture());
+            InterviewStrategy savedStrategy = strategyCaptor.getValue();
+
+            assertNotNull(savedStrategy);
+            assertEquals(USER_ID, savedStrategy.getUserId());
+            assertEquals(FILE_ASSET_ID, savedStrategy.getFileAssetId());
+            assertNotNull(savedStrategy.getGeneratedDate());
+            assertNotNull(savedStrategy.getCreatedAt());
+
+            verify(fileAssetRepository, times(1)).findByIdAndUserId(FILE_ASSET_ID, USER_ID);
+            verify(interviewStrategyQuestionSetGenerator, times(1))
+                    .request(USER_ID, INTERVIEW_STRATEGY_ID);
+
+            assertNotNull(result);
+            assertEquals(INTERVIEW_STRATEGY_ID, result.interviewStrategyId());
+        }
+
+        @Test
+        @DisplayName("오늘 이미 생성한 질문이 있으면 다시 생성할 수 없다")
+        void generate_fail_whenStrategyAlreadyCreatedToday() {
+            // given
+            ReflectionTestUtils.setField(interviewStrategyService, "dailyLimitEnabled", true);
+            GenerateInterviewQuestionSetRequest req = new GenerateInterviewQuestionSetRequest(FILE_ASSET_ID);
+
+            when(interviewStrategyRepository.existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class)))
+                    .thenReturn(true);
+
+            // when
+            BaseException exception = assertThrows(
+                    BaseException.class,
+                    () -> interviewStrategyService.generate(USER_ID, req)
+            );
+
+            // then
+            assertEquals(InterviewStrategyErrorCode.ALREADY_CREATED_TODAY, exception.getErrorCode());
+            verify(interviewStrategyRepository).existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class));
         }
     }
 
