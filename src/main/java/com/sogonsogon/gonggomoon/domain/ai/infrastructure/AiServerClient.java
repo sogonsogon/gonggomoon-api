@@ -4,7 +4,7 @@ package com.sogonsogon.gonggomoon.domain.ai.infrastructure;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractionAiServerRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.InterviewStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.PortfolioStrategyRequest;
-import com.sogonsogon.gonggomoon.domain.ai.error.AiServerErrorCode;
+import com.sogonsogon.gonggomoon.domain.ai.error.AiErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,7 +45,7 @@ public class AiServerClient {
                 HttpStatusCode::isError,
                 response -> response.bodyToMono(String.class)
                     .flatMap(body -> Mono.error(
-                        new BaseException(AiServerErrorCode.AI_SERVER_ERROR)
+                        new BaseException(AiErrorCode.AI_SERVER_ERROR)
                     ))
             )
             .toBodilessEntity()
@@ -71,7 +71,7 @@ public class AiServerClient {
                 HttpStatusCode::isError,
                 response -> response.bodyToMono(String.class)
                     .flatMap(body -> Mono.error(
-                        new BaseException(AiServerErrorCode.AI_SERVER_ERROR)
+                        new BaseException(AiErrorCode.AI_SERVER_ERROR)
                     ))
             )
             .toBodilessEntity()
@@ -97,7 +97,7 @@ public class AiServerClient {
                 HttpStatusCode::isError,
                 response -> response.bodyToMono(String.class)
                     .flatMap(body -> Mono.error(
-                        new BaseException(AiServerErrorCode.AI_SERVER_ERROR)
+                        new BaseException(AiErrorCode.AI_SERVER_ERROR)
                     ))
             )
             .toBodilessEntity()

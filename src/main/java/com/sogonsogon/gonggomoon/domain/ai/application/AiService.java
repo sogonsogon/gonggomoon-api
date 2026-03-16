@@ -2,13 +2,21 @@ package com.sogonsogon.gonggomoon.domain.ai.application;
 
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
+import com.sogonsogon.gonggomoon.domain.ai.dto.request.AiFunctionStatusRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractionAiServerRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.InterviewStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.PortfolioStrategyRequest;
+import com.sogonsogon.gonggomoon.domain.ai.dto.response.AiFunctionStatusResponse;
 import com.sogonsogon.gonggomoon.domain.ai.dto.response.ExperienceExtractResponse;
+import com.sogonsogon.gonggomoon.domain.ai.error.AiErrorCode;
+import com.sogonsogon.gonggomoon.domain.ai.error.ExtractedExperienceErrorCode;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.AiServerClient;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.GenerateStatus;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategyRepository;
+import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +28,8 @@ import java.util.stream.StreamSupport;
 public class AiService {
 
     private final ExtractedExperienceRepository extractedExperienceRepository;
+    private final PortfolioStrategyRepository portfolioStrategyRepository;
+    private final InterviewStrategyRepository interviewStrategyRepository;
     private final AiServerClient aiServerClient;
 
     /*
@@ -93,5 +103,50 @@ public class AiService {
 
         // AI 서버에 포트폴리오 전략 생성 요청 전송
         aiServerClient.requestInterviewStrategyGeneration(request);
+    }
+
+    /*
+    * AI 기능들에 대해서 상태값을 조회합니다.
+    * */
+    public AiFunctionStatusResponse checkAiFunctionStatus(Long userId, AiFunctionStatusRequest request) {
+
+        // type에 따른 분기 처리
+        if (request.type() == null) {
+            throw new BaseException(AiErrorCode.INVALID_TYPE);
+        }
+
+        String status = switch (request.type()) {
+            case EXTRACT_EXPERIENCE -> getExperienceExtractionStatus(userId, request.id());
+            case PORTFOLIO_STRATEGY -> getPortfolioStrategyGenerationStatus(userId, request.id());
+            case INTERVIEW_STRATEGY -> getInterviewStrategyGenerationStatus(userId, request.id());
+            default -> throw new BaseException(AiErrorCode.INVALID_TYPE);
+        };
+        
+        // DTO 생성 및 반환
+        return new AiFunctionStatusResponse(
+            request.type(),
+            request.id(),
+            GenerateStatus.valueOf(status),
+            null
+        );
+    }
+
+    private String getExperienceExtractionStatus(Long userId, Long extractedExperienceId) {
+        ExtractedExperience foundExtractedExperience = extractedExperienceRepository.findByUserIdAndId(userId, extractedExperienceId)
+            .orElseThrow(() -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND));
+
+        return foundExtractedExperience.getStatus().name();
+    }
+
+    private String getPortfolioStrategyGenerationStatus(Long userId, Long extractedExperienceId) {
+        return portfolioStrategyRepository.findByIdAndUserId(extractedExperienceId, userId)
+            .map(strategy -> strategy.getStatus().name())
+            .orElseThrow(() -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND));
+    }
+
+    private String getInterviewStrategyGenerationStatus(Long userId, Long extractedExperienceId) {
+        return interviewStrategyRepository.findByIdAndUserId(extractedExperienceId, userId)
+            .map(strategy -> strategy.getStatus().name())
+            .orElseThrow(() -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND));
     }
 }
