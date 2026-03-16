@@ -2,6 +2,7 @@ package com.sogonsogon.gonggomoon.domain.ai.infrastructure;
 
 
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractionAiServerRequest;
+import com.sogonsogon.gonggomoon.domain.ai.dto.request.InterviewStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.PortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.ai.error.AiServerErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
@@ -62,6 +63,32 @@ public class AiServerClient {
         // 응답값이 없음 202 Accepted
         webClient.post()
             .uri("/api/v1/jobs/portfolio-strategy-generation")
+            .header("x-internal-api-key", internalApiKey)
+            .header(HttpHeaders.CONTENT_TYPE, "application/json")
+            .bodyValue(request)
+            .retrieve()
+            .onStatus(
+                HttpStatusCode::isError,
+                response -> response.bodyToMono(String.class)
+                    .flatMap(body -> Mono.error(
+                        new BaseException(AiServerErrorCode.AI_SERVER_ERROR)
+                    ))
+            )
+            .toBodilessEntity()
+            .block();
+    }
+
+    /*
+     * 면접 전략 생성 요청을 AI 서버로 전송하는 메서드
+     * */
+    public void requestInterviewStrategyGeneration(InterviewStrategyRequest request) {
+        WebClient webClient = webClientBuilder
+            .baseUrl(aiServerBaseUrl)
+            .build();
+
+        // 응답값이 없음 202 Accepted
+        webClient.post()
+            .uri("/api/v1/jobs/interview-strategy-generation")
             .header("x-internal-api-key", internalApiKey)
             .header(HttpHeaders.CONTENT_TYPE, "application/json")
             .bodyValue(request)
