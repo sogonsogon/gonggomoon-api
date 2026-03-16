@@ -11,5 +11,7 @@ public interface ExtractedExperienceRepository {
 
     Optional<ExtractedExperience> findById(Long id);
 
+    Optional<ExtractedExperience> findByUserIdAndId(Long userId, Long id);
+
     List<ExtractedExperience> findAllById(Iterable<Long> ids);
 }
