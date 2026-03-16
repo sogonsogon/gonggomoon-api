@@ -1,7 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.strategy.application;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sogonsogon.gonggomoon.domain.ai.application.AiService;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceType;
@@ -30,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
 import java.time.Instant;
@@ -59,6 +60,9 @@ class PortfolioStrategyServiceTest {
 
     @Mock
     private ObjectMapper objectMapper;
+
+    @Mock
+    private AiService aiService;
 
     @InjectMocks
     private PortfolioStrategyService portfolioStrategyService;
@@ -94,7 +98,7 @@ class PortfolioStrategyServiceTest {
 
             // then
             assertEquals(PortfolioStrategyErrorCode.EXPERIENCE_IDS_REQUIRED, exception.getErrorCode());
-            verifyNoInteractions(experienceRepository, portfolioStrategyContentGenerator, objectMapper, portfolioStrategyRepository);
+            verifyNoInteractions(experienceRepository, portfolioStrategyContentGenerator, portfolioStrategyRepository);
         }
 
         @Test
@@ -115,7 +119,7 @@ class PortfolioStrategyServiceTest {
 
             // then
             assertEquals(PortfolioStrategyErrorCode.EXPERIENCE_IDS_REQUIRED, exception.getErrorCode());
-            verifyNoInteractions(experienceRepository, portfolioStrategyContentGenerator, objectMapper, portfolioStrategyRepository);
+            verifyNoInteractions(experienceRepository, portfolioStrategyContentGenerator, portfolioStrategyRepository);
         }
 
         @Test
@@ -140,17 +144,16 @@ class PortfolioStrategyServiceTest {
             );
 
             // then
-            // then
             assertEquals(PortfolioStrategyErrorCode.REQUESTED_EXPERIENCE_NOT_FOUND, exception.getErrorCode());
             verify(portfolioStrategyRepository).existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class));
             verify(experienceRepository).findAllByIdInAndUserId(req.experienceIds(), USER_ID);
-            verifyNoInteractions(portfolioStrategyContentGenerator, objectMapper);
+            verifyNoInteractions(portfolioStrategyContentGenerator);
             verify(portfolioStrategyRepository, never()).save(any(PortfolioStrategy.class));
         }
 
         @Test
-        @DisplayName("정상 요청이면 전략을 생성하고 저장한다")
-        void generate_success() throws Exception {
+        @DisplayName("정상 요청이면 전략 초안을 저장하고 AI 생성 요청을 보낸다")
+        void generate_success() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
@@ -162,80 +165,43 @@ class PortfolioStrategyServiceTest {
             Experience experience2 = createExperience(USER_ID, "인턴 경험");
             List<Experience> experiences = List.of(experience1, experience2);
 
-            PortfolioStrategyContent content = PortfolioStrategyContent.of(
-                    "대규모 트래픽 환경에서 안정성과 데이터 기반 의사결정을 설계하는 백엔드 개발자",
-                    List.of(),
-                    List.of(),
-                    List.of("안정성", "트래픽 대응"),
-                    List.of("문제 해결", "데이터 기반 사고"),
-                    List.of("전환율 개선", "운영 효율성"),
-                    List.of()
-            );
-            when(portfolioStrategyRepository.existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class)))
-                    .thenReturn(false);
+            Industry industry = createIndustry(INDUSTRY_ID, "핀테크");
 
-            when(experienceRepository.findAllByIdInAndUserId(req.experienceIds(), USER_ID))
+            PortfolioStrategy savedStrategy = PortfolioStrategy.create(
+                    USER_ID,
+                    req.jobType(),
+                    req.industryId(),
+                    experiences.size(),
+                    Instant.now(),
+                    LocalDate.now(ZoneId.of("Asia/Seoul"))
+            );
+            ReflectionTestUtils.setField(savedStrategy, "id", 100L);
+            ReflectionTestUtils.setField(portfolioStrategyService, "dailyLimitEnabled", true);
+
+            when(portfolioStrategyRepository.existsByUserIdAndGeneratedDate(anyLong(), any(LocalDate.class)))
+                    .thenReturn(false);
+            when(experienceRepository.findAllByIdInAndUserId(anyList(), anyLong()))
                     .thenReturn(experiences);
-            when(portfolioStrategyContentGenerator.generate(experiences, req))
-                    .thenReturn(content);
-            when(objectMapper.writeValueAsString(content))
-                    .thenReturn("{}");
+            when(industryRepository.findById(anyLong()))
+                    .thenReturn(Optional.of(industry));
+            when(portfolioStrategyRepository.save(any(PortfolioStrategy.class)))
+                    .thenReturn(savedStrategy);
 
             // when
             GeneratePortfolioStrategyResult result = portfolioStrategyService.generate(USER_ID, req);
 
             // then
             assertNotNull(result);
-            verify(experienceRepository).findAllByIdInAndUserId(req.experienceIds(), USER_ID);
-            verify(portfolioStrategyContentGenerator).generate(experiences, req);
-            verify(objectMapper).writeValueAsString(content);
+            assertEquals(100L, result.strategyId());
+
             verify(portfolioStrategyRepository).save(any(PortfolioStrategy.class));
-        }
-
-        @Test
-        @DisplayName("전략 결과 JSON 직렬화에 실패하면 RESULT_JSON_SERIALIZATION_FAILED 예외가 발생한다")
-        void generate_fail_whenJsonSerializationFails() throws Exception {
-            // given
-            GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    JobType.BACKEND,
-                    INDUSTRY_ID,
-                    List.of(1L)
+            verify(portfolioStrategyContentGenerator).request(
+                    anyLong(),
+                    anyLong(),
+                    anyList(),
+                    anyString(),
+                    nullable(String.class)
             );
-
-            Experience experience = createExperience(USER_ID, "캡스톤 프로젝트");
-            List<Experience> experiences = List.of(experience);
-
-            PortfolioStrategyContent content = PortfolioStrategyContent.of(
-                    "포지셔닝 메시지",
-                    List.of(),
-                    List.of(),
-                    List.of("키워드"),
-                    List.of("강점"),
-                    List.of("KPI"),
-                    List.of()
-            );
-
-            when(portfolioStrategyRepository.existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class)))
-                    .thenReturn(false);
-            when(experienceRepository.findAllByIdInAndUserId(req.experienceIds(), USER_ID))
-                    .thenReturn(experiences);
-            when(portfolioStrategyContentGenerator.generate(experiences, req))
-                    .thenReturn(content);
-            when(objectMapper.writeValueAsString(content))
-                    .thenThrow(new JsonProcessingException("serialization failed") {});
-
-            // when
-            BaseException exception = assertThrows(
-                    BaseException.class,
-                    () -> portfolioStrategyService.generate(USER_ID, req)
-            );
-
-            // then
-            assertEquals(PortfolioStrategyErrorCode.RESULT_JSON_SERIALIZATION_FAILED, exception.getErrorCode());
-            verify(experienceRepository).findAllByIdInAndUserId(req.experienceIds(), USER_ID);
-            verify(portfolioStrategyContentGenerator).generate(experiences, req);
-            verify(objectMapper).writeValueAsString(content);
-            verify(portfolioStrategyRepository, never()).save(any());
         }
 
         @Test
@@ -260,7 +226,7 @@ class PortfolioStrategyServiceTest {
             // then
             assertEquals(PortfolioStrategyErrorCode.ALREADY_CREATED_TODAY, exception.getErrorCode());
             verify(portfolioStrategyRepository).existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class));
-            verifyNoInteractions(experienceRepository, portfolioStrategyContentGenerator, objectMapper);
+            verifyNoInteractions(experienceRepository);
         }
 
         @Test
@@ -286,8 +252,8 @@ class PortfolioStrategyServiceTest {
         }
 
         @Test
-        @DisplayName("오늘 전략 생성 기록이 없으면 정상적으로 전략이 생성된다")
-        void generate_success_whenNotCreatedToday() throws Exception {
+        @DisplayName("오늘 전략 생성 기록이 없으면 전략 초안을 저장하고 AI 생성 요청을 보낸다")
+        void generate_success_whenNotCreatedToday() throws  Exception{
             // given
             setField(portfolioStrategyService, "dailyLimitEnabled", true);
 
@@ -298,39 +264,50 @@ class PortfolioStrategyServiceTest {
             Experience experience2 = createExperience(USER_ID, "인턴 경험");
             List<Experience> experiences = List.of(experience1, experience2);
 
-            PortfolioStrategyContent content = PortfolioStrategyContent.of(
-                    "포지셔닝 메시지",
-                    List.of(),
-                    List.of(),
-                    List.of("키워드"),
-                    List.of("강점"),
-                    List.of("KPI"),
-                    List.of()
+            Industry industry = createIndustry(1L, "핀테크");
+
+            PortfolioStrategy savedStrategy = PortfolioStrategy.create(
+                    USER_ID,
+                    req.jobType(),
+                    req.industryId(),
+                    experiences.size(),
+                    Instant.now(),
+                    LocalDate.now(ZoneId.of("Asia/Seoul"))
             );
+            setField(savedStrategy, "id", 100L);
 
             when(portfolioStrategyRepository.existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class)))
                     .thenReturn(false);
             when(experienceRepository.findAllByIdInAndUserId(req.experienceIds(), USER_ID))
                     .thenReturn(experiences);
-            when(portfolioStrategyContentGenerator.generate(experiences, req))
-                    .thenReturn(content);
-            when(objectMapper.writeValueAsString(content))
-                    .thenReturn("{}");
-            when(portfolioStrategyRepository.save(any()))
-                    .thenAnswer(invocation -> invocation.getArgument(0));
+            when(industryRepository.findById(req.industryId()))
+                    .thenReturn(Optional.of(industry));
+            when(portfolioStrategyRepository.save(any(PortfolioStrategy.class)))
+                    .thenReturn(savedStrategy);
 
             // when
             GeneratePortfolioStrategyResult result = portfolioStrategyService.generate(USER_ID, req);
 
             // then
             assertNotNull(result);
+            assertEquals(100L, result.strategyId());
 
             verify(portfolioStrategyRepository)
                     .existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class));
-            verify(experienceRepository).findAllByIdInAndUserId(req.experienceIds(), USER_ID);
-            verify(portfolioStrategyContentGenerator).generate(experiences, req);
-            verify(objectMapper).writeValueAsString(content);
-            verify(portfolioStrategyRepository).save(any());
+            verify(experienceRepository)
+                    .findAllByIdInAndUserId(req.experienceIds(), USER_ID);
+            verify(industryRepository)
+                    .findById(req.industryId());
+            verify(portfolioStrategyRepository)
+                    .save(any(PortfolioStrategy.class));
+            verify(portfolioStrategyContentGenerator)
+                    .request(
+                            eq(USER_ID),
+                            eq(100L),
+                            eq(experiences),
+                            eq(req.jobType().name()),
+                            nullable(String.class)
+                    );
         }
     }
 
@@ -517,38 +494,6 @@ class PortfolioStrategyServiceTest {
             verify(portfolioStrategyRepository).findByIdAndUserId(strategyId, USER_ID);
             verifyNoInteractions(objectMapper);
         }
-
-        @Test
-        @DisplayName("전략 결과 JSON 역직렬화에 실패하면 RESULT_JSON_DESERIALIZATION_FAILED 예외가 발생한다")
-        void getPortfolioStrategyDetail_fail_whenJsonDeserializationFails() throws Exception {
-            // given
-            Long strategyId = 100L;
-
-            PortfolioStrategy portfolioStrategy = createPortfolioStrategy(
-                    strategyId,
-                    USER_ID,
-                    JobType.BACKEND,
-                    INDUSTRY_ID,
-                    Instant.parse("2026-03-10T10:00:00Z")
-            );
-
-            when(portfolioStrategyRepository.findByIdAndUserId(strategyId, USER_ID))
-                    .thenReturn(Optional.of(portfolioStrategy));
-            when(objectMapper.readValue(portfolioStrategy.getResultJson(), PortfolioStrategyContent.class))
-                    .thenThrow(new JsonProcessingException("deserialization failed") {});
-
-            // when
-            BaseException exception = assertThrows(
-                    BaseException.class,
-                    () -> portfolioStrategyService.getPortfolioStrategyDetail(strategyId, USER_ID)
-            );
-
-            // then
-            assertEquals(PortfolioStrategyErrorCode.RESULT_JSON_DESERIALIZATION_FAILED, exception.getErrorCode());
-            verify(portfolioStrategyRepository).findByIdAndUserId(strategyId, USER_ID);
-            verify(objectMapper).readValue(portfolioStrategy.getResultJson(), PortfolioStrategyContent.class);
-        }
-
     }
 
     @Nested
@@ -629,7 +574,6 @@ class PortfolioStrategyServiceTest {
                 userId,
                 jobType,
                 industryId,
-                "{}",
                 1,
                 createdAt,
                 generatedDate
@@ -649,6 +593,13 @@ class PortfolioStrategyServiceTest {
                 LocalDate.of(2025, 1, 1),
                 LocalDate.of(2025, 2, 1)
         );
+    }
+
+    private Industry createIndustry(Long id, String name) {
+        Industry industry = mock(Industry.class);
+        ReflectionTestUtils.setField(industry, "id", id);
+        ReflectionTestUtils.setField(industry, "name", name);
+        return industry;
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {

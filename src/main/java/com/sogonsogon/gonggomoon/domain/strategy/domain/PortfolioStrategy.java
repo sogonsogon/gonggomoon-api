@@ -74,7 +74,6 @@ public class PortfolioStrategy {
             Long userId,
             JobType jobType,
             Long industryId,
-            String resultJson,
             int selectedExperienceCount,
             Instant now,
             LocalDate generatedDate
@@ -90,10 +89,10 @@ public class PortfolioStrategy {
                 .userId(userId)
                 .jobType(jobType)
                 .industryId(industryId)
-                .resultJson(resultJson)
                 .selectedExperienceCount(selectedExperienceCount)
                 .createdAt(now)
                 .generatedDate(generatedDate)
+                .status(GenerateStatus.PROCESSING)
                 .build();
     }
 

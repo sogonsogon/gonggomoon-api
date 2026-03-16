@@ -2,6 +2,7 @@ package com.sogonsogon.gonggomoon.domain.strategy.application;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sogonsogon.gonggomoon.domain.ai.application.AiService;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.industry.domain.Industry;
@@ -38,6 +39,8 @@ public class PortfolioStrategyService {
     private final PortfolioStrategyContentGenerator portfolioStrategyContentGenerator;
     private final ObjectMapper objectMapper;
 
+    private final AiService aiService;
+
     @Value("${strategy.portfolio.daily-limit-enabled:true}")
     private boolean dailyLimitEnabled;
 
@@ -66,35 +69,44 @@ public class PortfolioStrategyService {
             throw new BaseException(PortfolioStrategyErrorCode.ALREADY_CREATED_TODAY);
         }
 
+        /**
+         * 경험 목록 조회
+         */
         List<Experience> experiences = experienceRepository.findAllByIdInAndUserId(req.experienceIds(), userId);
         if (experiences.size() != req.experienceIds().size()) {
             throw new BaseException(PortfolioStrategyErrorCode.REQUESTED_EXPERIENCE_NOT_FOUND);
         }
 
-        // 전략 생성
-        PortfolioStrategyContent content = portfolioStrategyContentGenerator.generate(experiences, req);
-
-        // 전략 결과 JSON 반환
-        String resultJson;
-        try {
-            resultJson = objectMapper.writeValueAsString(content);
-        } catch (JsonProcessingException e) {
-            throw new BaseException(PortfolioStrategyErrorCode.RESULT_JSON_SERIALIZATION_FAILED);
-        }
-
-        // 전략 엔티티 생성
+        /**
+         * 포트폴리오 전략 엔티티 생성
+         * 기본 값으로 생성하는 이유는 AI가 포트폴리오 전략을 생성하고 난 후,
+         * 어떤 portfolio_strategy에 그 값을 저장해야하는지 명시
+         */
         PortfolioStrategy strategy = PortfolioStrategy.create(
                 userId,
                 req.jobType(),
                 req.industryId(),
-                resultJson,
                 experiences.size(),
                 now,
                 today);
 
-        portfolioStrategyRepository.save(strategy);
+        PortfolioStrategy draftStrategy = portfolioStrategyRepository.save(strategy);
 
-        return GeneratePortfolioStrategyResult.of(strategy.getId());
+        /**
+         * 산업 조회 및 산업이름 반환
+         * 산업을 조회하는 이유는 AI에게 포트폴리오 전략을 생성할 때, 값으로 넣어주기 위함
+         */
+        String industryName = resolveIndustryName(draftStrategy, req.industryId());
+
+        // AI Service에 포폴 전략 생성 요청
+        portfolioStrategyContentGenerator.request(
+                userId,
+                draftStrategy.getId(),
+                experiences,
+                req.jobType().name(),
+                industryName);
+
+        return GeneratePortfolioStrategyResult.from(draftStrategy.getId());
     }
 
     /**
@@ -121,14 +133,8 @@ public class PortfolioStrategyService {
         }
 
         Long industryId = portfolioStrategy.getIndustryId();
-        String industryName;
-        if (industryId == null) {
-            industryName = "마스터";
-        } else {
-            Industry industry = industryRepository.findById(portfolioStrategy.getIndustryId())
-                    .orElseThrow(() -> new BaseException(IndustryErrorCode.INDUSTRY_NOT_FOUND));
-            industryName = industry.getName();
-        }
+
+        String industryName = resolveIndustryName(portfolioStrategy, industryId);
 
         return PortfolioStrategyDetailResult.of(portfolioStrategy, content, industryName);
     }
@@ -141,5 +147,17 @@ public class PortfolioStrategyService {
                 .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
 
         portfolioStrategyRepository.delete(portfolioStrategy);
+    }
+
+    public String resolveIndustryName(PortfolioStrategy portfolioStrategy, Long industryId) {
+        String industryName;
+        if (industryId == null) {
+            industryName = "마스터";
+        } else {
+            Industry industry = industryRepository.findById(portfolioStrategy.getIndustryId())
+                    .orElseThrow(() -> new BaseException(IndustryErrorCode.INDUSTRY_NOT_FOUND));
+            industryName = industry.getName();
+        }
+        return industryName;
     }
 }
