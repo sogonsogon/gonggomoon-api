@@ -35,63 +35,75 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
     private final TokenCookieManager tokenCookieManager;
 
-@Override
-public void onAuthenticationSuccess(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    Authentication authentication) throws IOException {
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        Authentication authentication) throws IOException {
 
-    /*
-    * OAuthAccount에 토큰을 저장하기 위한 로직
-    * */
-    // 1. AuthorizedClient를 통해 Refresh Token이 포함된 객체 획득
-    OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
+        /*
+        * OAuthAccount에 토큰을 저장하기 위한 로직
+        * */
+        // 1. AuthorizedClient를 통해 Refresh Token이 포함된 객체 획득
+        OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
 
-    OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
-        oauthToken.getAuthorizedClientRegistrationId(),
-        oauthToken.getName());
+        OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
+            oauthToken.getAuthorizedClientRegistrationId(),
+            oauthToken.getName());
 
-    // 2. Refresh Token 추출
-    String providerAccessToken = client.getAccessToken().getTokenValue();
-    String providerRefreshToken = (client.getRefreshToken() != null)
-        ? client.getRefreshToken().getTokenValue()
-        : null;
+        // 2. Refresh Token 추출
+        String providerAccessToken = client.getAccessToken().getTokenValue();
+        String providerRefreshToken = (client.getRefreshToken() != null)
+            ? client.getRefreshToken().getTokenValue()
+            : null;
 
-    AccessUser accessUser = (AccessUser) authentication.getPrincipal();
-    OAuthAccount newSocialUser = OAuthAccount.builder()
-        .userId(accessUser.getId())
-        .provider(OAuthProvider.from(oauthToken.getAuthorizedClientRegistrationId()))
-        .providerId(accessUser.getProviderId())
-        .accessToken(providerAccessToken)
-        .refreshToken(providerRefreshToken)
-        .build();
+        AccessUser accessUser = (AccessUser) authentication.getPrincipal();
+        OAuthProvider provider = OAuthProvider.from(oauthToken.getAuthorizedClientRegistrationId());
 
-    oauthAccountRepository.save(newSocialUser);
+        OAuthAccount oauthAccount = oauthAccountRepository
+            .findByUserIdAndProvider(accessUser.getId(), provider)
+            .map(existingAccount -> {
+                existingAccount.updateToken(
+                    accessUser.getProviderId(),
+                    providerAccessToken,
+                    providerRefreshToken
+                );
+                return existingAccount;
+            })
+            .orElseGet(() -> OAuthAccount.builder()
+                .userId(accessUser.getId())
+                .provider(provider)
+                .providerId(accessUser.getProviderId())
+                .accessToken(providerAccessToken)
+                .refreshToken(providerRefreshToken)
+                .build());
+
+        oauthAccountRepository.save(oauthAccount);
 
 
-    /*
-    * 유저에게 서비스(공고문)에서 발급하는 토큰 제공
-    * */
-    String accessToken = tokenProvider.createAccessToken(authentication);
-    String refreshToken = tokenProvider.createRefreshToken(authentication);
+        /*
+        * 유저에게 서비스(공고문)에서 발급하는 토큰 제공
+        * */
+        String accessToken = tokenProvider.createAccessToken(authentication);
+        String refreshToken = tokenProvider.createRefreshToken(authentication);
 
-    // DB에 Refresh Token 저장 (로그아웃 시 검증 및 폐기 위해)
-    tokenService.issueRefreshToken(accessUser.getId(), refreshToken);
+        // DB에 Refresh Token 저장 (로그아웃 시 검증 및 폐기 위해)
+        tokenService.issueRefreshToken(accessUser.getId(), refreshToken);
 
-    // ✅ 1) refresh는 HttpOnly 쿠키로
-    tokenCookieManager.addRefreshTokenCookie(response, refreshToken);
+        // ✅ 1) refresh는 HttpOnly 쿠키로
+        tokenCookieManager.addRefreshTokenCookie(response, refreshToken);
 
-    // ✅ 2) access는 노출 최소화: HttpOnly 쿠키로 같이 넣거나(선택) / 안 넣고 이후 /auth/token으로 발급
-    // 선택 A: access도 HttpOnly 쿠키로 저장 (SSR/CSR 모두 편함)
-    tokenCookieManager.addAccessTokenCookie(response, accessToken);
+        // ✅ 2) access는 노출 최소화: HttpOnly 쿠키로 같이 넣거나(선택) / 안 넣고 이후 /auth/token으로 발급
+        // 선택 A: access도 HttpOnly 쿠키로 저장 (SSR/CSR 모두 편함)
+        tokenCookieManager.addAccessTokenCookie(response, accessToken);
 
-    clearAuthenticationAttributes(request, response);
+        clearAuthenticationAttributes(request, response);
 
-    // ✅ 3) 프론트 콜백으로만 리다이렉트 (token 파라미터 없음)
-    // TODO : 프론트 리다이렉트 주소 받아와야 할 듯 ? -> application.yml에서 수정하면 됨.
-    String targetUrl = REDIRECT_URI;
-    getRedirectStrategy().sendRedirect(request, response, targetUrl);
+        // ✅ 3) 프론트 콜백으로만 리다이렉트 (token 파라미터 없음)
+        // TODO : 프론트 리다이렉트 주소 받아와야 할 듯 ? -> application.yml에서 수정하면 됨.
+        String targetUrl = REDIRECT_URI;
+        getRedirectStrategy().sendRedirect(request, response, targetUrl);
 
-}
+    }
 
     protected void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse response) {
         super.clearAuthenticationAttributes(request);
