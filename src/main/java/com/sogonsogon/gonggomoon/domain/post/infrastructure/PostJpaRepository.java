@@ -66,6 +66,7 @@ public interface PostJpaRepository extends JpaRepository<Post, Long>, PostReposi
                     p.url,
                     p.experienceLevel,
                     p.originalContent,
+                    p.analyzedContent,
                     p.jobType,
                     p.status,
                     p.startedAt,
