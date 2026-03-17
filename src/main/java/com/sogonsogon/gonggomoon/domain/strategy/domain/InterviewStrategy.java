@@ -98,6 +98,10 @@ public class InterviewStrategy {
     public void updateStatusReady() {
         this.status = GenerateStatus.READY;
     }
+
+    public void updateStateFailed() {
+        this.status = GenerateStatus.FAILED;
+    }
     private static void requireNonNull(Object value, BaseErrorCode baseErrorCode) {
         if (value == null) {
             throw new BaseException(baseErrorCode);

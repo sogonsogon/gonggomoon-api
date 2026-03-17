@@ -18,6 +18,7 @@ import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategyRepository;
+import com.sogonsogon.gonggomoon.domain.strategy.error.InterviewStrategyErrorCode;
 import com.sogonsogon.gonggomoon.domain.strategy.error.PortfolioStrategyErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import java.util.ArrayList;
@@ -138,8 +139,15 @@ public class AiCallbackService {
         // id 값으로 찾아오기
         InterviewStrategy foundStrategy = interviewStrategyRepository.findByIdAndUserId(request.id(), request.userId())
             .orElseThrow(
-                () -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND) // TODO : 적절한 에러코드로 변경
+                () -> new BaseException(InterviewStrategyErrorCode.NOT_FOUND)
             );
+
+        // AI 작업 실패로 업데이트
+        if (request.status() == AiJobStatus.FAILED) {
+            foundStrategy.updateStateFailed();
+            interviewStrategyRepository.save(foundStrategy);
+            return;
+        }
 
         // 결과에서 questions 추출하기 (실제 필드명은 AI 서버에서 보내주는 결과에 따라 달라질 수 있음)
         JsonNode questionsNode = request.result().get("questions");
