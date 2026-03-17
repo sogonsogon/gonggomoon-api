@@ -14,6 +14,7 @@ import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStr
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyListResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyListResultItem;
 import com.sogonsogon.gonggomoon.domain.strategy.content.PortfolioStrategyContent;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.GenerateStatus;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.error.PortfolioStrategyErrorCode;
@@ -124,6 +125,19 @@ public class PortfolioStrategyService {
     public PortfolioStrategyDetailResult getPortfolioStrategyDetail(Long strategyId, Long userId) {
         PortfolioStrategy portfolioStrategy = portfolioStrategyRepository.findByIdAndUserId(strategyId, userId)
                 .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
+
+        if (portfolioStrategy.getStatus() == GenerateStatus.PROCESSING) {
+            throw new BaseException(PortfolioStrategyErrorCode.RESULT_NOT_READY);
+        }
+
+        if (portfolioStrategy.getStatus() == GenerateStatus.FAILED) {
+            throw new BaseException(PortfolioStrategyErrorCode.GENERATION_FAILED);
+        }
+
+        String resultJson = portfolioStrategy.getResultJson();
+        if (resultJson == null || resultJson.isBlank()) {
+            throw new BaseException(PortfolioStrategyErrorCode.RESULT_JSON_EMPTY);
+        }
 
         PortfolioStrategyContent content;
         try {
