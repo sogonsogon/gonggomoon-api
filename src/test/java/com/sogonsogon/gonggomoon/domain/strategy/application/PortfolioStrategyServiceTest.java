@@ -16,6 +16,7 @@ import com.sogonsogon.gonggomoon.domain.strategy.content.ExperienceOrderingItem;
 import com.sogonsogon.gonggomoon.domain.strategy.content.ExperienceStrategyPoint;
 import com.sogonsogon.gonggomoon.domain.strategy.content.ImprovementGuide;
 import com.sogonsogon.gonggomoon.domain.strategy.content.PortfolioStrategyContent;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.GenerateStatus;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.JobType;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategyRepository;
@@ -427,6 +428,7 @@ class PortfolioStrategyServiceTest {
                     )
             );
 
+            portfolioStrategy.addResult(String.valueOf(content));
             Industry industry = mock(Industry.class);
             when(industry.getName()).thenReturn("핀테크");
 
