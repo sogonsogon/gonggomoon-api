@@ -1,5 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.bookmark.api;
 
+import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.bookmark.application.BookmarkService;
 import com.sogonsogon.gonggomoon.domain.bookmark.dto.BookmarkListResponse;
 import com.sogonsogon.gonggomoon.domain.bookmark.dto.CreateBookmarkRequest;
@@ -10,7 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,19 +32,19 @@ public class BookmarkController {
     // 북마크 생성
     @PostMapping
     public ResponseEntity<BaseResponse<Void>> createBookmark(@RequestBody @Valid CreateBookmarkRequest request,
-                                                             @AuthenticationPrincipal UserDetails details) {
+                                                             @AuthenticationPrincipal AccessUser details) {
 
-        bookmarkService.createBookmark(request, Long.valueOf(details.getUsername()));
+        bookmarkService.createBookmark(request, details.getId());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success());
     }
 
     // 북마크 목록 조회
     @GetMapping
-    public ResponseEntity<BaseResponse<BaseResponse.PageResponse<BookmarkListResponse>>> getBookmarks(@AuthenticationPrincipal UserDetails details,
+    public ResponseEntity<BaseResponse<BaseResponse.PageResponse<BookmarkListResponse>>> getBookmarks(@AuthenticationPrincipal AccessUser details,
                                                                                                       Pageable pageable) {
 
-        Page<BookmarkListResponse> page = bookmarkService.getBookmarks(Long.valueOf(details.getUsername()), pageable);
+        Page<BookmarkListResponse> page = bookmarkService.getBookmarks(details.getId(), pageable);
 
         return ResponseEntity.ok(BaseResponse.success(
                 BaseResponse.PageResponse.<BookmarkListResponse>builder()
@@ -61,9 +61,10 @@ public class BookmarkController {
 
     // 북마크 삭제
     @DeleteMapping("/{bookmarkId}")
-    public ResponseEntity<BaseResponse<Void>> deleteBookmark(@PathVariable Long bookmarkId) {
+    public ResponseEntity<BaseResponse<Void>> deleteBookmark(@PathVariable Long bookmarkId,
+                                                             @AuthenticationPrincipal AccessUser details) {
 
-        bookmarkService.deleteBookmark(bookmarkId);
+        bookmarkService.deleteBookmark(bookmarkId, details.getId());
 
         return ResponseEntity.ok(BaseResponse.success());
     }

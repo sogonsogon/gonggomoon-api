@@ -6,6 +6,7 @@ import com.sogonsogon.gonggomoon.domain.bookmark.entity.Bookmark;
 import com.sogonsogon.gonggomoon.domain.bookmark.entity.BookmarkRepository;
 import com.sogonsogon.gonggomoon.domain.bookmark.error.BookmarkErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
+import com.sogonsogon.gonggomoon.global.error.GlobalErrorCode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -37,10 +38,12 @@ public class BookmarkService {
         return bookmarkRepository.findBookmarksByUserId(userId, pageable);
     }
 
-    public void deleteBookmark(Long bookmarkId) {
+    public void deleteBookmark(Long bookmarkId, Long userId) {
 
         Bookmark bookmark = bookmarkRepository.findById(bookmarkId)
                 .orElseThrow(() -> new BaseException(BookmarkErrorCode.BOOKMARK_NOT_FOUND));
+
+        if (!bookmark.getUserId().equals(userId)) throw new BaseException(GlobalErrorCode.INVALID_INPUT_VALUE);
 
         bookmarkRepository.delete(bookmark);
     }
