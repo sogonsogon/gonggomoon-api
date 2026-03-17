@@ -52,7 +52,7 @@ public class Experience {
     @Column(nullable = false)
     private ExperienceType experienceType; // 경험 유형
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String experienceContent; // 경험 내용
 
     @Enumerated(EnumType.STRING)
