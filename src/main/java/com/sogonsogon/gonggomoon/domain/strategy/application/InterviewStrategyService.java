@@ -6,12 +6,10 @@ import com.sogonsogon.gonggomoon.domain.strategy.api.request.GenerateInterviewQu
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GenerateInterviewQuestionSetResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewQuestionSetListResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewStrategyDetailResult;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.error.InterviewStrategyErrorCode;
 import com.sogonsogon.gonggomoon.domain.strategy.generator.InterviewStrategyQuestionSetGenerator;
-import com.sogonsogon.gonggomoon.domain.strategy.generator.result.InterviewStrategyQuestionSet;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,19 +60,11 @@ public class InterviewStrategyService {
                 .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.FILE_ASSET_NOT_FOUND));
 
         // 면접 질문 생성
-        InterviewStrategyQuestionSet questionSet = interviewStrategyQuestionSetGenerator.generate(fileAsset.getId());
-
-        List<InterviewQuestion> questions = questionSet.questions().stream()
-                .map(item -> InterviewQuestion.create(
-                        item.question(),
-                        item.questionLevel()
-                ))
-                .toList();
-
         InterviewStrategy interviewStrategy = InterviewStrategy.create(userId, req.fileAssetId(), now, today);
-        interviewStrategy.addQuestions(questions);
 
         InterviewStrategy savedInterviewStrategy = interviewStrategyRepository.save(interviewStrategy);
+
+        interviewStrategyQuestionSetGenerator.request(userId, interviewStrategy.getId());
 
         return GenerateInterviewQuestionSetResult.from(savedInterviewStrategy);
     }
