@@ -6,9 +6,12 @@ import com.sogonsogon.gonggomoon.domain.strategy.api.request.GenerateInterviewQu
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GenerateInterviewQuestionSetResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewQuestionSetListResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewStrategyDetailResult;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.GenerateStatus;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.error.InterviewStrategyErrorCode;
+import com.sogonsogon.gonggomoon.domain.strategy.error.PortfolioStrategyErrorCode;
 import com.sogonsogon.gonggomoon.domain.strategy.generator.InterviewStrategyQuestionSetGenerator;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
@@ -84,6 +87,19 @@ public class InterviewStrategyService {
     public InterviewStrategyDetailResult getInterviewStrategyDetail(Long interviewStrategyId, Long userId) {
         InterviewStrategy interviewStrategy = interviewStrategyRepository.findByIdAndUserId(interviewStrategyId, userId)
                 .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.NOT_FOUND));
+
+        if (interviewStrategy.getStatus() == GenerateStatus.PROCESSING) {
+            throw new BaseException(InterviewStrategyErrorCode.RESULT_NOT_READY);
+        }
+
+        if (interviewStrategy.getStatus() == GenerateStatus.FAILED) {
+            throw new BaseException(InterviewStrategyErrorCode.GENERATION_FAILED);
+        }
+
+        List<InterviewQuestion> questions = interviewStrategy.getQuestions();
+        if (questions == null || questions.isEmpty()) {
+            throw new BaseException(InterviewStrategyErrorCode.QUESTION_EMPTY);
+        }
 
         FileAsset fileAsset = fileAssetRepository.findById(interviewStrategy.getFileAssetId())
                 .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.FILE_ASSET_NOT_FOUND));

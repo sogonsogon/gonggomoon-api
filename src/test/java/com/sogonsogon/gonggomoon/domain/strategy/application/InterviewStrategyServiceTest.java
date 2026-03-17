@@ -8,6 +8,7 @@ import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewQue
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewStrategiesResultItem;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewStrategyDetailResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewStrategyDetailResultItem;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.GenerateStatus;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
@@ -260,6 +261,7 @@ public class InterviewStrategyServiceTest {
             when(fileAssetRepository.findById(PORTFOLIO_FILE_ASSET_ID))
                     .thenReturn(Optional.of(fileAsset));
 
+            interviewStrategy.updateStatusReady();
             // when
             InterviewStrategyDetailResult result =
                     interviewStrategyService.getInterviewStrategyDetail(INTERVIEW_STRATEGY_ID, USER_ID);
@@ -314,7 +316,10 @@ public class InterviewStrategyServiceTest {
         void getInterviewStrategyDetail_fileAssetNotFound() {
             // given
             InterviewStrategy interviewStrategy = mock(InterviewStrategy.class);
+            List<InterviewQuestion> questions = List.of(mock(InterviewQuestion.class));
 
+            when(interviewStrategy.getStatus()).thenReturn(GenerateStatus.READY);
+            when(interviewStrategy.getQuestions()).thenReturn(questions);
             when(interviewStrategy.getFileAssetId()).thenReturn(PORTFOLIO_FILE_ASSET_ID);
 
             when(interviewStrategyRepository.findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID))
