@@ -43,7 +43,6 @@ public class AiCallbackService {
 
     private final ObjectMapper objectMapper;
 
-    // TODO : 경험 추출 실패 업데이트 (staus 업데이트 어떻게 하지 ? ID가 2개인데)
     @Transactional
     public void createExtractedExperience(BaseCallbackRequest request) {
         JsonNode resultsNode = request.result();
@@ -64,6 +63,16 @@ public class AiCallbackService {
 
             callbackItems.add(itemNode);
             ids.add(extractedExperienceId);
+        }
+
+        // 경험 추출 실패 업데이트
+        if (request.status() == AiJobStatus.FAILED) {
+            List<ExtractedExperience> experiencesToUpdate = extractedExperienceRepository.findAllById(ids);
+            for (ExtractedExperience experience : experiencesToUpdate) {
+                experience.updateStatus(ExtractionStatus.FAILED);
+            }
+            extractedExperienceRepository.saveAll(experiencesToUpdate);
+            return;
         }
 
         List<ExtractedExperience> foundExperiences = extractedExperienceRepository.findAllById(ids);
