@@ -1,5 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.post.domain;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.JobType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +12,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -55,6 +58,10 @@ public class Post {
 
     @Column(name = "original_content", nullable = false, columnDefinition = "TEXT")
     private String originalContent;
+
+    @Column(name = "analyzed_content", columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private JsonNode analyzedContent;
 
     @Column(name = "started_at", nullable = false)
     private Instant startedAt;
