@@ -14,11 +14,12 @@ import java.util.List;
 public interface PortfolioStrategyJpaRepository
         extends JpaRepository<PortfolioStrategy, Long>, PortfolioStrategyRepository {
 
+    // COALESCE 함수로 NULL 값 처리
     @Query("""
         select new com.sogonsogon.gonggomoon.domain.strategy.application.result.PortfolioStrategyListResultItem(
             ps.id,
             ps.jobType,
-            i.name,
+            coalesce(i.name, '마스터'),
             ps.createdAt
         )
         from PortfolioStrategy ps
