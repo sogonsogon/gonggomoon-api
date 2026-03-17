@@ -29,6 +29,7 @@ public interface BookmarkJpaRepository extends JpaRepository<Bookmark, Long>, Bo
                 JOIN Post p ON p.id = b.postId
                 JOIN Company c ON c.id = p.companyId
                 WHERE b.userId = :id
+                ORDER BY b.createdAt DESC
         """,
             countQuery = """
             SELECT COUNT(b)
