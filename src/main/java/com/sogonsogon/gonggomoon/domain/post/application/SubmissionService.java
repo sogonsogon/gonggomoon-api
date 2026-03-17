@@ -13,6 +13,9 @@ import com.sogonsogon.gonggomoon.global.error.BaseException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 @Service
 public class SubmissionService {
 
@@ -34,9 +37,17 @@ public class SubmissionService {
                 .orElseThrow(() -> new BaseException(PlatformErrorCode.PLATFORM_NOT_FOUND));
 
         // baseUrl 검증
-        if (!request.postUrl().contains("://" + platform.getBaseUrl()) &&
-        !request.postUrl().contains("." + platform.getBaseUrl())) throw new BaseException(SubmissionErrorCode.URL_PLATFORM_MISMATCH);
+        try {
+            URI uri = new URI(request.postUrl());
+            String host = uri.getHost();
 
+            if (host == null ||
+                    (!host.equalsIgnoreCase(platform.getBaseUrl()) && !host.toLowerCase().endsWith("." + platform.getBaseUrl().toLowerCase()))) {
+                throw new BaseException(SubmissionErrorCode.URL_PLATFORM_MISMATCH);
+            }
+        } catch (URISyntaxException e) {
+            throw new BaseException(SubmissionErrorCode.INVALID_URL_FORMAT);
+        }
         // 해당 url을 가지고 있는 공고 있는지 확인
         if (postRepository.existsByUrl(request.postUrl())) throw new BaseException(SubmissionErrorCode.DUPLICATE_URL);
 
