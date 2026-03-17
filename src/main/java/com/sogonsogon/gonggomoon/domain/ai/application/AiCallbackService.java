@@ -3,6 +3,7 @@ package com.sogonsogon.gonggomoon.domain.ai.application;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiJobStatus;
 import com.sogonsogon.gonggomoon.domain.ai.domain.Experiences;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
@@ -11,6 +12,7 @@ import com.sogonsogon.gonggomoon.domain.ai.dto.request.BaseCallbackRequest;
 import com.sogonsogon.gonggomoon.domain.ai.error.ExtractedExperienceErrorCode;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.ExperienceResultMapper;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.InterviewQuestionResultMapper;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.GenerateStatus;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
@@ -40,6 +42,7 @@ public class AiCallbackService {
 
     private final ObjectMapper objectMapper;
 
+    // TODO : 경험 추출 실패 업데이트 (staus 업데이트 어떻게 하지 ? ID가 2개인데)
     @Transactional
     public void createExtractedExperience(BaseCallbackRequest request) {
         JsonNode resultsNode = request.result();
@@ -93,8 +96,14 @@ public class AiCallbackService {
 
         // id 값으로 찾아오기
         PortfolioStrategy fountStrategy =portfolioStrategyRepository.findByIdAndUserId(request.id(), request.userId()).orElseThrow(
-            () -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND) // TODO : 적절한 에러코드로 변경
+            () -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND)
         );
+        // AI 작업 실패로 업데이트
+        if (request.status() == AiJobStatus.FAILED) {
+            fountStrategy.updateStatus(GenerateStatus.FAILED);
+            portfolioStrategyRepository.save(fountStrategy);
+            return;
+        }
 
         // 결과를 텍스트로 저장 (내부적으로 status 업데이트도 같이 이루어짐)
         JsonNode resultNode = request.result();
