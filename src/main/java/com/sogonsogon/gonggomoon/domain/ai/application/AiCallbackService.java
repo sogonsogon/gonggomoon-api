@@ -3,6 +3,7 @@ package com.sogonsogon.gonggomoon.domain.ai.application;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiJobStatus;
 import com.sogonsogon.gonggomoon.domain.ai.domain.Experiences;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
@@ -11,11 +12,13 @@ import com.sogonsogon.gonggomoon.domain.ai.dto.request.BaseCallbackRequest;
 import com.sogonsogon.gonggomoon.domain.ai.error.ExtractedExperienceErrorCode;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.ExperienceResultMapper;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.InterviewQuestionResultMapper;
+import com.sogonsogon.gonggomoon.domain.strategy.domain.GenerateStatus;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategyRepository;
+import com.sogonsogon.gonggomoon.domain.strategy.error.InterviewStrategyErrorCode;
 import com.sogonsogon.gonggomoon.domain.strategy.error.PortfolioStrategyErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import java.util.ArrayList;
@@ -62,6 +65,16 @@ public class AiCallbackService {
             ids.add(extractedExperienceId);
         }
 
+        // 경험 추출 실패 업데이트
+        if (request.status() == AiJobStatus.FAILED) {
+            List<ExtractedExperience> experiencesToUpdate = extractedExperienceRepository.findAllById(ids);
+            for (ExtractedExperience experience : experiencesToUpdate) {
+                experience.updateStatus(ExtractionStatus.FAILED);
+            }
+            extractedExperienceRepository.saveAll(experiencesToUpdate);
+            return;
+        }
+
         List<ExtractedExperience> foundExperiences = extractedExperienceRepository.findAllById(ids);
 
         Map<Long, ExtractedExperience> experienceMap = foundExperiences.stream()
@@ -93,8 +106,14 @@ public class AiCallbackService {
 
         // id 값으로 찾아오기
         PortfolioStrategy fountStrategy =portfolioStrategyRepository.findByIdAndUserId(request.id(), request.userId()).orElseThrow(
-            () -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND) // TODO : 적절한 에러코드로 변경
+            () -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND)
         );
+        // AI 작업 실패로 업데이트
+        if (request.status() == AiJobStatus.FAILED) {
+            fountStrategy.updateStatus(GenerateStatus.FAILED);
+            portfolioStrategyRepository.save(fountStrategy);
+            return;
+        }
 
         // 결과를 텍스트로 저장 (내부적으로 status 업데이트도 같이 이루어짐)
         JsonNode resultNode = request.result();
@@ -129,8 +148,15 @@ public class AiCallbackService {
         // id 값으로 찾아오기
         InterviewStrategy foundStrategy = interviewStrategyRepository.findByIdAndUserId(request.id(), request.userId())
             .orElseThrow(
-                () -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND) // TODO : 적절한 에러코드로 변경
+                () -> new BaseException(InterviewStrategyErrorCode.NOT_FOUND)
             );
+
+        // AI 작업 실패로 업데이트
+        if (request.status() == AiJobStatus.FAILED) {
+            foundStrategy.updateStateFailed();
+            interviewStrategyRepository.save(foundStrategy);
+            return;
+        }
 
         // 결과에서 questions 추출하기 (실제 필드명은 AI 서버에서 보내주는 결과에 따라 달라질 수 있음)
         JsonNode questionsNode = request.result().get("questions");

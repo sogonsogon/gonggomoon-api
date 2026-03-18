@@ -96,6 +96,10 @@ public class PortfolioStrategy {
                 .build();
     }
 
+    public void updateStatus(GenerateStatus status) {
+        this.status = status;
+    }
+
     public void addResult(String resultJson) {
         if (resultJson == null || resultJson.isEmpty()) {
             throw new BaseException(PortfolioStrategyErrorCode.RESULT_JSON_EMPTY);
