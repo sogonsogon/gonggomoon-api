@@ -66,7 +66,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/v1/auth/social/login/**", "/oauth2/**").permitAll() // 인증 진입점은 모두 허용
                     .requestMatchers("/api/v1/auth/reissue").permitAll()
                     .requestMatchers("/api/v1/callbacks/**").permitAll() // AI 서버에서 콜백하기 위해 풀어둠.
-                    .requestMatchers(HttpMethod.GET, "/api/v1/posts/**", "api/v1/companies/**", "/api/v1/industries/*/reports").permitAll() // 조회에 한해서만 (공고, 기업, 산업(리포트만))
+                    .requestMatchers(HttpMethod.GET, "/api/v1/posts/**", "api/v1/companies/**", "/api/v1/industries/**").permitAll() // 조회에 한해서만 (공고, 기업, 산업(리포트만))
                     .anyRequest().authenticated() // 나머지는 JWT 인증 필요
             )
 
