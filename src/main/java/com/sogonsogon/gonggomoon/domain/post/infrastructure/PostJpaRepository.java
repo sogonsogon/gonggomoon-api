@@ -34,7 +34,7 @@ public interface PostJpaRepository extends JpaRepository<Post, Long>, PostReposi
                 )
                 FROM Post p
                 JOIN Company c ON c.id = p.companyId
-                JOIN Platform pl ON pl.id = p.platformId
+                LEFT JOIN Platform pl ON pl.id = p.platformId
                 WHERE (:jobType IS NULL OR p.jobType = :jobType)
                 AND (:title IS NULL OR p.title LIKE %:title%)
                 AND p.status = :status
