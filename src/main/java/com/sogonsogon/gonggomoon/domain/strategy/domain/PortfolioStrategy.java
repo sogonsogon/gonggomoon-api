@@ -1,8 +1,8 @@
 package com.sogonsogon.gonggomoon.domain.strategy.domain;
 
 import com.sogonsogon.gonggomoon.domain.strategy.error.PortfolioStrategyErrorCode;
-import com.sogonsogon.gonggomoon.global.error.BaseErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
+import com.sogonsogon.gonggomoon.global.validation.ValidationUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -78,8 +78,8 @@ public class PortfolioStrategy {
             Instant now,
             LocalDate generatedDate
     ) {
-        requireNonNull(userId, PortfolioStrategyErrorCode.USERID_REQUIRED);
-        requireNonNull(jobType, PortfolioStrategyErrorCode.JOB_TYPE_REQUIRED);
+        ValidationUtils.requireNonNull(userId, PortfolioStrategyErrorCode.USERID_REQUIRED);
+        ValidationUtils.requireNonNull(jobType, PortfolioStrategyErrorCode.JOB_TYPE_REQUIRED);
 
         // 프로그래밍 오류
         Objects.requireNonNull(now, "now must not be null");
@@ -106,11 +106,5 @@ public class PortfolioStrategy {
         }
         this.resultJson = resultJson;
         this.status = GenerateStatus.READY;
-    }
-
-    private static void requireNonNull(Object value, BaseErrorCode baseErrorCode) {
-        if (value == null) {
-            throw new BaseException(baseErrorCode);
-        }
     }
 }

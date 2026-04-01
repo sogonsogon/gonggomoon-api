@@ -1,8 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.strategy.domain;
 
 import com.sogonsogon.gonggomoon.domain.strategy.error.InterviewStrategyErrorCode;
-import com.sogonsogon.gonggomoon.global.error.BaseErrorCode;
-import com.sogonsogon.gonggomoon.global.error.BaseException;
+import com.sogonsogon.gonggomoon.global.validation.ValidationUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -56,8 +55,8 @@ public class InterviewQuestion {
             String question,
             QuestionLevel level
     ) {
-        requireText(question, InterviewStrategyErrorCode.INVALID_INTERVIEW_QUESTION);
-        requireNonNull(level, InterviewStrategyErrorCode.INVALID_QUESTION_LEVEL);
+        ValidationUtils.requireText(question, InterviewStrategyErrorCode.INVALID_INTERVIEW_QUESTION);
+        ValidationUtils.requireNonNull(level, InterviewStrategyErrorCode.INVALID_QUESTION_LEVEL);
 
         return InterviewQuestion.builder()
                 .question(question)
@@ -67,17 +66,5 @@ public class InterviewQuestion {
 
     public void assignStrategy(InterviewStrategy interviewStrategy) {
         this.interviewStrategy = interviewStrategy;
-    }
-
-    private static void requireText(String value, BaseErrorCode baseErrorCode) {
-        if (value == null || value.isBlank()) {
-            throw new BaseException(baseErrorCode);
-        }
-    }
-
-    private static void requireNonNull(Object value, BaseErrorCode baseErrorCode) {
-        if (value == null) {
-            throw new BaseException(baseErrorCode);
-        }
     }
 }
