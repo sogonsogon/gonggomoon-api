@@ -1,9 +1,9 @@
 package com.sogonsogon.gonggomoon.domain.experience.domain;
 
 import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
-import com.sogonsogon.gonggomoon.global.error.BaseErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import com.sogonsogon.gonggomoon.global.file.FileAssetPolicy;
+import com.sogonsogon.gonggomoon.global.validation.ValidationUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -69,10 +69,10 @@ public class FileAsset {
             String fileKey,
             Long sizeBytes
     ) {
-        requireNonNull(userId, FileAssetErrorCode.USER_ID_REQUIRED);
-        requireNonNull(category, FileAssetErrorCode.CATEGORY_REQUIRED);
-        requireText(originalFileName, FileAssetErrorCode.ORIGINAL_FILE_NAME_REQUIRED);
-        requireText(fileKey, FileAssetErrorCode.FILE_KEY_REQUIRED);
+        ValidationUtils.requireNonNull(userId, FileAssetErrorCode.USER_ID_REQUIRED);
+        ValidationUtils.requireNonNull(category, FileAssetErrorCode.CATEGORY_REQUIRED);
+        ValidationUtils.requireText(originalFileName, FileAssetErrorCode.ORIGINAL_FILE_NAME_REQUIRED);
+        ValidationUtils.requireText(fileKey, FileAssetErrorCode.FILE_KEY_REQUIRED);
         validateFileSize(sizeBytes);
 
         return FileAsset.builder()
@@ -83,18 +83,6 @@ public class FileAsset {
                 .fileKey(fileKey)
                 .sizeBytes(sizeBytes)
                 .build();
-    }
-
-    private static void requireText(String value, BaseErrorCode baseErrorCode) {
-        if (value == null || value.isBlank()) {
-            throw new BaseException(baseErrorCode);
-        }
-    }
-
-    private static void requireNonNull(Object value, BaseErrorCode baseErrorCode) {
-        if (value == null) {
-            throw new BaseException(baseErrorCode);
-        }
     }
 
     private static void validateFileSize(Long sizeBytes) {
