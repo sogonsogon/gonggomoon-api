@@ -1,5 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.auth.infrastructure.security;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -39,6 +40,16 @@ public class TokenCookieManager {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
+    public ResponseCookie getRefreshTokenCookie(String refreshToken) {
+        return ResponseCookie.from("refresh_token", refreshToken)
+            .path("/")
+            .maxAge(refreshTokenValiditySeconds)
+            .httpOnly(cookieHttpOnly)
+            .secure(cookieSecure)
+            .sameSite(cookieSameSite)
+            .build();
+    }
+
     /**
      * Access Token을 쿠키로 저장하는 메서드입니다.
      * */
@@ -52,6 +63,16 @@ public class TokenCookieManager {
             .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    public ResponseCookie getAccessTokenCookie(String accessToken) {
+        return ResponseCookie.from("access_token", accessToken)
+            .path("/")
+            .maxAge(accessTokenValiditySeconds)
+            .httpOnly(cookieHttpOnly)
+            .secure(cookieSecure)
+            .sameSite(cookieSameSite)
+            .build();
     }
 
     public void expireAccessTokenCookie(HttpServletResponse response) {
