@@ -1,5 +1,6 @@
 package com.sogonsogon.gonggomoon.global.config;
 
+import java.net.URI;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +25,9 @@ public class S3Config {
                                 )
                         )
                 )
+                // 로컬에서 MinIO를 사용할 때는 endpoint를 명시적으로 설정해야 합니다.
+                .endpointOverride(URI.create(s3Properties.getEndpoint()))
+                .forcePathStyle(true)
                 .build();
     }
 }
