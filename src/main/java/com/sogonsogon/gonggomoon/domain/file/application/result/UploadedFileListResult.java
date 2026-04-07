@@ -1,6 +1,6 @@
-package com.sogonsogon.gonggomoon.domain.experience.application.result;
+package com.sogonsogon.gonggomoon.domain.file.application.result;
 
-import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
+import com.sogonsogon.gonggomoon.domain.file.domain.FileAsset;
 import lombok.Builder;
 
 import java.util.List;

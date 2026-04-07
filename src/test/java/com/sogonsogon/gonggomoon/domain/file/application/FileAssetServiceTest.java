@@ -1,12 +1,12 @@
-package com.sogonsogon.gonggomoon.domain.experience.application;
+package com.sogonsogon.gonggomoon.domain.file.application;
 
-import com.sogonsogon.gonggomoon.domain.experience.api.request.ImportExperienceRequest;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.ImportExperienceResult;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResult;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResultItem;
-import com.sogonsogon.gonggomoon.domain.experience.domain.DocumentCategory;
-import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
-import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
+import com.sogonsogon.gonggomoon.domain.file.api.request.UploadFileRequest;
+import com.sogonsogon.gonggomoon.domain.file.application.result.UploadFileResult;
+import com.sogonsogon.gonggomoon.domain.file.application.result.UploadedFileListResult;
+import com.sogonsogon.gonggomoon.domain.file.application.result.UploadedFileListResultItem;
+import com.sogonsogon.gonggomoon.domain.file.domain.DocumentCategory;
+import com.sogonsogon.gonggomoon.domain.file.domain.FileAsset;
+import com.sogonsogon.gonggomoon.domain.file.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
 import com.sogonsogon.gonggomoon.global.config.MultipartProperties;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-public class ExperienceImportServiceTest {
+public class FileAssetServiceTest {
     @Mock
     private FileAssetRepository fileAssetRepository;
 
@@ -50,7 +50,7 @@ public class ExperienceImportServiceTest {
     private S3Uploader s3Uploader;
 
     @InjectMocks
-    private ExperienceImportService experienceImportService;
+    private FileAssetService fileAssetService;
 
     private static final Long USER_ID = 1L;
     private static final DataSize MAX_FILE_SIZE = DataSize.ofMegabytes(10);
@@ -64,7 +64,7 @@ public class ExperienceImportServiceTest {
         void uploadFile_success() throws Exception {
             // given
             when(multipartProperties.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
-            ImportExperienceRequest req = createRequest();
+            UploadFileRequest req = createRequest();
             MockMultipartFile file = new MockMultipartFile(
                     "file",
                     "resume.pdf",
@@ -79,7 +79,7 @@ public class ExperienceImportServiceTest {
             });
 
             // when
-            ImportExperienceResult result = experienceImportService.uploadFile(USER_ID, req, file);
+            UploadFileResult result = fileAssetService.uploadFile(USER_ID, req, file);
 
             // then
             assertNotNull(result);
@@ -93,12 +93,12 @@ public class ExperienceImportServiceTest {
         @DisplayName("파일이 null이면 FILE_REQUIRED 예외가 발생한다")
         void uploadFile_fail_whenFileIsNull() {
             // given
-            ImportExperienceRequest req = createRequest();
+            UploadFileRequest req = createRequest();
 
             // when
             BaseException ex = assertThrows(
                     BaseException.class,
-                    () -> experienceImportService.uploadFile(USER_ID, req, null)
+                    () -> fileAssetService.uploadFile(USER_ID, req, null)
             );
 
             // then
@@ -111,7 +111,7 @@ public class ExperienceImportServiceTest {
         @DisplayName("빈 파일이면 EMPTY_FILE_NOT_ALLOWED 예외가 발생한다")
         void uploadFile_fail_whenFileIsEmpty() {
             // given
-            ImportExperienceRequest req = createRequest();
+            UploadFileRequest req = createRequest();
             MockMultipartFile emptyFile = new MockMultipartFile(
                     "file",
                     "resume.pdf",
@@ -122,7 +122,7 @@ public class ExperienceImportServiceTest {
             // when
             BaseException ex = assertThrows(
                     BaseException.class,
-                    () -> experienceImportService.uploadFile(USER_ID, req, emptyFile)
+                    () -> fileAssetService.uploadFile(USER_ID, req, emptyFile)
             );
 
             // then
@@ -135,7 +135,7 @@ public class ExperienceImportServiceTest {
         @DisplayName("파일명이 blank면 INVALID_FILE_NAME 예외가 발생한다")
         void uploadFile_fail_whenOriginalFilenameIsBlank() {
             // given
-            ImportExperienceRequest req = createRequest();
+            UploadFileRequest req = createRequest();
             MockMultipartFile file = new MockMultipartFile(
                     "file",
                     " ",
@@ -146,7 +146,7 @@ public class ExperienceImportServiceTest {
             // when
             BaseException ex = assertThrows(
                     BaseException.class,
-                    () -> experienceImportService.uploadFile(USER_ID, req, file)
+                    () -> fileAssetService.uploadFile(USER_ID, req, file)
             );
 
             // then
@@ -161,7 +161,7 @@ public class ExperienceImportServiceTest {
             // given
             when(multipartProperties.getMaxFileSize()).thenReturn(MAX_FILE_SIZE);
 
-            ImportExperienceRequest req = createRequest();
+            UploadFileRequest req = createRequest();
             byte[] oversized = new byte[(int) MAX_FILE_SIZE.toBytes() + 1];
             MockMultipartFile file = new MockMultipartFile(
                     "file",
@@ -173,7 +173,7 @@ public class ExperienceImportServiceTest {
             // when
             BaseException ex = assertThrows(
                     BaseException.class,
-                    () -> experienceImportService.uploadFile(USER_ID, req, file)
+                    () -> fileAssetService.uploadFile(USER_ID, req, file)
             );
 
             // then
@@ -216,7 +216,7 @@ public class ExperienceImportServiceTest {
                     .thenReturn(List.of(file1, file2));
 
             // when
-            UploadedFileListResult result = experienceImportService.getFileList(USER_ID, null);
+            UploadedFileListResult result = fileAssetService.getFileList(USER_ID, null);
 
             // then
             assertThat(result).isNotNull();
@@ -272,7 +272,7 @@ public class ExperienceImportServiceTest {
                     .thenReturn(List.of(file1, file2));
 
             // when
-            UploadedFileListResult result = experienceImportService.getFileList(USER_ID, DocumentCategory.PORTFOLIO);
+            UploadedFileListResult result = fileAssetService.getFileList(USER_ID, DocumentCategory.PORTFOLIO);
 
             // then
             assertThat(result).isNotNull();
@@ -307,7 +307,7 @@ public class ExperienceImportServiceTest {
                     .thenReturn(List.of());
 
             // when
-            UploadedFileListResult result = experienceImportService.getFileList(USER_ID, DocumentCategory.OTHER);
+            UploadedFileListResult result = fileAssetService.getFileList(USER_ID, DocumentCategory.OTHER);
 
             // then
             assertThat(result).isNotNull();
@@ -342,7 +342,7 @@ public class ExperienceImportServiceTest {
                     .thenReturn(java.util.Optional.of(fileAsset));
 
             // when
-            experienceImportService.deleteFile(fileAssetId, USER_ID);
+            fileAssetService.deleteFile(fileAssetId, USER_ID);
 
             // then
             verify(fileAssetRepository).findByIdAndUserId(fileAssetId, USER_ID);
@@ -362,7 +362,7 @@ public class ExperienceImportServiceTest {
             // when
             BaseException ex = assertThrows(
                     BaseException.class,
-                    () -> experienceImportService.deleteFile(fileAssetId, USER_ID)
+                    () -> fileAssetService.deleteFile(fileAssetId, USER_ID)
             );
 
             // then
@@ -395,8 +395,8 @@ public class ExperienceImportServiceTest {
         return fileAsset;
     }
 
-    private ImportExperienceRequest createRequest() {
-        return new ImportExperienceRequest(DocumentCategory.values()[0]);
+    private UploadFileRequest createRequest() {
+        return new UploadFileRequest(DocumentCategory.values()[0]);
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {

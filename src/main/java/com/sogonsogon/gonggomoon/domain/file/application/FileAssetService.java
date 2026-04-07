@@ -1,11 +1,11 @@
-package com.sogonsogon.gonggomoon.domain.experience.application;
+package com.sogonsogon.gonggomoon.domain.file.application;
 
-import com.sogonsogon.gonggomoon.domain.experience.api.request.ImportExperienceRequest;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.ImportExperienceResult;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResult;
-import com.sogonsogon.gonggomoon.domain.experience.domain.DocumentCategory;
-import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
-import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
+import com.sogonsogon.gonggomoon.domain.file.api.request.UploadFileRequest;
+import com.sogonsogon.gonggomoon.domain.file.application.result.UploadFileResult;
+import com.sogonsogon.gonggomoon.domain.file.application.result.UploadedFileListResult;
+import com.sogonsogon.gonggomoon.domain.file.domain.DocumentCategory;
+import com.sogonsogon.gonggomoon.domain.file.domain.FileAsset;
+import com.sogonsogon.gonggomoon.domain.file.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
 import com.sogonsogon.gonggomoon.global.file.FileKeyGenerator;
 import com.sogonsogon.gonggomoon.global.config.MultipartProperties;
@@ -20,7 +20,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class ExperienceImportService {
+public class FileAssetService {
 
     private final FileAssetRepository fileAssetRepository;
     private final MultipartProperties multipartProperties;
@@ -33,7 +33,7 @@ public class ExperienceImportService {
      * @param file
      * @return
      */
-    public ImportExperienceResult uploadFile(Long userId, ImportExperienceRequest req, MultipartFile file) {
+    public UploadFileResult uploadFile(Long userId, UploadFileRequest req, MultipartFile file) {
 
         validateFile(file);
 
@@ -50,7 +50,7 @@ public class ExperienceImportService {
 
         fileAssetRepository.save(fileAsset);
 
-        return ImportExperienceResult.from(fileAsset);
+        return UploadFileResult.from(fileAsset);
     }
 
     /**

@@ -1,13 +1,13 @@
-package com.sogonsogon.gonggomoon.domain.experience.api;
+package com.sogonsogon.gonggomoon.domain.file.api;
 
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
-import com.sogonsogon.gonggomoon.domain.experience.api.request.ImportExperienceRequest;
-import com.sogonsogon.gonggomoon.domain.experience.api.response.ImportExperienceResponse;
-import com.sogonsogon.gonggomoon.domain.experience.api.response.UploadedFileListResponse;
-import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceImportService;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.ImportExperienceResult;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResult;
-import com.sogonsogon.gonggomoon.domain.experience.domain.DocumentCategory;
+import com.sogonsogon.gonggomoon.domain.file.api.request.UploadFileRequest;
+import com.sogonsogon.gonggomoon.domain.file.api.response.UploadFileResponse;
+import com.sogonsogon.gonggomoon.domain.file.api.response.UploadedFileListResponse;
+import com.sogonsogon.gonggomoon.domain.file.application.FileAssetService;
+import com.sogonsogon.gonggomoon.domain.file.application.result.UploadFileResult;
+import com.sogonsogon.gonggomoon.domain.file.application.result.UploadedFileListResult;
+import com.sogonsogon.gonggomoon.domain.file.domain.DocumentCategory;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +28,9 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
-public class ExperienceImportController {
+public class FileController {
 
-    private final ExperienceImportService experienceImportService;
+    private final FileAssetService experienceImportService;
 
     /**
      * 파일을 업로드 합니다.
@@ -43,17 +43,17 @@ public class ExperienceImportController {
             value = "/uploads/experiences",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public ResponseEntity<BaseResponse<ImportExperienceResponse>> uploadFile(
+    public ResponseEntity<BaseResponse<UploadFileResponse>> uploadFile(
             @AuthenticationPrincipal AccessUser user,
-            @RequestPart("request") @Valid ImportExperienceRequest req,
+            @RequestPart("request") @Valid UploadFileRequest req,
             @RequestPart("file") MultipartFile file
     ) {
-        ImportExperienceResult result = experienceImportService.uploadFile(
+        UploadFileResult result = experienceImportService.uploadFile(
                 user.getId(),
                 req,
                 file
         );
-        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(ImportExperienceResponse.from(result)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(UploadFileResponse.from(result)));
     }
 
     /**

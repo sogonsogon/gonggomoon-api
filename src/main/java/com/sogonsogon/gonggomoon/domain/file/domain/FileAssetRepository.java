@@ -1,4 +1,4 @@
-package com.sogonsogon.gonggomoon.domain.experience.domain;
+package com.sogonsogon.gonggomoon.domain.file.domain;
 
 import java.util.List;
 import java.util.Optional;

@@ -1,7 +1,7 @@
-package com.sogonsogon.gonggomoon.domain.experience.api.response;
+package com.sogonsogon.gonggomoon.domain.file.api.response;
 
-import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResult;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResultItem;
+import com.sogonsogon.gonggomoon.domain.file.application.result.UploadedFileListResult;
+import com.sogonsogon.gonggomoon.domain.file.application.result.UploadedFileListResultItem;
 import lombok.Builder;
 
 import java.util.List;
