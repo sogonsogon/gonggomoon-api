@@ -26,21 +26,16 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v2")
 @RequiredArgsConstructor
-public class FileController {
-
-    private final FileAssetService experienceImportService;
+public class FileV2Controller {
+    private final FileAssetService fileAssetService;
 
     /**
      * 파일을 업로드 합니다.
-     * @param user
-     * @param req
-     * @param file
-     * @return
      */
     @PostMapping(
-            value = "/uploads/experiences",
+            value = "/files",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<BaseResponse<UploadFileResponse>> uploadFile(
@@ -48,7 +43,7 @@ public class FileController {
             @RequestPart("request") @Valid UploadFileRequest req,
             @RequestPart("file") MultipartFile file
     ) {
-        UploadFileResult result = experienceImportService.uploadFile(
+        UploadFileResult result = fileAssetService.uploadFile(
                 user.getId(),
                 req,
                 file
@@ -59,11 +54,11 @@ public class FileController {
     /**
      * 업로드된 파일 목록을 조회 합니다.
      */
-    @GetMapping("/uploads/experiences")
+    @GetMapping("/files")
     public ResponseEntity<BaseResponse<UploadedFileListResponse>> getUploadFileList(
             @AuthenticationPrincipal AccessUser user,
             @RequestParam(required = false) DocumentCategory documentCategory) {
-        UploadedFileListResult result = experienceImportService.getFileList(user.getId(), documentCategory);
+        UploadedFileListResult result = fileAssetService.getFileList(user.getId(), documentCategory);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(UploadedFileListResponse.from(result)));
     }
@@ -71,11 +66,11 @@ public class FileController {
     /**
      * 업로드된 파일을 삭제합니다.
      */
-    @DeleteMapping("/uploads/experiences/{fileAssetId}")
+    @DeleteMapping("/files/{fileAssetId}")
     public ResponseEntity<BaseResponse<Void>> deleteFile(
             @AuthenticationPrincipal AccessUser user,
             @PathVariable("fileAssetId") Long fileAssetId) {
-        experienceImportService.deleteFile(fileAssetId, user.getId());
+        fileAssetService.deleteFile(fileAssetId, user.getId());
 
         return ResponseEntity.ok(BaseResponse.success());
     }
