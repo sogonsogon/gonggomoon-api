@@ -1,13 +1,13 @@
-package com.sogonsogon.gonggomoon.domain.experience.api;
+package com.sogonsogon.gonggomoon.domain.file.api;
 
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
-import com.sogonsogon.gonggomoon.domain.experience.api.request.ImportExperienceRequest;
-import com.sogonsogon.gonggomoon.domain.experience.api.response.ImportExperienceResponse;
-import com.sogonsogon.gonggomoon.domain.experience.api.response.UploadedFileListResponse;
-import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceImportService;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.ImportExperienceResult;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.UploadedFileListResult;
-import com.sogonsogon.gonggomoon.domain.experience.domain.DocumentCategory;
+import com.sogonsogon.gonggomoon.domain.file.api.request.UploadFileRequest;
+import com.sogonsogon.gonggomoon.domain.file.api.response.UploadFileResponse;
+import com.sogonsogon.gonggomoon.domain.file.api.response.UploadedFileListResponse;
+import com.sogonsogon.gonggomoon.domain.file.application.FileAssetService;
+import com.sogonsogon.gonggomoon.domain.file.application.result.UploadFileResult;
+import com.sogonsogon.gonggomoon.domain.file.application.result.UploadedFileListResult;
+import com.sogonsogon.gonggomoon.domain.file.domain.DocumentCategory;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,44 +26,39 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v2")
 @RequiredArgsConstructor
-public class ExperienceImportController {
-
-    private final ExperienceImportService experienceImportService;
+public class FileV2Controller {
+    private final FileAssetService fileAssetService;
 
     /**
      * 파일을 업로드 합니다.
-     * @param user
-     * @param req
-     * @param file
-     * @return
      */
     @PostMapping(
-            value = "/uploads/experiences",
+            value = "/files",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public ResponseEntity<BaseResponse<ImportExperienceResponse>> uploadFile(
+    public ResponseEntity<BaseResponse<UploadFileResponse>> uploadFile(
             @AuthenticationPrincipal AccessUser user,
-            @RequestPart("request") @Valid ImportExperienceRequest req,
+            @RequestPart("request") @Valid UploadFileRequest req,
             @RequestPart("file") MultipartFile file
     ) {
-        ImportExperienceResult result = experienceImportService.uploadFile(
+        UploadFileResult result = fileAssetService.uploadFile(
                 user.getId(),
                 req,
                 file
         );
-        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(ImportExperienceResponse.from(result)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(UploadFileResponse.from(result)));
     }
 
     /**
      * 업로드된 파일 목록을 조회 합니다.
      */
-    @GetMapping("/uploads/experiences")
+    @GetMapping("/files")
     public ResponseEntity<BaseResponse<UploadedFileListResponse>> getUploadFileList(
             @AuthenticationPrincipal AccessUser user,
             @RequestParam(required = false) DocumentCategory documentCategory) {
-        UploadedFileListResult result = experienceImportService.getFileList(user.getId(), documentCategory);
+        UploadedFileListResult result = fileAssetService.getFileList(user.getId(), documentCategory);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(UploadedFileListResponse.from(result)));
     }
@@ -71,11 +66,11 @@ public class ExperienceImportController {
     /**
      * 업로드된 파일을 삭제합니다.
      */
-    @DeleteMapping("/uploads/experiences/{fileAssetId}")
+    @DeleteMapping("/files/{fileAssetId}")
     public ResponseEntity<BaseResponse<Void>> deleteFile(
             @AuthenticationPrincipal AccessUser user,
             @PathVariable("fileAssetId") Long fileAssetId) {
-        experienceImportService.deleteFile(fileAssetId, user.getId());
+        fileAssetService.deleteFile(fileAssetId, user.getId());
 
         return ResponseEntity.ok(BaseResponse.success());
     }

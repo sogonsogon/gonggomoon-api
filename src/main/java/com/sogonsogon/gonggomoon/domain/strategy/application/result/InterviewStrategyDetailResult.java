@@ -1,6 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.strategy.application.result;
 
-import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
+import com.sogonsogon.gonggomoon.domain.file.domain.FileAsset;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
 import lombok.Builder;
 

@@ -1,7 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.strategy.application;
 
-import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
-import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
+import com.sogonsogon.gonggomoon.domain.file.domain.FileAsset;
+import com.sogonsogon.gonggomoon.domain.file.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.api.request.GenerateInterviewQuestionSetRequest;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GenerateInterviewQuestionSetResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewQuestionSetListResult;

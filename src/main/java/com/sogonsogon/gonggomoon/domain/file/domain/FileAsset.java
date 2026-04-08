@@ -1,4 +1,4 @@
-package com.sogonsogon.gonggomoon.domain.experience.domain;
+package com.sogonsogon.gonggomoon.domain.file.domain;
 
 import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;

@@ -1,7 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.strategy.application;
 
-import com.sogonsogon.gonggomoon.domain.experience.domain.FileAsset;
-import com.sogonsogon.gonggomoon.domain.experience.domain.FileAssetRepository;
+import com.sogonsogon.gonggomoon.domain.file.domain.FileAsset;
+import com.sogonsogon.gonggomoon.domain.file.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.api.request.GenerateInterviewQuestionSetRequest;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.GenerateInterviewQuestionSetResult;
 import com.sogonsogon.gonggomoon.domain.strategy.application.result.InterviewQuestionSetListResult;
@@ -11,7 +11,6 @@ import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
 import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.strategy.error.InterviewStrategyErrorCode;
-import com.sogonsogon.gonggomoon.domain.strategy.error.PortfolioStrategyErrorCode;
 import com.sogonsogon.gonggomoon.domain.strategy.generator.InterviewStrategyQuestionSetGenerator;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;

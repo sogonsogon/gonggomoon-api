@@ -1,4 +1,4 @@
-package com.sogonsogon.gonggomoon.domain.experience.domain;
+package com.sogonsogon.gonggomoon.domain.file.domain;
 
 public enum FileAssetStatus {
     UPLOADED, // 파일 업로드가 정상적으로 완료된 상태
