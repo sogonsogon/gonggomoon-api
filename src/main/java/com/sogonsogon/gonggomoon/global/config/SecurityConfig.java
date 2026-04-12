@@ -3,6 +3,7 @@ package com.sogonsogon.gonggomoon.global.config;
 import com.sogonsogon.gonggomoon.domain.auth.application.CustomOAuth2UserService;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.oauth2.OAuth2SuccessHandler;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.HttpCookieOAuth2AuthorizationRequestRepository;
+import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.JwtAuthenticationEntryPoint;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +24,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     // 💡 핵심: 세션 대신 쿠키에 OAuth2 인증 상태를 저장하는 커스텀 클래스
     private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
@@ -72,7 +74,12 @@ public class SecurityConfig {
 
             // 5. 일반적인 API 요청을 처리할 JWT 커스텀 필터 등록
             // 스프링의 기본 인증 필터(UsernamePassword)가 돌기 전에 우리 JWT 필터를 먼저 거치도록 설정
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+            // 6. 인증 실패 시 OAuth2 로그인 진입점으로 리다이렉트하는 기본 동작을 막고 401 JSON 응답으로 처리
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+            );
 
         return http.build();
     }
