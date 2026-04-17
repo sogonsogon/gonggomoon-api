@@ -1,8 +1,8 @@
 package com.sogonsogon.gonggomoon.global.error;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.JobType;
-import com.sogonsogon.gonggomoon.domain.strategy.error.PortfolioStrategyErrorCode;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.JobType;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.error.PortfolioStrategyErrorCode;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;

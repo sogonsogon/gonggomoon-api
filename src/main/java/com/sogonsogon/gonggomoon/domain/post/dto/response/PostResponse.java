@@ -2,7 +2,7 @@ package com.sogonsogon.gonggomoon.domain.post.dto.response;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sogonsogon.gonggomoon.domain.post.domain.PostStatus;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.JobType;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.JobType;
 
 import java.time.Instant;
 
