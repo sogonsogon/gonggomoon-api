@@ -1,5 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.ai.application;
 
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiFunctionStatus;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.AiFunctionStatusRequest;
@@ -13,9 +14,8 @@ import com.sogonsogon.gonggomoon.domain.ai.error.AiErrorCode;
 import com.sogonsogon.gonggomoon.domain.ai.error.ExtractedExperienceErrorCode;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.AiServerClient;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.GenerateStatus;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategyRepository;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.PortfolioStrategyRepository;
+import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategyRepository;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyRepository;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -126,7 +126,7 @@ public class AiService {
         return new AiFunctionStatusResponse(
             request.type(),
             request.id(),
-            GenerateStatus.valueOf(status),
+            AiFunctionStatus.valueOf(status),
             null
         );
     }
