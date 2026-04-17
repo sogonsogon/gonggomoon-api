@@ -57,7 +57,8 @@ http-client.cookies
 ### application yaml 파일
 application-*.yaml
 application-*.yml
+!application-dev.yml
 
 ### .env 파일
-.env
+*.env
 
