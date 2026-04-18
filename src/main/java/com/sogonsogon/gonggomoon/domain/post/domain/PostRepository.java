@@ -2,7 +2,7 @@ package com.sogonsogon.gonggomoon.domain.post.domain;
 
 import com.sogonsogon.gonggomoon.domain.post.dto.response.PostResponse;
 import com.sogonsogon.gonggomoon.domain.post.dto.response.PostsResponse;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.JobType;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.JobType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

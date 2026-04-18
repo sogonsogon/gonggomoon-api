@@ -2,9 +2,9 @@ package com.sogonsogon.gonggomoon.domain.ai.infrastructure;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sogonsogon.gonggomoon.domain.ai.error.InterviewStrategyResultMapperError;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewQuestion;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.InterviewStrategy;
-import com.sogonsogon.gonggomoon.domain.strategy.domain.QuestionLevel;
+import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewQuestion;
+import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategy;
+import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.QuestionLevel;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import java.util.ArrayList;
 import java.util.List;

@@ -1,6 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.post.dto.request;
 
-import com.sogonsogon.gonggomoon.domain.strategy.domain.JobType;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.JobType;
 import jakarta.validation.constraints.Size;
 
 public record SearchPostRequest(
