@@ -1,9 +1,10 @@
-package com.sogonsogon.gonggomoon.global.file;
+package com.sogonsogon.gonggomoon.domain.file.infrastructure.s3;
 
 import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
-import com.sogonsogon.gonggomoon.global.config.S3Properties;
+import com.sogonsogon.gonggomoon.domain.file.port.FileStorage;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -15,11 +16,13 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
-public class S3Uploader {
+@ConditionalOnProperty(name = "app.file.storage-type", havingValue = "s3")
+public class S3FileStorage implements FileStorage {
 
     private final S3Client s3Client;
     private final S3Properties s3Properties;
 
+    @Override
     public void upload(String key, MultipartFile file) {
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -40,6 +43,7 @@ public class S3Uploader {
         }
     }
 
+    @Override
     public void delete(String key) {
         try {
             DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()

@@ -1,4 +1,4 @@
-package com.sogonsogon.gonggomoon.global.config;
+package com.sogonsogon.gonggomoon.domain.file.infrastructure.s3;
 
 import lombok.Getter;
 import lombok.Setter;

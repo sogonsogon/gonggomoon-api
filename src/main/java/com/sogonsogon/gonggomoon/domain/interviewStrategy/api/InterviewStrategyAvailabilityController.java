@@ -9,9 +9,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class InterviewStrategyAvailabilityController {
 
@@ -20,7 +22,7 @@ public class InterviewStrategyAvailabilityController {
     /**
      * 생성 가능한지 조회합니다.
      */
-    @GetMapping("/api/v1/interview-strategies/availability")
+    @GetMapping("/interview-strategies/availability")
     public ResponseEntity<BaseResponse<InterviewStrategyAvailabilityResponse>> getStrategyAvailability(
             @AuthenticationPrincipal AccessUser user
     ) {

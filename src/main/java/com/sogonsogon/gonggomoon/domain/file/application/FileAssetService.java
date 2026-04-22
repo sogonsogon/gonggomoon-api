@@ -10,7 +10,7 @@ import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
 import com.sogonsogon.gonggomoon.global.file.FileKeyGenerator;
 import com.sogonsogon.gonggomoon.global.config.MultipartProperties;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
-import com.sogonsogon.gonggomoon.global.file.S3Uploader;
+import com.sogonsogon.gonggomoon.domain.file.infrastructure.s3.S3FileStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,7 +24,7 @@ public class FileAssetService {
 
     private final FileAssetRepository fileAssetRepository;
     private final MultipartProperties multipartProperties;
-    private final S3Uploader s3Uploader;
+    private final S3FileStorage s3Uploader;
 
     /**
      * 파일 업로드 서비스

@@ -10,7 +10,7 @@ import com.sogonsogon.gonggomoon.domain.file.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
 import com.sogonsogon.gonggomoon.global.config.MultipartProperties;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
-import com.sogonsogon.gonggomoon.global.file.S3Uploader;
+import com.sogonsogon.gonggomoon.domain.file.infrastructure.s3.S3FileStorage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -47,7 +47,7 @@ public class FileAssetServiceTest {
     private MultipartProperties multipartProperties;
 
     @Mock
-    private S3Uploader s3Uploader;
+    private S3FileStorage s3Uploader;
 
     @InjectMocks
     private FileAssetService fileAssetService;
