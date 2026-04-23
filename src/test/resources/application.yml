@@ -54,10 +54,13 @@ app:
     region: ap-northeast-2
     access-key: test-access-key
     secret-key: test-secret-key
+    endpoint: https://example
   cookie:
     secure: false
     http-only: true
     same-site: lax
+  file:
+    storage-type: s3
 
 ai:
   server:

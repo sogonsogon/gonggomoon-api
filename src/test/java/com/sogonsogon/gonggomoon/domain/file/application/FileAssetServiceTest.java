@@ -8,9 +8,9 @@ import com.sogonsogon.gonggomoon.domain.file.domain.DocumentCategory;
 import com.sogonsogon.gonggomoon.domain.file.domain.FileAsset;
 import com.sogonsogon.gonggomoon.domain.file.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
+import com.sogonsogon.gonggomoon.domain.file.port.FileStorage;
 import com.sogonsogon.gonggomoon.global.config.MultipartProperties;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
-import com.sogonsogon.gonggomoon.global.file.S3Uploader;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -47,7 +47,7 @@ public class FileAssetServiceTest {
     private MultipartProperties multipartProperties;
 
     @Mock
-    private S3Uploader s3Uploader;
+    private FileStorage fileStorage;
 
     @InjectMocks
     private FileAssetService fileAssetService;
@@ -85,7 +85,7 @@ public class FileAssetServiceTest {
             assertNotNull(result);
             assertEquals(100L, result.fileAssetId());
 
-            verify(s3Uploader).upload(anyString(), same(file));
+            verify(fileStorage).upload(anyString(), same(file));
             verify(fileAssetRepository).save(any(FileAsset.class));
         }
 
@@ -103,7 +103,7 @@ public class FileAssetServiceTest {
 
             // then
             assertEquals(FileAssetErrorCode.FILE_REQUIRED, ex.getErrorCode());
-            verify(s3Uploader, never()).upload(anyString(), any());
+            verify(fileStorage, never()).upload(anyString(), any());
             verify(fileAssetRepository, never()).save(any());
         }
 
@@ -127,7 +127,7 @@ public class FileAssetServiceTest {
 
             // then
             assertEquals(FileAssetErrorCode.EMPTY_FILE_NOT_ALLOWED, ex.getErrorCode());
-            verify(s3Uploader, never()).upload(anyString(), any());
+            verify(fileStorage, never()).upload(anyString(), any());
             verify(fileAssetRepository, never()).save(any());
         }
 
@@ -151,7 +151,7 @@ public class FileAssetServiceTest {
 
             // then
             assertEquals(FileAssetErrorCode.INVALID_FILE_NAME, ex.getErrorCode());
-            verify(s3Uploader, never()).upload(anyString(), any());
+            verify(fileStorage, never()).upload(anyString(), any());
             verify(fileAssetRepository, never()).save(any());
         }
 
@@ -178,7 +178,7 @@ public class FileAssetServiceTest {
 
             // then
             assertEquals(FileAssetErrorCode.FILE_SIZE_EXCEEDED, ex.getErrorCode());
-            verify(s3Uploader, never()).upload(anyString(), any());
+            verify(fileStorage, never()).upload(anyString(), any());
             verify(fileAssetRepository, never()).save(any());
         }
     }
@@ -346,7 +346,7 @@ public class FileAssetServiceTest {
 
             // then
             verify(fileAssetRepository).findByIdAndUserId(fileAssetId, USER_ID);
-            verify(s3Uploader).delete(fileAsset.getFileKey());
+            verify(fileStorage).delete(fileAsset.getFileKey());
             verify(fileAssetRepository).delete(fileAsset);
         }
 
@@ -368,7 +368,7 @@ public class FileAssetServiceTest {
             // then
             assertEquals(FileAssetErrorCode.NOT_FOUND, ex.getErrorCode());
             verify(fileAssetRepository).findByIdAndUserId(fileAssetId, USER_ID);
-            verify(s3Uploader, never()).delete((anyString()));
+            verify(fileStorage, never()).delete((anyString()));
             verify(fileAssetRepository, never()).delete(any(FileAsset.class));
         }
     }

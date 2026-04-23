@@ -7,10 +7,10 @@ import com.sogonsogon.gonggomoon.domain.file.domain.DocumentCategory;
 import com.sogonsogon.gonggomoon.domain.file.domain.FileAsset;
 import com.sogonsogon.gonggomoon.domain.file.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.experience.error.FileAssetErrorCode;
+import com.sogonsogon.gonggomoon.domain.file.port.FileStorage;
 import com.sogonsogon.gonggomoon.global.file.FileKeyGenerator;
 import com.sogonsogon.gonggomoon.global.config.MultipartProperties;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
-import com.sogonsogon.gonggomoon.global.file.S3Uploader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,7 +24,7 @@ public class FileAssetService {
 
     private final FileAssetRepository fileAssetRepository;
     private final MultipartProperties multipartProperties;
-    private final S3Uploader s3Uploader;
+    private final FileStorage fileStorage;
 
     /**
      * 파일 업로드 서비스
@@ -39,7 +39,7 @@ public class FileAssetService {
 
         String fileKey = FileKeyGenerator.generate(file.getOriginalFilename());
 
-        s3Uploader.upload(fileKey, file);
+        fileStorage.upload(fileKey, file);
 
         FileAsset fileAsset = FileAsset.create(
                 userId,
@@ -96,7 +96,7 @@ public class FileAssetService {
         FileAsset fileAsset = fileAssetRepository.findByIdAndUserId(fileAssetId, userId)
                 .orElseThrow(() -> new BaseException(FileAssetErrorCode.NOT_FOUND));
 
-        s3Uploader.delete(fileAsset.getFileKey());
+        fileStorage.delete(fileAsset.getFileKey());
         fileAssetRepository.delete(fileAsset);
     }
 }

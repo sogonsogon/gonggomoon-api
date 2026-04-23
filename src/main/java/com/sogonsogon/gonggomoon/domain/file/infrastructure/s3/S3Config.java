@@ -1,6 +1,8 @@
-package com.sogonsogon.gonggomoon.global.config;
+package com.sogonsogon.gonggomoon.domain.file.infrastructure.s3;
 
 import java.net.URI;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +13,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 @Configuration
 @EnableConfigurationProperties(S3Properties.class)
+@ConditionalOnProperty(name = "app.file.storage-type", havingValue = "s3")
 public class S3Config {
 
     @Bean
