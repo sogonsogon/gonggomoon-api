@@ -11,11 +11,13 @@ import com.sogonsogon.gonggomoon.domain.experience.error.ExperienceErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ExperienceService {
     private final ExperienceRepository experienceRepository;
 
@@ -25,6 +27,7 @@ public class ExperienceService {
      * @param req
      * @return
      */
+    @Transactional
     public CreateExperienceResult create(Long userId, CreateExperienceRequest req) {
         Experience experience = Experience.create(userId, req.title(), req.experienceType(), req.experienceContent(), req.startDate(), req.endDate());
         Experience savedExperience = experienceRepository.save(experience);
@@ -39,6 +42,7 @@ public class ExperienceService {
      * @param req
      * @return
      */
+    @Transactional
     public ExperienceDetailResult update(Long experienceId, Long userId, UpdateExperienceRequest req) {
         Experience experience = experienceRepository.findByIdAndUserId(experienceId, userId)
                 .orElseThrow(() -> new BaseException(ExperienceErrorCode.NOT_FOUND));
@@ -53,6 +57,7 @@ public class ExperienceService {
      * @param experienceId
      * @param userId
      */
+    @Transactional
     public void deleteExperience(Long experienceId, Long userId) {
         Experience experience = experienceRepository.findByIdAndUserId(experienceId, userId)
                 .orElseThrow(() -> new BaseException(ExperienceErrorCode.NOT_FOUND));
