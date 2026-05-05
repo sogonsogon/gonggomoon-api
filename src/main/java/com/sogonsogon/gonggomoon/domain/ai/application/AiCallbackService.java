@@ -3,12 +3,15 @@ package com.sogonsogon.gonggomoon.domain.ai.application;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiFunctionStatus;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiFunctions;
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiJobStatus;
 import com.sogonsogon.gonggomoon.domain.ai.domain.Experiences;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractionStatus;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.BaseCallbackRequest;
+import com.sogonsogon.gonggomoon.domain.ai.dto.response.AiFunctionStatusResponse;
 import com.sogonsogon.gonggomoon.domain.ai.error.ExtractedExperienceErrorCode;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.ExperienceResultMapper;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.InterviewQuestionResultMapper;
@@ -30,6 +33,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 
 @Service
@@ -41,6 +46,7 @@ public class AiCallbackService {
     private final PortfolioStrategyRepository portfolioStrategyRepository;
     private final InterviewStrategyRepository interviewStrategyRepository;
     private final InterviewQuestionResultMapper interviewQuestionResultMapper;
+    private final AiJobSseService aiJobSseService;
 
     private final ObjectMapper objectMapper;
 
@@ -73,6 +79,7 @@ public class AiCallbackService {
                 experience.updateStatus(ExtractionStatus.FAILED);
             }
             extractedExperienceRepository.saveAll(experiencesToUpdate);
+            notifyJobStatusAfterCommit(request.userId(), AiFunctions.EXTRACT_EXPERIENCE, ids, AiFunctionStatus.FAILED);
             return;
         }
 
@@ -100,6 +107,7 @@ public class AiCallbackService {
         }
 
         extractedExperienceRepository.saveAll(entitiesToSave);
+        notifyJobStatusAfterCommit(request.userId(), AiFunctions.EXTRACT_EXPERIENCE, ids, AiFunctionStatus.READY);
     }
 
     @Transactional
@@ -113,6 +121,7 @@ public class AiCallbackService {
         if (request.status() == AiJobStatus.FAILED) {
             fountStrategy.updateStatus(PortfolioStrategyGenerateStatus.FAILED);
             portfolioStrategyRepository.save(fountStrategy);
+            notifyJobStatusAfterCommit(request.userId(), AiFunctions.PORTFOLIO_STRATEGY, request.id(), AiFunctionStatus.FAILED);
             return;
         }
 
@@ -140,6 +149,7 @@ public class AiCallbackService {
 
         // 명시적으로 업데이트를 표현하기 위해 save() 호출 (영속성 컨텍스트에 의해 자동으로 업데이트가 될 수 있지만, 명시적으로 표현)
         portfolioStrategyRepository.save(fountStrategy);
+        notifyJobStatusAfterCommit(request.userId(), AiFunctions.PORTFOLIO_STRATEGY, request.id(), AiFunctionStatus.READY);
 
     }
 
@@ -156,6 +166,7 @@ public class AiCallbackService {
         if (request.status() == AiJobStatus.FAILED) {
             foundStrategy.updateStateFailed();
             interviewStrategyRepository.save(foundStrategy);
+            notifyJobStatusAfterCommit(request.userId(), AiFunctions.INTERVIEW_STRATEGY, request.id(), AiFunctionStatus.FAILED);
             return;
         }
 
@@ -171,5 +182,33 @@ public class AiCallbackService {
 
         // 명시적으로 업데이트를 표현하기 위해 save() 호출 (영속성 컨텍스트에 의해 자동으로 업데이트가 될 수 있지만, 명시적으로 표현)
         interviewStrategyRepository.save(foundStrategy);
+        notifyJobStatusAfterCommit(request.userId(), AiFunctions.INTERVIEW_STRATEGY, request.id(), AiFunctionStatus.READY);
+    }
+
+    private void notifyJobStatusAfterCommit(Long userId, AiFunctions type, List<Long> ids, AiFunctionStatus status) {
+        runAfterCommit(() -> ids.forEach(id -> notifyJobStatus(userId, type, id, status)));
+    }
+
+    private void notifyJobStatusAfterCommit(Long userId, AiFunctions type, Long id, AiFunctionStatus status) {
+        runAfterCommit(() -> notifyJobStatus(userId, type, id, status));
+    }
+
+    private void notifyJobStatus(Long userId, AiFunctions type, Long id, AiFunctionStatus status) {
+        aiJobSseService.send(userId, new AiFunctionStatusResponse(type, id, status, null));
+        aiJobSseService.complete(userId, type, id);
+    }
+
+    private void runAfterCommit(Runnable runnable) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            runnable.run();
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                runnable.run();
+            }
+        });
     }
 }

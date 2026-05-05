@@ -19,6 +19,7 @@ import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrate
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.stream.StreamSupport;
@@ -31,6 +32,7 @@ public class AiService {
     private final PortfolioStrategyRepository portfolioStrategyRepository;
     private final InterviewStrategyRepository interviewStrategyRepository;
     private final AiServerClient aiServerClient;
+    private final AiJobSseService aiJobSseService;
 
     /*
     * AI 서버에 경험 추출 요청을 처리하는 비즈니스 로직
@@ -129,6 +131,34 @@ public class AiService {
             AiFunctionStatus.valueOf(status),
             null
         );
+    }
+
+    public SseEmitter subscribe(Long userId, AiFunctionStatusRequest request) {
+        SseEmitter emitter = aiJobSseService.register(userId, request.type(), request.id());
+
+        try {
+            AiFunctionStatusResponse response = checkAiFunctionStatus(userId, request);
+
+            aiJobSseService.send(userId, response);
+
+            if (isTerminalStatus(response.status())) {
+                aiJobSseService.complete(userId, request.type(), request.id());
+            }
+        } catch (RuntimeException e) {
+            aiJobSseService.complete(userId, request.type(), request.id());
+            throw e;
+        }
+
+        return emitter;
+    }
+
+    public boolean isTerminalJobStatus(Long userId, AiFunctionStatusRequest request) {
+        AiFunctionStatusResponse response = checkAiFunctionStatus(userId, request);
+        return isTerminalStatus(response.status());
+    }
+
+    private boolean isTerminalStatus(AiFunctionStatus status) {
+        return status == AiFunctionStatus.READY || status == AiFunctionStatus.FAILED;
     }
 
     private String getExperienceExtractionStatus(Long userId, Long extractedExperienceId) {
