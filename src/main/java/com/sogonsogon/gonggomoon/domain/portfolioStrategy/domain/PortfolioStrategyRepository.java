@@ -18,4 +18,5 @@ public interface PortfolioStrategyRepository {
     boolean existsByUserIdAndGeneratedDate(Long userId, LocalDate today);
 
     int countByUserIdAndGeneratedDate(Long userId, LocalDate generatedDate);
+
 }

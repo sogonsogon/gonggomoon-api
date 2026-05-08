@@ -2,7 +2,8 @@ package com.sogonsogon.gonggomoon.domain.portfolioStrategy.application;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sogonsogon.gonggomoon.domain.ai.application.AiService;
+import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.industry.domain.Industry;
@@ -40,10 +41,12 @@ public class PortfolioStrategyService {
     private final PortfolioStrategyContentGenerator portfolioStrategyContentGenerator;
     private final ObjectMapper objectMapper;
 
-    private final AiService aiService;
+    private final AiUsagePolicyService aiUsagePolicyService;
 
-    @Value("${strategy.portfolio.daily-limit-enabled:true}")
-    private boolean dailyLimitEnabled;
+    @Value("${strategy.portfolio.weekly-limit-enabled:true}")
+    private boolean weeklyLimitEnabled;
+
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
     /**
      * 포트폴리오 전략 생성 서비스
@@ -61,14 +64,7 @@ public class PortfolioStrategyService {
          * today : 그 시각에서 파생된 날짜
          */
         Instant now = Instant.now();
-        LocalDate today = now.atZone(ZoneId.of("Asia/Seoul")).toLocalDate();
-
-        /**
-         * 전략이 이미 있는지 검증
-         */
-        if (dailyLimitEnabled && portfolioStrategyRepository.existsByUserIdAndGeneratedDate(userId, today)) {
-            throw new BaseException(PortfolioStrategyErrorCode.ALREADY_CREATED_TODAY);
-        }
+        LocalDate today = now.atZone(KST).toLocalDate();
 
         /**
          * 경험 목록 조회
@@ -76,6 +72,13 @@ public class PortfolioStrategyService {
         List<Experience> experiences = experienceRepository.findAllByIdInAndUserId(req.experienceIds(), userId);
         if (experiences.size() != req.experienceIds().size()) {
             throw new BaseException(PortfolioStrategyErrorCode.REQUESTED_EXPERIENCE_NOT_FOUND);
+        }
+
+        /**
+         * 이번 주 성공한 전략 생성 횟수를 검증
+         */
+        if (weeklyLimitEnabled && !aiUsagePolicyService.reserve(userId, AiUsageType.PORTFOLIO_STRATEGY)) {
+            throw new BaseException(PortfolioStrategyErrorCode.WEEKLY_LIMIT_EXCEEDED);
         }
 
         /**
@@ -174,4 +177,5 @@ public class PortfolioStrategyService {
         }
         return industryName;
     }
+
 }

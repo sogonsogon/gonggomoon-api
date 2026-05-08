@@ -9,5 +9,4 @@ public interface ExtractedExperienceJpaRepository extends JpaRepository<Extracte
     ExtractedExperienceRepository {
 
     Optional<ExtractedExperience> findByUserIdAndId(Long userId, Long id);
-
 }

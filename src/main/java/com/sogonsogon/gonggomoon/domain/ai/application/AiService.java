@@ -3,6 +3,7 @@ package com.sogonsogon.gonggomoon.domain.ai.application;
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiFunctionStatus;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
+import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractionStatus;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.AiFunctionStatusRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractionAiServerRequest;
@@ -16,10 +17,14 @@ import com.sogonsogon.gonggomoon.domain.ai.infrastructure.AiServerClient;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyRepository;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyGenerateStatus;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
@@ -32,6 +37,8 @@ public class AiService {
     private final InterviewStrategyRepository interviewStrategyRepository;
     private final AiServerClient aiServerClient;
 
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+
     /*
     * AI 서버에 경험 추출 요청을 처리하는 비즈니스 로직
     *
@@ -42,11 +49,12 @@ public class AiService {
 
          // DTO 생성
         ExperienceExtractRequest request = new ExperienceExtractRequest(userId, fileAssetIds);
+        LocalDate generatedDate = Instant.now().atZone(KST).toLocalDate();
 
         // ExtractedExperience 엔티티 생성
 
         List<ExtractedExperience> extractedExperiences = request.fileAssetIds().stream()
-            .map(fileAssetId -> ExtractedExperience.create(request.userId(), fileAssetId))
+            .map(fileAssetId -> ExtractedExperience.create(request.userId(), fileAssetId, generatedDate))
             .toList();
         Iterable<ExtractedExperience> savedExtractedExperienceIterable = extractedExperienceRepository.saveAll(extractedExperiences);
         List<ExtractedExperience> savedExtractedExperiences = StreamSupport
@@ -59,7 +67,15 @@ public class AiService {
 
         // AI 서버에 경험 추출 요청 전송
         ExperienceExtractionAiServerRequest aiServerRequest = new ExperienceExtractionAiServerRequest(savedExtractedExperienceIds);
-        aiServerClient.requestExperienceExtraction(aiServerRequest);
+        try {
+            aiServerClient.requestExperienceExtraction(aiServerRequest);
+        } catch (RuntimeException exception) {
+            savedExtractedExperiences.forEach(extractedExperience -> {
+                extractedExperience.updateStatus(ExtractionStatus.FAILED);
+            });
+            extractedExperienceRepository.saveAll(savedExtractedExperiences);
+            throw exception;
+        }
 
         return new ExperienceExtractResponse(savedExtractedExperienceIds);
     }
@@ -87,7 +103,16 @@ public class AiService {
         );
 
         // AI 서버에 포트폴리오 전략 생성 요청 전송
-        aiServerClient.requestPortfolioStrategyGeneration(request);
+        try {
+            aiServerClient.requestPortfolioStrategyGeneration(request);
+        } catch (RuntimeException exception) {
+            portfolioStrategyRepository.findByIdAndUserId(portfolioStrategyId, userId)
+                .ifPresent(portfolioStrategy -> {
+                    portfolioStrategy.updateStatus(PortfolioStrategyGenerateStatus.FAILED);
+                    portfolioStrategyRepository.save(portfolioStrategy);
+                });
+            throw exception;
+        }
     }
 
     /*
@@ -102,7 +127,16 @@ public class AiService {
         InterviewStrategyRequest request = new InterviewStrategyRequest(userId, interviewStrategyId);
 
         // AI 서버에 포트폴리오 전략 생성 요청 전송
-        aiServerClient.requestInterviewStrategyGeneration(request);
+        try {
+            aiServerClient.requestInterviewStrategyGeneration(request);
+        } catch (RuntimeException exception) {
+            interviewStrategyRepository.findByIdAndUserId(interviewStrategyId, userId)
+                .ifPresent(interviewStrategy -> {
+                    interviewStrategy.updateStateFailed();
+                    interviewStrategyRepository.save(interviewStrategy);
+                });
+            throw exception;
+        }
     }
 
     /*

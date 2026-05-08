@@ -12,7 +12,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
-import java.util.List;
+import java.time.LocalDate;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -55,6 +55,9 @@ public class ExtractedExperience {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "generated_date", nullable = false, updatable = false)
+    private LocalDate generatedDate;
+
     /**
      * 업데이트 시각 (UTC)
      */
@@ -73,18 +76,21 @@ public class ExtractedExperience {
     private ExtractedExperience(
         Long userId,
         Long fileAssetId,
-        ExtractionStatus status
+        ExtractionStatus status,
+        LocalDate generatedDate
     ) {
         this.userId = userId;
         this.fileAssetId = fileAssetId;
         this.status = status;
+        this.generatedDate = generatedDate;
     }
 
-    public static ExtractedExperience create(Long userId, Long fileAssetId) {
+    public static ExtractedExperience create(Long userId, Long fileAssetId, LocalDate generatedDate) {
         return ExtractedExperience.builder()
             .userId(userId)
             .fileAssetId(fileAssetId)
             .status(ExtractionStatus.PROCESSING)
+            .generatedDate(generatedDate)
             .build();
     }
 
@@ -95,4 +101,5 @@ public class ExtractedExperience {
     public void updateStatus(ExtractionStatus newStatus) {
         this.status = newStatus;
     }
+
 }

@@ -1,5 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.interviewStrategy.application;
 
+import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
 import com.sogonsogon.gonggomoon.domain.file.domain.FileAsset;
 import com.sogonsogon.gonggomoon.domain.file.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.api.request.GenerateInterviewQuestionSetRequest;
@@ -27,7 +29,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +45,9 @@ public class InterviewStrategyServiceTest {
 
     @Mock
     private InterviewStrategyQuestionSetGenerator interviewStrategyQuestionSetGenerator;
+
+    @Mock
+    private AiUsagePolicyService aiUsagePolicyService;
 
     @InjectMocks
     private InterviewStrategyService interviewStrategyService;
@@ -101,11 +105,14 @@ public class InterviewStrategyServiceTest {
         void generate_success_saveDraftAndRequestAi() {
             // given
             GenerateInterviewQuestionSetRequest req = new GenerateInterviewQuestionSetRequest(FILE_ASSET_ID);
+            ReflectionTestUtils.setField(interviewStrategyService, "weeklyLimitEnabled", true);
 
             FileAsset fileAsset = mock(FileAsset.class);
 
             when(fileAssetRepository.findByIdAndUserId(FILE_ASSET_ID, USER_ID))
                     .thenReturn(Optional.of(fileAsset));
+            when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.INTERVIEW_STRATEGY))
+                    .thenReturn(true);
 
             when(interviewStrategyRepository.save(any(InterviewStrategy.class)))
                     .thenAnswer(invocation -> {
@@ -140,14 +147,17 @@ public class InterviewStrategyServiceTest {
         }
 
         @Test
-        @DisplayName("오늘 이미 생성한 질문이 있으면 다시 생성할 수 없다")
-        void generate_fail_whenStrategyAlreadyCreatedToday() {
+        @DisplayName("이번 주 성공한 질문 생성 횟수가 7회이면 다시 생성할 수 없다")
+        void generate_fail_whenWeeklyLimitReached() {
             // given
-            ReflectionTestUtils.setField(interviewStrategyService, "dailyLimitEnabled", true);
+            ReflectionTestUtils.setField(interviewStrategyService, "weeklyLimitEnabled", true);
             GenerateInterviewQuestionSetRequest req = new GenerateInterviewQuestionSetRequest(FILE_ASSET_ID);
+            FileAsset fileAsset = mock(FileAsset.class);
 
-            when(interviewStrategyRepository.existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class)))
-                    .thenReturn(true);
+            when(fileAssetRepository.findByIdAndUserId(FILE_ASSET_ID, USER_ID))
+                    .thenReturn(Optional.of(fileAsset));
+            when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.INTERVIEW_STRATEGY))
+                    .thenReturn(false);
 
             // when
             BaseException exception = assertThrows(
@@ -156,8 +166,8 @@ public class InterviewStrategyServiceTest {
             );
 
             // then
-            assertEquals(InterviewStrategyErrorCode.ALREADY_CREATED_TODAY, exception.getErrorCode());
-            verify(interviewStrategyRepository).existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class));
+            assertEquals(InterviewStrategyErrorCode.WEEKLY_LIMIT_EXCEEDED, exception.getErrorCode());
+            verify(aiUsagePolicyService).reserve(USER_ID, AiUsageType.INTERVIEW_STRATEGY);
         }
     }
 
