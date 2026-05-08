@@ -76,6 +76,10 @@ management:
 
 strategy:
   portfolio:
-    daily-limit-enabled: false # 개발 환경에서는 false, 운영 환경에서는 true로 설정하세요.
+    weekly-limit-enabled: false # 개발 환경에서는 false, 운영 환경에서는 true로 설정하세요.
   interview:
-    daily-limit-enabled: false
+    weekly-limit-enabled: false
+
+experience:
+  extraction:
+    weekly-limit-enabled: false

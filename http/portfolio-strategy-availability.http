@@ -41,7 +41,7 @@ Authorization: Bearer {{token}}
 ### =========================================================
 ### 2. 포트폴리오 전략 1회 생성 후 생성 가능 상태 조회 - usedCount = 1 확인용
 ### 전제:
-### - daily-limit-enabled=true 인 환경
+### - weekly-limit-enabled=true 인 환경
 ### - 오늘 아직 전략을 생성하지 않은 계정이어야 합니다.
 ### 기대:
 ### - 생성 API 성공 후 availability 조회 시
@@ -67,7 +67,7 @@ Authorization: Bearer {{token}}
 ### =========================================================
 ### 3. 생성 제한이 꺼진 환경(dev/staging 등) 확인용
 ### 전제:
-### - strategy.portfolio.daily-limit-enabled=false
+### - strategy.portfolio.weekly-limit-enabled=false
 ### 기대:
 ### - canGenerate = true
 ### - usedCount는 현재 구현에 따라 0으로 고정될 수 있음
