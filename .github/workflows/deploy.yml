@@ -1,73 +1,88 @@
-name: CI/CD Pipeline
+name: Deploy to EC2
 
 on:
   push:
-    branches: [ "main" ] # main 브랜치에 코드가 푸시되면 실행
+    branches: [ "main" ]
 
-env:
-  # 소문자로 작성해야 에러가 안 납니다.
-  DOCKER_IMAGE: ghcr.io/${{ github.repository_owner }}/gonggomoon-api
+permissions:
+  contents: read
+  id-token: write
+  packages: write
 
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest # GitHub의 강력한 서버 사용
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+      APP_PORT: ${{ vars.APP_PORT }}
+      IMAGE_TAG: ${{ github.sha }}
+      CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
 
     steps:
-      # 1. 내 코드 가져오기
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      # 2. JDK 17 세팅
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
+          distribution: temurin
           java-version: '17'
-          distribution: 'temurin'
+          cache: gradle
 
-      # 3. Spring Boot 빌드 (테스트 코드는 생략하여 속도 향상)
-      - name: Build with Gradle
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Test
+        run: ./gradlew test
+
+      - name: Build jar
+        run: ./gradlew clean bootJar
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
         run: |
-          chmod +x ./gradlew
-          ./gradlew clean build -x test
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
+          docker tag ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} \
+                     ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
 
-      # 4. Docker 이미지 빌드
-      - name: Build Docker Image
-        run: docker build -t ${{ env.DOCKER_IMAGE }}:latest .
+      - name: Push Docker image
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
 
-      # 5. GHCR 로그인 (GitHub 기본 제공 토큰 사용)
-      - name: Login to GHCR
-        uses: docker/login-action@v2
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # 6. 만들어진 도커 이미지를 GHCR에 업로드
-      - name: Push Docker Image
-        run: docker push ${{ env.DOCKER_IMAGE }}:latest
-
-      # 7. GCP VM에 접속해서 배포 명령 실행
-      - name: Deploy to GCP VM
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.GCP_VM_IP }}
-          username: ${{ secrets.GCP_VM_USER }}
-          key: ${{ secrets.GCP_VM_SSH_KEY }}
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1) VM 내부에서 GHCR 로그인
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
-            
-            # 2) 방금 올린 최신 이미지 다운로드
-            docker pull ${{ env.DOCKER_IMAGE }}:latest
-            
-            # 3) 기존에 돌고 있던 컨테이너 멈추고 삭제 (없으면 무시)
-            docker stop api-server || true
-            docker rm api-server || true
-            
-            # 4) 새 컨테이너 실행 (여기가 수정된 부분입니다!)
-            docker run -d --name api-server -p 8080:8080 \
-              --env-file /home/${{ secrets.GCP_VM_USER }}/.env \
-              -e "SPRING_PROFILES_ACTIVE=prod" \
-              ${{ env.DOCKER_IMAGE }}:latest
-            
-            # 5) 용량 확보를 위해 안 쓰는 옛날 이미지 삭제
-            docker image prune -f
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} | \
+              docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+
+            docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
+
+            docker run -d \
+              --name ${{ env.CONTAINER_NAME }} \
+              -p ${{ env.APP_PORT }}:${{ env.APP_PORT }} \
+              --env-file /home/ec2-user/gonggomoon/.env \
+              -v /home/ec2-user/gonggomoon/config:/app/config \
+              -e SPRING_PROFILES_ACTIVE=prod \
+              -e SPRING_CONFIG_ADDITIONAL_LOCATION=file:/app/config/ \
+              --restart always \
+              ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
