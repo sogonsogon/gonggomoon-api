@@ -75,6 +75,7 @@ app:
   file:
     storage-type: ${FILE_STORAGE_TYPE} # s3 || gcs
   cookie:
+    domain: gonggomoon.com
     secure: true # 개발 환경에서는 false, 운영 환경에서는 true로 설정하세요.
     http-only: true
     same-site: lax # 프론트/백엔드가 같은 localhost면 Lax로 테스트 가능
