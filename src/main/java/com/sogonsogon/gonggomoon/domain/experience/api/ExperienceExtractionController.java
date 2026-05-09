@@ -3,7 +3,9 @@ package com.sogonsogon.gonggomoon.domain.experience.api;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.experience.api.request.ExperienceExtractRequest;
 import com.sogonsogon.gonggomoon.domain.experience.api.response.ExperienceExtractionResponse;
+import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceExtractionAvailabilityService;
 import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceExtractionService;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionAvailabilityResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionSearchResult;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ExperienceExtractionController {
 
     private final ExperienceExtractionService extractionService;
+    private final ExperienceExtractionAvailabilityService extractionAvailabilityService;
 
     @PostMapping("/extractions")
     public ResponseEntity<BaseResponse<ExperienceExtractionResponse>> startExperienceExtraction(
@@ -32,6 +35,16 @@ public class ExperienceExtractionController {
             @RequestBody @Valid ExperienceExtractRequest req) {
         ExperienceExtractionResult result = extractionService.startExperienceExtraction(req, user.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(ExperienceExtractionResponse.from(result)));
+    }
+
+    @GetMapping("/extractions/availability")
+    public ResponseEntity<BaseResponse<ExperienceExtractionAvailabilityResult>> getExtractionAvailability(
+            @AuthenticationPrincipal AccessUser user
+    ) {
+        ExperienceExtractionAvailabilityResult result =
+                extractionAvailabilityService.getAvailability(user.getId());
+
+        return ResponseEntity.ok(BaseResponse.success(result));
     }
 
     /*

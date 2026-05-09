@@ -1,8 +1,10 @@
 package com.sogonsogon.gonggomoon.domain.portfolioStrategy.application;
 
+import com.sogonsogon.gonggomoon.domain.ai.application.AiUsageAvailability;
+import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyAvailabilityResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.support.PortfolioStrategyAvailabilityCalculator;
-import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,22 +14,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
-import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class PortfolioStrategyAvailabilityServiceTest {
 
     @Mock
-    private PortfolioStrategyRepository portfolioStrategyRepository;
+    private PortfolioStrategyAvailabilityCalculator portfolioStrategyAvailabilityCalculator;
 
     @Mock
-    private PortfolioStrategyAvailabilityCalculator portfolioStrategyAvailabilityCalculator;
+    private AiUsagePolicyService aiUsagePolicyService;
 
     @InjectMocks
     private PortfolioStrategyAvailabilityService portfolioStrategyAvailabilityService;
@@ -39,74 +39,69 @@ public class PortfolioStrategyAvailabilityServiceTest {
     class GetAvailabilityTest {
 
         @Test
-        @DisplayName("일일 제한이 켜져 있고 오늘 사용 횟수가 0이면 생성 가능하다")
-        void getAvailability_success_whenDailyLimitEnabled_andNotUsedToday() throws Exception {
-            // given - dailyLimitEnabled를 true로 바꿔주는 코드
-            setField(portfolioStrategyAvailabilityService, "dailyLimitEnabled", true);
-
-            // countByUserIdAndGeneratedDate가 호출되면 오늘 사용 횟수를 0으로 돌려준다.
-            when(portfolioStrategyRepository.countByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class)))
-                    .thenReturn(0);
-            when(portfolioStrategyAvailabilityCalculator.calculate(0, 1, true))
-                    .thenReturn(PortfolioStrategyAvailabilityResult.of(0, 1, true));
+        @DisplayName("주간 제한이 켜져 있고 이번 주 성공 횟수가 0이면 생성 가능하다")
+        void getAvailability_success_whenWeeklyLimitEnabled_andNotUsedThisWeek() throws Exception {
+            // given - weeklyLimitEnabled를 true로 바꿔주는 코드
+            setField(portfolioStrategyAvailabilityService, "weeklyLimitEnabled", true);
+            when(aiUsagePolicyService.getAvailability(USER_ID, AiUsageType.PORTFOLIO_STRATEGY, true))
+                    .thenReturn(new AiUsageAvailability(0, 7, true, true));
+            when(portfolioStrategyAvailabilityCalculator.calculate(eq(0), eq(7), eq(true)))
+                    .thenReturn(PortfolioStrategyAvailabilityResult.of(0, 7, true));
 
             // when
             PortfolioStrategyAvailabilityResult result = portfolioStrategyAvailabilityService.getAvailability(USER_ID);
 
             // then
             assertEquals(0, result.usedCount());
-            assertEquals(1, result.limitCount());
+            assertEquals(7, result.limitCount());
             assertTrue(result.canGenerate());
 
-            verify(portfolioStrategyRepository)
-                    .countByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class));
-            verify(portfolioStrategyAvailabilityCalculator).calculate(0, 1, true);
+            verify(aiUsagePolicyService).getAvailability(USER_ID, AiUsageType.PORTFOLIO_STRATEGY, true);
+            verify(portfolioStrategyAvailabilityCalculator).calculate(eq(0), eq(7), eq(true));
         }
 
         @Test
-        @DisplayName("일일 제한이 켜져 있고 오늘 이미 1회 사용했으면 생성할 수 없다")
-        void getAvailability_success_whenDailyLimitEnabled_andAlreadyUsedToday() throws Exception {
+        @DisplayName("주간 제한이 켜져 있고 이번 주 성공 횟수가 7이면 생성할 수 없다")
+        void getAvailability_success_whenWeeklyLimitEnabled_andLimitReached() throws Exception {
             // given
-            setField(portfolioStrategyAvailabilityService, "dailyLimitEnabled", true);
-
-            // 오늘 이미 한번 생성한 상태를 가짜로 만들어준다. (usedCount = 1)
-            when(portfolioStrategyRepository.countByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class)))
-                    .thenReturn(1);
-            when(portfolioStrategyAvailabilityCalculator.calculate(1, 1, true))
-                    .thenReturn(PortfolioStrategyAvailabilityResult.of(1, 1, false));
+            setField(portfolioStrategyAvailabilityService, "weeklyLimitEnabled", true);
+            when(aiUsagePolicyService.getAvailability(USER_ID, AiUsageType.PORTFOLIO_STRATEGY, true))
+                    .thenReturn(new AiUsageAvailability(7, 7, false, true));
+            when(portfolioStrategyAvailabilityCalculator.calculate(eq(7), eq(7), eq(true)))
+                    .thenReturn(PortfolioStrategyAvailabilityResult.of(7, 7, false));
 
             // when
             PortfolioStrategyAvailabilityResult result = portfolioStrategyAvailabilityService.getAvailability(USER_ID);
 
             // then
-            assertEquals(1, result.usedCount());
-            assertEquals(1, result.limitCount());
+            assertEquals(7, result.usedCount());
+            assertEquals(7, result.limitCount());
             assertFalse(result.canGenerate());
 
-            verify(portfolioStrategyRepository)
-                    .countByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class));
-            verify(portfolioStrategyAvailabilityCalculator).calculate(1, 1, true);
+            verify(aiUsagePolicyService).getAvailability(USER_ID, AiUsageType.PORTFOLIO_STRATEGY, true);
+            verify(portfolioStrategyAvailabilityCalculator).calculate(eq(7), eq(7), eq(true));
         }
 
         @Test
-        @DisplayName("일일 제한이 꺼져 있으면 저장 이력과 관계없이 항상 생성 가능하다")
-        void getAvailability_success_whenDailyLimitDisabled() throws Exception {
+        @DisplayName("주간 제한이 꺼져 있으면 저장 이력과 관계없이 항상 생성 가능하다")
+        void getAvailability_success_whenWeeklyLimitDisabled() throws Exception {
             // given
-            setField(portfolioStrategyAvailabilityService, "dailyLimitEnabled", false);
-
-            when(portfolioStrategyAvailabilityCalculator.calculate(0, 1, false))
-                    .thenReturn(PortfolioStrategyAvailabilityResult.of(0, 1, true));
+            setField(portfolioStrategyAvailabilityService, "weeklyLimitEnabled", false);
+            when(aiUsagePolicyService.getAvailability(USER_ID, AiUsageType.PORTFOLIO_STRATEGY, false))
+                    .thenReturn(new AiUsageAvailability(0, 7, true, true));
+            when(portfolioStrategyAvailabilityCalculator.calculate(eq(0), eq(7), eq(false)))
+                    .thenReturn(PortfolioStrategyAvailabilityResult.of(0, 7, true));
 
             // when
             PortfolioStrategyAvailabilityResult result = portfolioStrategyAvailabilityService.getAvailability(USER_ID);
 
             // then
             assertEquals(0, result.usedCount());
-            assertEquals(1, result.limitCount());
+            assertEquals(7, result.limitCount());
             assertTrue(result.canGenerate());
 
-            verifyNoInteractions(portfolioStrategyRepository);
-            verify(portfolioStrategyAvailabilityCalculator).calculate(0, 1, false);
+            verify(aiUsagePolicyService).getAvailability(USER_ID, AiUsageType.PORTFOLIO_STRATEGY, false);
+            verify(portfolioStrategyAvailabilityCalculator).calculate(eq(0), eq(7), eq(false));
         }
     }
 

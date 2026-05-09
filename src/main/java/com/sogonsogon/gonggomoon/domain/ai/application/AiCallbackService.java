@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiFunctionStatus;
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiFunctions;
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiJobStatus;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
 import com.sogonsogon.gonggomoon.domain.ai.domain.Experiences;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
@@ -46,6 +47,7 @@ public class AiCallbackService {
     private final PortfolioStrategyRepository portfolioStrategyRepository;
     private final InterviewStrategyRepository interviewStrategyRepository;
     private final InterviewQuestionResultMapper interviewQuestionResultMapper;
+    private final AiUsagePolicyService aiUsagePolicyService;
     private final AiJobSseService aiJobSseService;
 
     private final ObjectMapper objectMapper;
@@ -75,10 +77,19 @@ public class AiCallbackService {
         // 경험 추출 실패 업데이트
         if (request.status() == AiJobStatus.FAILED) {
             List<ExtractedExperience> experiencesToUpdate = extractedExperienceRepository.findAllById(ids);
+            boolean shouldRefund = experiencesToUpdate.stream()
+                .anyMatch(experience -> experience.getStatus() == ExtractionStatus.PROCESSING);
             for (ExtractedExperience experience : experiencesToUpdate) {
                 experience.updateStatus(ExtractionStatus.FAILED);
             }
             extractedExperienceRepository.saveAll(experiencesToUpdate);
+            if (shouldRefund && !experiencesToUpdate.isEmpty()) {
+                aiUsagePolicyService.refund(
+                    experiencesToUpdate.get(0).getUserId(),
+                    AiUsageType.EXPERIENCE_EXTRACTION,
+                    experiencesToUpdate.get(0).getGeneratedDate()
+                );
+            }
             notifyJobStatusAfterCommit(request.userId(), AiFunctions.EXTRACT_EXPERIENCE, ids, AiFunctionStatus.FAILED);
             return;
         }
@@ -119,8 +130,16 @@ public class AiCallbackService {
         );
         // AI 작업 실패로 업데이트
         if (request.status() == AiJobStatus.FAILED) {
+            boolean shouldRefund = fountStrategy.getStatus() == PortfolioStrategyGenerateStatus.PROCESSING;
             fountStrategy.updateStatus(PortfolioStrategyGenerateStatus.FAILED);
             portfolioStrategyRepository.save(fountStrategy);
+            if (shouldRefund) {
+                aiUsagePolicyService.refund(
+                    fountStrategy.getUserId(),
+                    AiUsageType.PORTFOLIO_STRATEGY,
+                    fountStrategy.getGeneratedDate()
+                );
+            }
             notifyJobStatusAfterCommit(request.userId(), AiFunctions.PORTFOLIO_STRATEGY, request.id(), AiFunctionStatus.FAILED);
             return;
         }
@@ -164,8 +183,16 @@ public class AiCallbackService {
 
         // AI 작업 실패로 업데이트
         if (request.status() == AiJobStatus.FAILED) {
+            boolean shouldRefund = foundStrategy.getStatus() == InterviewGenerateStatus.PROCESSING;
             foundStrategy.updateStateFailed();
             interviewStrategyRepository.save(foundStrategy);
+            if (shouldRefund) {
+                aiUsagePolicyService.refund(
+                    foundStrategy.getUserId(),
+                    AiUsageType.INTERVIEW_STRATEGY,
+                    foundStrategy.getGeneratedDate()
+                );
+            }
             notifyJobStatusAfterCommit(request.userId(), AiFunctions.INTERVIEW_STRATEGY, request.id(), AiFunctionStatus.FAILED);
             return;
         }

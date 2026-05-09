@@ -1,6 +1,9 @@
 package com.sogonsogon.gonggomoon.domain.experience.application;
 
 import com.sogonsogon.gonggomoon.domain.ai.application.AiService;
+import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
+import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.dto.response.ExperienceExtractResponse;
 import com.sogonsogon.gonggomoon.domain.experience.api.request.ExperienceExtractRequest;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionResult;
@@ -15,14 +18,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
-
-import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 public class ExperienceExtractionServiceTest {
@@ -38,6 +40,12 @@ public class ExperienceExtractionServiceTest {
     @Mock
     private FileAssetRepository fileAssetRepository;
 
+    @Mock
+    private ExtractedExperienceRepository extractedExperienceRepository;
+
+    @Mock
+    private AiUsagePolicyService aiUsagePolicyService;
+
     @InjectMocks
     private ExperienceExtractionService experienceExtractionService;
 
@@ -51,12 +59,15 @@ public class ExperienceExtractionServiceTest {
             // given
             ExperienceExtractRequest request =
                     new ExperienceExtractRequest(List.of(FILE_ASSET_ID_1, FILE_ASSET_ID_2));
+            ReflectionTestUtils.setField(experienceExtractionService, "weeklyLimitEnabled", true);
 
             FileAsset fileAsset1 = mock(FileAsset.class);
             FileAsset fileAsset2 = mock(FileAsset.class);
 
             when(fileAssetRepository.findAllByIdInAndUserId(request.fileAssetIds(), USER_ID))
                     .thenReturn(List.of(fileAsset1, fileAsset2));
+            when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.EXPERIENCE_EXTRACTION))
+                    .thenReturn(true);
 
             when(aiService.requestExperienceExtraction(USER_ID, request.fileAssetIds()))
                     .thenReturn(new ExperienceExtractResponse(EXTRACTED_EXPERIENCE_IDS));
@@ -69,6 +80,7 @@ public class ExperienceExtractionServiceTest {
             assertEquals(EXTRACTED_EXPERIENCE_IDS, result.extractedExperienceIds());
 
             verify(fileAssetRepository).findAllByIdInAndUserId(request.fileAssetIds(), USER_ID);
+            verify(aiUsagePolicyService).reserve(USER_ID, AiUsageType.EXPERIENCE_EXTRACTION);
             verify(aiService).requestExperienceExtraction(USER_ID, request.fileAssetIds());
         }
 
@@ -93,6 +105,7 @@ public class ExperienceExtractionServiceTest {
             assertEquals(ExperienceErrorCode.INVALID_FILE_ASSET_REQUEST, exception.getErrorCode());
             verify(fileAssetRepository).findAllByIdInAndUserId(request.fileAssetIds(), USER_ID);
             verifyNoInteractions(aiService);
+            verifyNoInteractions(aiUsagePolicyService);
         }
     }
 }

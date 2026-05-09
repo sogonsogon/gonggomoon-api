@@ -1,5 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.interviewStrategy.application;
 
+import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
 import com.sogonsogon.gonggomoon.domain.file.domain.FileAsset;
 import com.sogonsogon.gonggomoon.domain.file.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.api.request.GenerateInterviewQuestionSetRequest;
@@ -30,9 +32,12 @@ public class InterviewStrategyService {
     private final FileAssetRepository fileAssetRepository;
     private final InterviewStrategyRepository interviewStrategyRepository;
     private final InterviewStrategyQuestionSetGenerator interviewStrategyQuestionSetGenerator;
+    private final AiUsagePolicyService aiUsagePolicyService;
 
-    @Value("${strategy.interview.daily-limit-enabled:true}")
-    private boolean dailyLimitEnabled;
+    @Value("${strategy.interview.weekly-limit-enabled:true}")
+    private boolean weeklyLimitEnabled;
+
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
     /**
      * 면접 전략 질문 생성 서비스
@@ -49,17 +54,17 @@ public class InterviewStrategyService {
          * today : 그 시각에서 파생된 날짜
          */
         Instant now = Instant.now();
-        LocalDate today = now.atZone(ZoneId.of("Asia/Seoul")).toLocalDate();
-
-        /**
-         * 질문이 이미 있는지 검증
-         */
-        if (dailyLimitEnabled && interviewStrategyRepository.existsByUserIdAndGeneratedDate(userId, today)) {
-            throw new BaseException(InterviewStrategyErrorCode.ALREADY_CREATED_TODAY);
-        }
+        LocalDate today = now.atZone(KST).toLocalDate();
 
         FileAsset fileAsset = fileAssetRepository.findByIdAndUserId(req.fileAssetId(), userId)
                 .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.FILE_ASSET_NOT_FOUND));
+
+        /**
+         * 이번 주 성공한 질문 생성 횟수를 검증
+         */
+        if (weeklyLimitEnabled && !aiUsagePolicyService.reserve(userId, AiUsageType.INTERVIEW_STRATEGY)) {
+            throw new BaseException(InterviewStrategyErrorCode.WEEKLY_LIMIT_EXCEEDED);
+        }
 
         // 면접 질문 생성
         InterviewStrategy interviewStrategy = InterviewStrategy.create(userId, req.fileAssetId(), now, today);
@@ -114,4 +119,5 @@ public class InterviewStrategyService {
                 .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.NOT_FOUND));
         interviewStrategyRepository.delete(interviewStrategy);
     }
+
 }

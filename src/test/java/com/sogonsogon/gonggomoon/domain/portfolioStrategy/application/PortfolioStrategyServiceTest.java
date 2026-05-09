@@ -1,7 +1,8 @@
 package com.sogonsogon.gonggomoon.domain.portfolioStrategy.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sogonsogon.gonggomoon.domain.ai.application.AiService;
+import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceType;
@@ -62,14 +63,14 @@ class PortfolioStrategyServiceTest {
     private ObjectMapper objectMapper;
 
     @Mock
-    private AiService aiService;
+    private AiUsagePolicyService aiUsagePolicyService;
 
     @InjectMocks
     private PortfolioStrategyService portfolioStrategyService;
 
     @BeforeEach
     void setUp() throws Exception {
-        setField(portfolioStrategyService, "dailyLimitEnabled", true);
+        setField(portfolioStrategyService, "weeklyLimitEnabled", true);
     }
 
     private static final Long USER_ID = 1L;
@@ -145,9 +146,9 @@ class PortfolioStrategyServiceTest {
 
             // then
             assertEquals(PortfolioStrategyErrorCode.REQUESTED_EXPERIENCE_NOT_FOUND, exception.getErrorCode());
-            verify(portfolioStrategyRepository).existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class));
             verify(experienceRepository).findAllByIdInAndUserId(req.experienceIds(), USER_ID);
             verifyNoInteractions(portfolioStrategyContentGenerator);
+            verifyNoInteractions(aiUsagePolicyService);
             verify(portfolioStrategyRepository, never()).save(any(PortfolioStrategy.class));
         }
 
@@ -176,12 +177,12 @@ class PortfolioStrategyServiceTest {
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
             );
             ReflectionTestUtils.setField(savedStrategy, "id", 100L);
-            ReflectionTestUtils.setField(portfolioStrategyService, "dailyLimitEnabled", true);
+            ReflectionTestUtils.setField(portfolioStrategyService, "weeklyLimitEnabled", true);
 
-            when(portfolioStrategyRepository.existsByUserIdAndGeneratedDate(anyLong(), any(LocalDate.class)))
-                    .thenReturn(false);
             when(experienceRepository.findAllByIdInAndUserId(anyList(), anyLong()))
                     .thenReturn(experiences);
+            when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY))
+                    .thenReturn(true);
             when(industryRepository.findById(anyLong()))
                     .thenReturn(Optional.of(industry));
             when(portfolioStrategyRepository.save(any(PortfolioStrategy.class)))
@@ -205,8 +206,8 @@ class PortfolioStrategyServiceTest {
         }
 
         @Test
-        @DisplayName("오늘 이미 생성한 전략이 있으면 다시 생성할 수 없다")
-        void generate_fail_whenStrategyAlreadyCreatedToday() {
+        @DisplayName("이번 주 성공한 전략 생성 횟수가 7회이면 다시 생성할 수 없다")
+        void generate_fail_whenWeeklyLimitReached() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
@@ -214,8 +215,11 @@ class PortfolioStrategyServiceTest {
                     List.of(1L)
             );
 
-            when(portfolioStrategyRepository.existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class)))
-                    .thenReturn(true);
+            Experience experience = createExperience(USER_ID, "캡스톤 프로젝트");
+            when(experienceRepository.findAllByIdInAndUserId(req.experienceIds(), USER_ID))
+                    .thenReturn(List.of(experience));
+            when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY))
+                    .thenReturn(false);
 
             // when
             BaseException exception = assertThrows(
@@ -224,38 +228,41 @@ class PortfolioStrategyServiceTest {
             );
 
             // then
-            assertEquals(PortfolioStrategyErrorCode.ALREADY_CREATED_TODAY, exception.getErrorCode());
-            verify(portfolioStrategyRepository).existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class));
-            verifyNoInteractions(experienceRepository);
+            assertEquals(PortfolioStrategyErrorCode.WEEKLY_LIMIT_EXCEEDED, exception.getErrorCode());
+            verify(aiUsagePolicyService).reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY);
+            verify(experienceRepository).findAllByIdInAndUserId(req.experienceIds(), USER_ID);
         }
 
         @Test
-        @DisplayName("오늘 이미 전략을 생성했으면 ALREADY_CREATED_TODAY 예외가 발생한다")
-        void generate_fail_whenAlreadyCreatedToday() throws Exception {
+        @DisplayName("이번 주 성공한 전략 생성 횟수가 7회이면 WEEKLY_LIMIT_EXCEEDED 예외가 발생한다")
+        void generate_fail_whenWeeklyLimitReachedForMultipleExperiences() throws Exception {
             // given
-            setField(portfolioStrategyService, "dailyLimitEnabled", true);
+            setField(portfolioStrategyService, "weeklyLimitEnabled", true);
 
             GeneratePortfolioStrategyRequest req =
                     new GeneratePortfolioStrategyRequest(JobType.BACKEND, 1L, List.of(1L, 2L));
 
-            when(portfolioStrategyRepository.existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class)))
-                    .thenReturn(true);
+            Experience experience1 = createExperience(USER_ID, "캡스톤 프로젝트");
+            Experience experience2 = createExperience(USER_ID, "인턴 경험");
+            when(experienceRepository.findAllByIdInAndUserId(req.experienceIds(), USER_ID))
+                    .thenReturn(List.of(experience1, experience2));
+            when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY))
+                    .thenReturn(false);
 
             // when & then
             BaseException ex = assertThrows(BaseException.class,
                     () -> portfolioStrategyService.generate(USER_ID, req));
 
-            assertEquals(PortfolioStrategyErrorCode.ALREADY_CREATED_TODAY, ex.getErrorCode());
+            assertEquals(PortfolioStrategyErrorCode.WEEKLY_LIMIT_EXCEEDED, ex.getErrorCode());
 
-            verify(portfolioStrategyRepository)
-                    .existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class));
+            verify(aiUsagePolicyService).reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY);
         }
 
         @Test
-        @DisplayName("오늘 전략 생성 기록이 없으면 전략 초안을 저장하고 AI 생성 요청을 보낸다")
-        void generate_success_whenNotCreatedToday() throws  Exception{
+        @DisplayName("이번 주 성공한 전략 생성 횟수가 7회 미만이면 전략 초안을 저장하고 AI 생성 요청을 보낸다")
+        void generate_success_whenWeeklyLimitAvailable() throws Exception{
             // given
-            setField(portfolioStrategyService, "dailyLimitEnabled", true);
+            setField(portfolioStrategyService, "weeklyLimitEnabled", true);
 
             GeneratePortfolioStrategyRequest req =
                     new GeneratePortfolioStrategyRequest(JobType.BACKEND, 1L, List.of(1L, 2L));
@@ -276,10 +283,10 @@ class PortfolioStrategyServiceTest {
             );
             setField(savedStrategy, "id", 100L);
 
-            when(portfolioStrategyRepository.existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class)))
-                    .thenReturn(false);
             when(experienceRepository.findAllByIdInAndUserId(req.experienceIds(), USER_ID))
                     .thenReturn(experiences);
+            when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY))
+                    .thenReturn(true);
             when(industryRepository.findById(req.industryId()))
                     .thenReturn(Optional.of(industry));
             when(portfolioStrategyRepository.save(any(PortfolioStrategy.class)))
@@ -292,8 +299,7 @@ class PortfolioStrategyServiceTest {
             assertNotNull(result);
             assertEquals(100L, result.strategyId());
 
-            verify(portfolioStrategyRepository)
-                    .existsByUserIdAndGeneratedDate(eq(USER_ID), any(LocalDate.class));
+            verify(aiUsagePolicyService).reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY);
             verify(experienceRepository)
                     .findAllByIdInAndUserId(req.experienceIds(), USER_ID);
             verify(industryRepository)

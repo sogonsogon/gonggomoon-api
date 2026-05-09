@@ -9,9 +9,9 @@
 ### =========================================================
 ### 1. 경험 파일 업로드 - 성공
 ### category 값은 DocumentCategory enum 상수명으로 맞춰서 넣기
-### 예: RESUME, PORTFOLIO, CERTIFICATE ...
+### 예: RESUME, PORTFOLIO, OTHER
 ### =========================================================
-POST {{host}}/api/v1/uploads/experiences
+POST {{host}}/api/v2/files
 Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
@@ -32,9 +32,9 @@ Content-Type: application/pdf
 ### =========================================================
 ### 1. 경험 파일 업로드 - 성공
 ### category 값은 DocumentCategory enum 상수명으로 맞춰서 넣기
-### 예: RESUME, PORTFOLIO, CERTIFICATE ...
+### 예: RESUME, PORTFOLIO, OTHER
 ### =========================================================
-POST {{host}}/api/v1/uploads/experiences
+POST {{host}}/api/v2/files
 Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 

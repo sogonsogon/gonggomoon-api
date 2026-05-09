@@ -9,13 +9,9 @@ public class InterviewStrategyAvailabilityCalculator {
     public InterviewStrategyAvailabilityResult calculate(
             int usedCount,
             int limitCount,
-            boolean dailyLimitEnabled
+            boolean limitEnabled
     ) {
-        int remainingCount = dailyLimitEnabled
-                ? Math.max(0, limitCount - usedCount)
-                : limitCount;
-
-        boolean canGenerate = !dailyLimitEnabled || remainingCount > 0;
+        boolean canGenerate = !limitEnabled || usedCount < limitCount;
 
         return InterviewStrategyAvailabilityResult.of(
                 usedCount,

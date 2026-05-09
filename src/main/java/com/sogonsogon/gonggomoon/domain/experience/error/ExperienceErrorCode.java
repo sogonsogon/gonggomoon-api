@@ -14,7 +14,8 @@ public enum ExperienceErrorCode implements BaseErrorCode {
     FILE_ASSET_NOT_FOUND("EXPERIENCE_FILE_ASSET_NOT_FOUND", HttpStatus.BAD_REQUEST, "해당 파일을 찾을 수 없습니다."),
     FILE_ASSET_COUNT_EXCEEDED("EXPERIENCE_FILE_ASSET_COUNT_EXCEEDED", HttpStatus.BAD_REQUEST, "파일은 최대 2개까지 요청할 수 있습니다."),
     DUPLICATE_FILE_ASSET_ID("EXPERIENCE_DUPLICATE_FILE_ASSET_ID", HttpStatus.BAD_REQUEST, "중복된 fileAssetId는 허용되지 않습니다."),
-    INVALID_FILE_ASSET_REQUEST("EXPERIENCE_INVALID_FILE_ASSET_REQUEST", HttpStatus.BAD_REQUEST, "요청한 파일 중 존재하지 않거나 본인 소유가 아닌 파일이 포함되어 있습니다.")
+    INVALID_FILE_ASSET_REQUEST("EXPERIENCE_INVALID_FILE_ASSET_REQUEST", HttpStatus.BAD_REQUEST, "요청한 파일 중 존재하지 않거나 본인 소유가 아닌 파일이 포함되어 있습니다."),
+    WEEKLY_LIMIT_EXCEEDED("EXPERIENCE_WEEKLY_LIMIT_EXCEEDED", HttpStatus.CONFLICT, "이번 주 경험 추출 가능 횟수를 모두 사용했습니다.")
     ;
 
     private final String code;

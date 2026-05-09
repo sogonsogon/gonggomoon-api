@@ -1,35 +1,34 @@
-package com.sogonsogon.gonggomoon.domain.portfolioStrategy.application;
+package com.sogonsogon.gonggomoon.domain.experience.application;
 
 import com.sogonsogon.gonggomoon.domain.ai.application.AiUsageAvailability;
 import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
-import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyAvailabilityResult;
-import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.support.PortfolioStrategyAvailabilityCalculator;
+import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionAvailabilityResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class PortfolioStrategyAvailabilityService {
+public class ExperienceExtractionAvailabilityService {
 
-    private final PortfolioStrategyAvailabilityCalculator portfolioStrategyAvailabilityCalculator;
     private final AiUsagePolicyService aiUsagePolicyService;
 
-    @Value("${strategy.portfolio.weekly-limit-enabled:true}")
+    @Value("${experience.extraction.weekly-limit-enabled:true}")
     private boolean weeklyLimitEnabled;
 
-    public PortfolioStrategyAvailabilityResult getAvailability(Long userId) {
+    public ExperienceExtractionAvailabilityResult getAvailability(Long userId) {
         AiUsageAvailability availability = aiUsagePolicyService.getAvailability(
                 userId,
-                AiUsageType.PORTFOLIO_STRATEGY,
+                AiUsageType.EXPERIENCE_EXTRACTION,
                 weeklyLimitEnabled
         );
 
-        return portfolioStrategyAvailabilityCalculator.calculate (
+        return new ExperienceExtractionAvailabilityResult(
                 availability.usedCount(),
                 availability.limitCount(),
-                weeklyLimitEnabled
+                availability.canGenerate(),
+                availability.canRetry()
         );
     }
 }

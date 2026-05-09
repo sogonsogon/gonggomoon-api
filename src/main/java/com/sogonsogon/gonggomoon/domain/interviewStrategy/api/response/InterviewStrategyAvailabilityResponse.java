@@ -7,13 +7,15 @@ import lombok.Builder;
 public record InterviewStrategyAvailabilityResponse(
         int usedCount,
         int limitCount,
-        boolean canGenerate
+        boolean canGenerate,
+        boolean canRetry
 ) {
     public static InterviewStrategyAvailabilityResponse from (InterviewStrategyAvailabilityResult result) {
         return InterviewStrategyAvailabilityResponse.builder()
                 .usedCount(result.usedCount())
                 .limitCount(result.limitCount())
                 .canGenerate(result.canGenerate())
+                .canRetry(result.canRetry())
                 .build();
     }
 }

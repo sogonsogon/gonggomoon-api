@@ -93,6 +93,10 @@ ai:
 
 strategy:
   portfolio:
-    daily-limit-enabled: ${PORTFOLIO_DAILY_LIMIT_ENABLED}
+    weekly-limit-enabled: ${PORTFOLIO_WEEKLY_LIMIT_ENABLED}
   interview:
-    daily-limit-enabled: ${INTERVIEW_DAILY_LIMIT_ENABLED}
+    weekly-limit-enabled: ${INTERVIEW_WEEKLY_LIMIT_ENABLED}
+
+experience:
+  extraction:
+    weekly-limit-enabled: ${EXPERIENCE_EXTRACTION_WEEKLY_LIMIT_ENABLED}
