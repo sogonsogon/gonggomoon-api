@@ -3,6 +3,7 @@ package com.sogonsogon.gonggomoon.domain.experience.domain;
 import com.sogonsogon.gonggomoon.domain.experience.error.ExperienceErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
+import com.sogonsogon.gonggomoon.global.validation.ValidationUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -52,7 +53,7 @@ public class Experience {
     @Column(nullable = false)
     private ExperienceType experienceType; // 경험 유형
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String experienceContent; // 경험 내용
 
     @Enumerated(EnumType.STRING)
@@ -82,10 +83,10 @@ public class Experience {
             LocalDate startDate,
             LocalDate endDate
     ) {
-        requireNonNull(userId, ExperienceErrorCode.USERID_REQUIRED);
-        requireText(title, ExperienceErrorCode.TITLE_REQUIRED);
-        requireNonNull(experienceType, ExperienceErrorCode.TYPE_REQUIRED);
-        requireText(experienceContent, ExperienceErrorCode.CONTENT_REQUIRED);
+        ValidationUtils.requireNonNull(userId, ExperienceErrorCode.USERID_REQUIRED);
+        ValidationUtils.requireText(title, ExperienceErrorCode.TITLE_REQUIRED);
+        ValidationUtils.requireNonNull(experienceType, ExperienceErrorCode.TYPE_REQUIRED);
+        ValidationUtils.requireText(experienceContent, ExperienceErrorCode.CONTENT_REQUIRED);
         validateDateRange(startDate, endDate, ExperienceErrorCode.INVALID_DATE_RANGE);
 
         return Experience.builder()
@@ -105,9 +106,9 @@ public class Experience {
             LocalDate startDate,
             LocalDate endDate
     ) {
-        requireText(title, ExperienceErrorCode.TITLE_REQUIRED);
-        requireNonNull(experienceType, ExperienceErrorCode.TYPE_REQUIRED);
-        requireText(experienceContent, ExperienceErrorCode.CONTENT_REQUIRED);
+        ValidationUtils.requireText(title, ExperienceErrorCode.TITLE_REQUIRED);
+        ValidationUtils.requireNonNull(experienceType, ExperienceErrorCode.TYPE_REQUIRED);
+        ValidationUtils.requireText(experienceContent, ExperienceErrorCode.CONTENT_REQUIRED);
         validateDateRange(startDate, endDate, ExperienceErrorCode.INVALID_DATE_RANGE);
 
         this.title = title;
@@ -116,18 +117,6 @@ public class Experience {
         this.startDate = startDate;
         this.endDate = endDate;
 
-    }
-
-    private static void requireText(String value, BaseErrorCode baseErrorCode) {
-        if (value == null || value.isBlank()) {
-            throw new BaseException(baseErrorCode);
-        }
-    }
-
-    private static void requireNonNull(Object value, BaseErrorCode baseErrorCode) {
-        if (value == null) {
-            throw new BaseException(baseErrorCode);
-        }
     }
 
     private static void validateDateRange(LocalDate startDate, LocalDate endDate, BaseErrorCode baseErrorCode) {

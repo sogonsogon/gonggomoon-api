@@ -11,4 +11,6 @@ public interface ExperienceRepository {
     void delete(Experience experience);
 
     List<Experience> findAllByUserIdOrderByUpdatedAtDesc(Long userId);
+
+    List<Experience> findAllByIdInAndUserId(List<Long> ids, Long userId);
 }

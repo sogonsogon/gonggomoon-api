@@ -1,0 +1,27 @@
+package com.sogonsogon.gonggomoon.domain.industry.api;
+
+import com.sogonsogon.gonggomoon.domain.industry.application.IndustryReportService;
+import com.sogonsogon.gonggomoon.domain.industry.dto.response.IndustryReportResponse;
+import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/v1/industries")
+public class IndustryReportController {
+
+    private final IndustryReportService industryReportService;
+
+    public IndustryReportController(IndustryReportService industryReportService) {
+        this.industryReportService = industryReportService;
+    }
+
+    @GetMapping("/{id}/reports")
+    public ResponseEntity<BaseResponse<IndustryReportResponse>> getIndustryReport(@PathVariable Long id) {
+
+        return ResponseEntity.ok(BaseResponse.success(industryReportService.getIndustryReport(id)));
+    }
+}

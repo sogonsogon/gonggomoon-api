@@ -1,0 +1,75 @@
+@host = http://localhost:8080
+//http://localhost:8080/api/v1/auth/social/login/naver 로그인 후 개발자도구에서 access_token 복사
+@token =
+@strategyId = 1
+
+### 1. 경험 생성
+POST {{host}}/api/v1/experiences
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "대용량 업로드 프로젝트",
+  "experienceType": "PROJECT",
+  "experienceContent": "세션 기반 청크 업로드와 offset 검증을 구현했습니다.",
+  "startDate": "2025-01-01",
+  "endDate": "2025-02-01"
+}
+
+### 1. 경험 생성
+POST {{host}}/api/v1/experiences
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "LXP",
+  "experienceType": "PROJECT",
+  "experienceContent": "세션 기반 청크 업로드와 offset 검증을 구현했습니다.",
+  "startDate": "2025-01-01",
+  "endDate": "2025-02-01"
+}
+
+### =========================================================
+### 1. 포트폴리오 전략 생성 가능 상태 조회 - 성공
+### 전제:
+### - 로그인 후 access token 값을 @token에 넣어야 합니다.
+### - today 기준 생성된 전략 row 개수에 따라 usedCount가 달라집니다.
+GET {{host}}/api/v1/strategies/availability
+Authorization: Bearer {{token}}
+
+
+### =========================================================
+### 2. 포트폴리오 전략 1회 생성 후 생성 가능 상태 조회 - usedCount = 1 확인용
+### 전제:
+### - weekly-limit-enabled=true 인 환경
+### - 오늘 아직 전략을 생성하지 않은 계정이어야 합니다.
+### 기대:
+### - 생성 API 성공 후 availability 조회 시
+###   usedCount = 1
+###   limitCount = 1
+###   canGenerate = false
+POST {{host}}/api/v1/portfolio-strategies
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "jobType": "BACKEND",
+  "industryId": 1,
+  "experienceIds": [1, 2]
+}
+
+###
+
+GET {{host}}/api/v1/strategies/availability
+Authorization: Bearer {{token}}
+
+
+### =========================================================
+### 3. 생성 제한이 꺼진 환경(dev/staging 등) 확인용
+### 전제:
+### - strategy.portfolio.weekly-limit-enabled=false
+### 기대:
+### - canGenerate = true
+### - usedCount는 현재 구현에 따라 0으로 고정될 수 있음
+GET {{host}}/api/v1/strategies/availability
+Authorization: Bearer {{token}}
