@@ -7,10 +7,12 @@ import com.sogonsogon.gonggomoon.domain.post.dto.response.PostResponse;
 import com.sogonsogon.gonggomoon.domain.post.dto.response.PostsResponse;
 import com.sogonsogon.gonggomoon.domain.post.error.PostErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class PostService {
 
@@ -26,6 +28,8 @@ public class PostService {
     }
 
     public PostResponse getPost(Long id) {
+
+        log.info("조회 상세 ID: " + id);
 
         PostResponse response = postRepository.getPost(id)
                 .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_PUBLISHED));
