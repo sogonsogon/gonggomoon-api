@@ -1,0 +1,14 @@
+steps:
+  # 1. 특정 Dockerfile(Dockerfile.dev)로 이미지 빌드
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/gonggomoon-api-dev'
+      - '-f'
+      - 'Dockerfile.dev'
+      - '.'
+
+# 빌드 성공 시 Cloud Build가 아래 이미지를 자동으로 레지스트리에 푸시함
+images:
+  - 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/gonggomoon-api-dev'
