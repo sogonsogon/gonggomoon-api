@@ -1,18 +1,15 @@
 steps:
-  # 1. 특정 Dockerfile(Dockerfile.dev)로 이미지 빌드
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
       - '-t'
-      - 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/gonggomoon-api'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/gonggomoon-api'
       - '-f'
       - 'Dockerfile.dev'
       - '.'
 
-# 빌드 성공 시 자동 푸시
 images:
-  - 'asia-northeast3-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/gonggomoon-api'
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/gonggomoon-api'
 
-# 🚀 [추가된 부분] 서비스 계정 사용 시 로그 저장 방식 명시
 options:
   logging: CLOUD_LOGGING_ONLY
