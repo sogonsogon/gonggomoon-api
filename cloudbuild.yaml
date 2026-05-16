@@ -1,4 +1,5 @@
 steps:
+  # 1. 특정 Dockerfile(Dockerfile.dev)로 이미지 빌드
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -8,8 +9,24 @@ steps:
       - 'Dockerfile.dev'
       - '.'
 
-images:
-  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/gonggomoon-api'
+  # 2. 빌드된 이미지를 Artifact Registry에 푸시 (배포 전에 먼저 올라가야 함)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/gonggomoon-api'
 
+  # 3. 🚀 [추가된 부분] 새 이미지를 Cloud Run에 배포
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'gonggomoon-api' # 캡처 화면에 보이는 Cloud Run 서비스 이름
+      - '--image'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/gonggomoon-api'
+      - '--region'
+      - 'europe-west1'
+
+# 서비스 계정 사용 시 로그 저장 방식 명시
 options:
   logging: CLOUD_LOGGING_ONLY
