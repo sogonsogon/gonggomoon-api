@@ -9,6 +9,8 @@ import com.sogonsogon.gonggomoon.domain.file.application.result.UploadFileResult
 import com.sogonsogon.gonggomoon.domain.file.application.result.UploadedFileListResult;
 import com.sogonsogon.gonggomoon.domain.file.domain.DocumentCategory;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+@Tag(name = "파일", description = "파일 업로드, 목록 조회, 삭제 API")
 @RestController
 @RequestMapping("/api/v2")
 @RequiredArgsConstructor
@@ -34,6 +37,7 @@ public class FileV2Controller {
     /**
      * 파일을 업로드 합니다.
      */
+    @Operation(summary = "파일 업로드", description = "현재 로그인한 사용자가 멀티파트 요청으로 파일을 업로드합니다.")
     @PostMapping(
             value = "/files",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -54,6 +58,7 @@ public class FileV2Controller {
     /**
      * 업로드된 파일 목록을 조회 합니다.
      */
+    @Operation(summary = "파일 목록 조회", description = "현재 로그인한 사용자가 업로드한 파일 목록을 문서 카테고리로 선택 필터링하여 조회합니다.")
     @GetMapping("/files")
     public ResponseEntity<BaseResponse<UploadedFileListResponse>> getUploadFileList(
             @AuthenticationPrincipal AccessUser user,
@@ -66,6 +71,7 @@ public class FileV2Controller {
     /**
      * 업로드된 파일을 삭제합니다.
      */
+    @Operation(summary = "파일 삭제", description = "현재 로그인한 사용자가 업로드한 지정한 파일을 삭제합니다.")
     @DeleteMapping("/files/{fileAssetId}")
     public ResponseEntity<BaseResponse<Void>> deleteFile(
             @AuthenticationPrincipal AccessUser user,

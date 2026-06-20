@@ -4,6 +4,8 @@ import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.post.dto.request.SubmitPostRequest;
 import com.sogonsogon.gonggomoon.domain.post.application.SubmissionService;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "공고 제출", description = "공고 제보 등록 관련 API")
 @RestController
 @RequestMapping("/api/v1/posts/submissions")
 public class SubmissionController {
@@ -23,6 +26,7 @@ public class SubmissionController {
         this.submissionService = submissionService;
     }
 
+    @Operation(summary = "공고 제출 등록", description = "인증된 사용자가 새로운 공고 제보를 등록합니다.")
     @PostMapping
     public ResponseEntity<BaseResponse<Void>> submitPost(@RequestBody @Valid SubmitPostRequest request,
                                                          @AuthenticationPrincipal AccessUser user) {

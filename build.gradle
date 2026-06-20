@@ -25,6 +25,10 @@ repositories {
 }
 
 dependencies {
+
+    // Swagger (OpenAPI 3) 의존성 - Swagger UI 및 OpenAPI 문서 자동 생성
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
+
     // JWT 의존성 (버전은 프로젝트 환경에 맞춰 최신 버전 사용 권장)
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
