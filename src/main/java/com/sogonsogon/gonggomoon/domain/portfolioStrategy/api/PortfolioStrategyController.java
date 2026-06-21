@@ -10,6 +10,8 @@ import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.Gen
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyDetailResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResult;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "포트폴리오 전략", description = "포트폴리오 전략 생성, 조회, 삭제 API")
 @RestController
 @RequestMapping("/api/v1/portfolio-strategies")
 @RequiredArgsConstructor
@@ -32,6 +35,7 @@ public class PortfolioStrategyController {
     /**
      * 포트폴리오 전략을 생생합니다.
      */
+    @Operation(summary = "포트폴리오 전략 생성", description = "로그인한 사용자의 요청 정보를 기반으로 포트폴리오 전략을 생성합니다.")
     @PostMapping
     public ResponseEntity<BaseResponse<GeneratePortfolioStrategyResponse>> generate(
             @AuthenticationPrincipal AccessUser user,
@@ -45,6 +49,7 @@ public class PortfolioStrategyController {
     /**
      * 포트폴리오 전략 목록을 조회합니다.
      */
+    @Operation(summary = "포트폴리오 전략 목록 조회", description = "로그인한 사용자가 생성한 포트폴리오 전략 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<BaseResponse<PortfolioStrategyListResponse>> getPortfolioStrategyList(
             @AuthenticationPrincipal AccessUser user
@@ -57,6 +62,7 @@ public class PortfolioStrategyController {
     /**
      * 포트폴리오 전략 상세를 조회합니다.
      */
+    @Operation(summary = "포트폴리오 전략 상세 조회", description = "전략 ID로 로그인한 사용자의 포트폴리오 전략 상세 정보를 조회합니다.")
     @GetMapping("/{strategyId}")
     public ResponseEntity<BaseResponse<PortfolioStrategyDetailResponse>> getPortfolioStrategyDetail(
             @AuthenticationPrincipal AccessUser user,
@@ -69,6 +75,7 @@ public class PortfolioStrategyController {
     /**
      * 포트폴리오 전략을 삭제합니다.
      */
+    @Operation(summary = "포트폴리오 전략 삭제", description = "전략 ID로 로그인한 사용자의 포트폴리오 전략을 삭제합니다.")
     @DeleteMapping("/{strategyId}")
     public ResponseEntity<BaseResponse<Void>> deletePortfolioStrategy(
             @AuthenticationPrincipal AccessUser user,

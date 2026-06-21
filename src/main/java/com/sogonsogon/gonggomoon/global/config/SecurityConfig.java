@@ -65,6 +65,7 @@ public class SecurityConfig {
             // 4. API 경로별 인가(권한) 설정
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/actuator/health").permitAll() // 헬스체크는 모두 허용
+                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll() // Swagger 문서는 모두 허용
                     .requestMatchers("/api/v1/auth/social/login/**", "/oauth2/**").permitAll() // 인증 진입점은 모두 허용
                     .requestMatchers("/api/v1/auth/reissue").permitAll()
                     .requestMatchers("/api/v1/callbacks/**").permitAll() // AI 서버에서 콜백하기 위해 풀어둠.

@@ -3,6 +3,7 @@ package com.sogonsogon.gonggomoon.domain.ai.controller;
 import com.sogonsogon.gonggomoon.domain.ai.application.AiCallbackService;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.BaseCallbackRequest;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Hidden // AI 서버 간 내부 통신 전용 - Swagger 문서에서 제외
 @RestController
 @RequestMapping("/api/v1/callbacks")
 @RequiredArgsConstructor

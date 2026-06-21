@@ -11,6 +11,8 @@ import com.sogonsogon.gonggomoon.domain.experience.application.result.CreateExpe
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceDetailResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceListResult;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/experiences")
 @RequiredArgsConstructor
+@Tag(name = "경험", description = "사용자의 경험을 생성, 수정, 삭제 및 조회하는 API")
 public class ExperienceController {
 
     private final ExperienceService experienceService;
@@ -37,6 +40,7 @@ public class ExperienceController {
      * @param req
      * @return
      */
+    @Operation(summary = "경험 생성", description = "로그인한 사용자가 입력한 내용을 기반으로 경험을 수기로 생성합니다.")
     @PostMapping
     public ResponseEntity<BaseResponse<CreateExperienceResponse>> createExperience(@AuthenticationPrincipal AccessUser user,
                                                                                   @RequestBody @Valid CreateExperienceRequest req) {
@@ -50,6 +54,7 @@ public class ExperienceController {
      * @param req
      * @return
      */
+    @Operation(summary = "경험 수정", description = "경험 ID에 해당하는 경험을 요청 내용으로 수정합니다.")
     @PatchMapping("/{experienceId}")
     public ResponseEntity<BaseResponse<ExperienceDetailResponse>> updateExperience(@AuthenticationPrincipal AccessUser user,
                                                                    @PathVariable("experienceId") Long experienceId,
@@ -64,6 +69,7 @@ public class ExperienceController {
      * @param experienceId
      * @return
      */
+    @Operation(summary = "경험 삭제", description = "경험 ID에 해당하는 경험을 삭제합니다.")
     @DeleteMapping("/{experienceId}")
     public ResponseEntity<BaseResponse<Void>> deleteExperience(@AuthenticationPrincipal AccessUser user,
                                                @PathVariable("experienceId") Long experienceId) {
@@ -75,6 +81,7 @@ public class ExperienceController {
     /**
      * 경험 목록을 조회합니다.
      */
+    @Operation(summary = "경험 목록 조회", description = "로그인한 사용자가 등록한 경험 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<BaseResponse<ExperienceListResponse>> getExperiencesList(@AuthenticationPrincipal AccessUser user) {
         ExperienceListResult result = experienceService.getExperiencesList(user.getId());
@@ -85,6 +92,7 @@ public class ExperienceController {
     /**
      * 경험 상세를 조회합니다.
      */
+    @Operation(summary = "경험 상세 조회", description = "경험 ID에 해당하는 경험의 상세 정보를 조회합니다.")
     @GetMapping("/{experienceId}")
     public ResponseEntity<BaseResponse<ExperienceDetailResponse>> getExperienceDetail(@AuthenticationPrincipal AccessUser user,
                                                                                       @PathVariable("experienceId") Long experienceId) {

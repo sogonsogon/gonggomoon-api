@@ -5,6 +5,8 @@ import com.sogonsogon.gonggomoon.domain.bookmark.application.BookmarkService;
 import com.sogonsogon.gonggomoon.domain.bookmark.dto.BookmarkListResponse;
 import com.sogonsogon.gonggomoon.domain.bookmark.dto.CreateBookmarkRequest;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "북마크", description = "공고 북마크 생성, 조회, 삭제 API")
 @RestController
 @RequestMapping("/api/v1/bookmarks")
 public class BookmarkController {
@@ -30,6 +33,7 @@ public class BookmarkController {
     }
 
     // 북마크 생성
+    @Operation(summary = "북마크 생성", description = "현재 로그인한 사용자가 요청한 대상을 북마크로 등록합니다.")
     @PostMapping
     public ResponseEntity<BaseResponse<Void>> createBookmark(@RequestBody @Valid CreateBookmarkRequest request,
                                                              @AuthenticationPrincipal AccessUser details) {
@@ -40,6 +44,7 @@ public class BookmarkController {
     }
 
     // 북마크 목록 조회
+    @Operation(summary = "북마크 목록 조회", description = "현재 로그인한 사용자의 북마크 목록을 페이지 단위로 조회합니다.")
     @GetMapping
     public ResponseEntity<BaseResponse<BaseResponse.PageResponse<BookmarkListResponse>>> getBookmarks(@AuthenticationPrincipal AccessUser details,
                                                                                                       Pageable pageable) {
@@ -60,6 +65,7 @@ public class BookmarkController {
     }
 
     // 북마크 삭제
+    @Operation(summary = "북마크 삭제", description = "현재 로그인한 사용자의 지정한 북마크를 삭제합니다.")
     @DeleteMapping("/{bookmarkId}")
     public ResponseEntity<BaseResponse<Void>> deleteBookmark(@PathVariable Long bookmarkId,
                                                              @AuthenticationPrincipal AccessUser details) {
