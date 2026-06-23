@@ -16,6 +16,9 @@ import com.sogonsogon.gonggomoon.domain.ai.dto.response.AiFunctionStatusResponse
 import com.sogonsogon.gonggomoon.domain.ai.error.ExtractedExperienceErrorCode;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.ExperienceResultMapper;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.InterviewQuestionResultMapper;
+
+import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
+import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewGenerateStatus;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategy;
@@ -26,6 +29,8 @@ import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrate
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.error.InterviewStrategyErrorCode;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.error.PortfolioStrategyErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +49,7 @@ public class AiCallbackService {
 
     private final ExperienceResultMapper experienceResultMapper;
     private final ExtractedExperienceRepository extractedExperienceRepository;
+    private final ExperienceRepository experienceRepository;
     private final PortfolioStrategyRepository portfolioStrategyRepository;
     private final InterviewStrategyRepository interviewStrategyRepository;
     private final InterviewQuestionResultMapper interviewQuestionResultMapper;
@@ -100,6 +106,7 @@ public class AiCallbackService {
             .collect(Collectors.toMap(ExtractedExperience::getId, Function.identity()));
 
         List<ExtractedExperience> entitiesToSave = new ArrayList<>();
+        List<Experience> experiencesToSave = new ArrayList<>();
 
         for (JsonNode itemNode : callbackItems) {
             long extractedExperienceId = itemNode.path("extracted_experience_id").asLong();
@@ -109,16 +116,42 @@ public class AiCallbackService {
                 throw new BaseException(ExtractedExperienceErrorCode.NOT_FOUND);
             }
 
+            if (foundExperience.getStatus() != ExtractionStatus.PROCESSING) {
+                continue;
+            }
+
             Experiences experiences = experienceResultMapper.toExperiencesFromCallbackItem(itemNode);
 
-            foundExperience.updateExperiences(experiences);
             foundExperience.updateStatus(ExtractionStatus.READY);
 
             entitiesToSave.add(foundExperience);
+            experiencesToSave.addAll(toExperiences(foundExperience.getUserId(), experiences));
         }
 
+        experienceRepository.saveAll(experiencesToSave);
         extractedExperienceRepository.saveAll(entitiesToSave);
         notifyJobStatusAfterCommit(request.userId(), AiFunctions.EXTRACT_EXPERIENCE, ids, AiFunctionStatus.READY);
+    }
+
+    private List<Experience> toExperiences(Long userId, Experiences experiences) {
+        return experiences.getExperiences().stream()
+            .map(item -> Experience.create(
+                userId,
+                item.getTitle(),
+                item.getExperienceType(),
+                item.getExperienceContent(),
+                toStartDate(item.getStartDate()),
+                toEndDate(item.getEndDate())
+            ))
+            .toList();
+    }
+
+    private LocalDate toStartDate(YearMonth yearMonth) {
+        return yearMonth == null ? null : yearMonth.atDay(1);
+    }
+
+    private LocalDate toEndDate(YearMonth yearMonth) {
+        return yearMonth == null ? null : yearMonth.atEndOfMonth();
     }
 
     @Transactional

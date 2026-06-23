@@ -8,6 +8,8 @@ public interface ExperienceRepository {
 
     Experience save(Experience experience);
 
+    <S extends Experience> Iterable<S> saveAll(Iterable<S> experiences);
+
     void delete(Experience experience);
 
     List<Experience> findAllByUserIdOrderByUpdatedAtDesc(Long userId);
