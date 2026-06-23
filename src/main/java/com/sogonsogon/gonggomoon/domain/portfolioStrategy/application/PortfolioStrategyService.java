@@ -108,7 +108,8 @@ public class PortfolioStrategyService {
                 draftStrategy.getId(),
                 experiences,
                 req.jobType().name(),
-                industryName);
+                industryName,
+                req.postId());
 
         return GeneratePortfolioStrategyResult.from(draftStrategy.getId());
     }

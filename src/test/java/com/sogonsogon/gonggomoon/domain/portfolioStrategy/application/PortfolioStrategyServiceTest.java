@@ -77,6 +77,8 @@ class PortfolioStrategyServiceTest {
 
     private static final Long INDUSTRY_ID = 1L;
 
+    private static final Long POST_ID = 10L;
+
     @Nested
     @DisplayName("generate")
     class GenerateTest {
@@ -88,6 +90,7 @@ class PortfolioStrategyServiceTest {
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
                     INDUSTRY_ID,
+                    POST_ID,
                     null
             );
 
@@ -109,6 +112,7 @@ class PortfolioStrategyServiceTest {
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
                     INDUSTRY_ID,
+                    POST_ID,
                     List.of()
             );
 
@@ -130,6 +134,7 @@ class PortfolioStrategyServiceTest {
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
                     INDUSTRY_ID,
+                    POST_ID,
                     List.of(1L, 2L)
             );
 
@@ -159,6 +164,7 @@ class PortfolioStrategyServiceTest {
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
                     INDUSTRY_ID,
+                    POST_ID,
                     List.of(1L, 2L)
             );
 
@@ -201,7 +207,8 @@ class PortfolioStrategyServiceTest {
                     anyLong(),
                     anyList(),
                     anyString(),
-                    nullable(String.class)
+                    nullable(String.class),
+                    eq(req.postId())
             );
         }
 
@@ -212,6 +219,7 @@ class PortfolioStrategyServiceTest {
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
                     INDUSTRY_ID,
+                    POST_ID,
                     List.of(1L)
             );
 
@@ -240,7 +248,7 @@ class PortfolioStrategyServiceTest {
             setField(portfolioStrategyService, "weeklyLimitEnabled", true);
 
             GeneratePortfolioStrategyRequest req =
-                    new GeneratePortfolioStrategyRequest(JobType.BACKEND, 1L, List.of(1L, 2L));
+                    new GeneratePortfolioStrategyRequest(JobType.BACKEND, 1L, POST_ID, List.of(1L, 2L));
 
             Experience experience1 = createExperience(USER_ID, "캡스톤 프로젝트");
             Experience experience2 = createExperience(USER_ID, "인턴 경험");
@@ -265,7 +273,7 @@ class PortfolioStrategyServiceTest {
             setField(portfolioStrategyService, "weeklyLimitEnabled", true);
 
             GeneratePortfolioStrategyRequest req =
-                    new GeneratePortfolioStrategyRequest(JobType.BACKEND, 1L, List.of(1L, 2L));
+                    new GeneratePortfolioStrategyRequest(JobType.BACKEND, 1L, POST_ID, List.of(1L, 2L));
 
             Experience experience1 = createExperience(USER_ID, "캡스톤 프로젝트");
             Experience experience2 = createExperience(USER_ID, "인턴 경험");
@@ -312,7 +320,8 @@ class PortfolioStrategyServiceTest {
                             eq(100L),
                             eq(experiences),
                             eq(req.jobType().name()),
-                            nullable(String.class)
+                            nullable(String.class),
+                            eq(req.postId())
                     );
         }
     }

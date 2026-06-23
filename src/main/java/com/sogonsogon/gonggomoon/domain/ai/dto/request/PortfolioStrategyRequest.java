@@ -11,6 +11,9 @@ public record PortfolioStrategyRequest(
     @JsonProperty("portfolio_strategy_id")
     Long portfolioStrategyId,
 
+    @JsonProperty("post_id")
+    Long postId,
+
     List<Experience> experiences,
 
     @JsonProperty("position_type")
