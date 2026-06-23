@@ -3,8 +3,6 @@ package com.sogonsogon.gonggomoon.domain.post.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -19,42 +17,41 @@ import java.time.Instant;
 @Entity
 @Getter
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "posts")
-public class Post {
+@Table(name = "post_analysis")
+public class PostAnalysis {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 2083, name = "url")
-    private String url;
+    @Column(name = "post_id", nullable = false)
+    private Long postId;
 
-    //TODO STATUS 이름도 좀 더 생각해야 할듯
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private PostStatus status;
+    @Column(name = "title", nullable = false)
+    private String title;
+
+    //TODO 요약 내용을 하나로 처리 하는게 맞을까? 제목은 하나의 컬럼으로 저장하는데?
+    @Column(name = "summary", columnDefinition = "TEXT")
+    private String summary;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    // 유저 ID
-    @Column(name = "created_by", nullable = false, updatable = false)
-    private Long createdBy;
-
-    protected Post() {}
+    protected PostAnalysis() {}
 
     @Builder
-    private Post(String url, Long userId) {
-        this.url = url;
-        this.createdBy = userId;
-        this.status = PostStatus.PENDING;
+    private PostAnalysis(Long postId, String title, String summary) {
+        this.postId = postId;
+        this.title = title;
+        this.summary = summary;
     }
 
-    public static Post create(String url, Long userId) {
-        return Post.builder()
-                .url(url)
-                .userId(userId)
+    public static PostAnalysis create(Long postId, String title, String summary) {
+        return PostAnalysis.builder()
+                .postId(postId)
+                .title(title)
+                .summary(summary)
                 .build();
     }
 }
