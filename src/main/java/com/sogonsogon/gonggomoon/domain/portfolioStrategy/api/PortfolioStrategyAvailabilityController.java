@@ -6,6 +6,8 @@ import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.PortfolioS
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyAvailabilityResult;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,10 @@ public class PortfolioStrategyAvailabilityController {
      * 생성 가능한지 조회합니다.
      */
     @Operation(summary = "포트폴리오 전략 생성 가능 여부 조회", description = "로그인한 사용자가 포트폴리오 전략을 생성할 수 있는지 여부를 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "포트폴리오 전략 생성 가능 여부 조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (액세스 토큰 누락/만료)")
+    })
     @GetMapping("/strategies/availability")
     public ResponseEntity<BaseResponse<PortfolioStrategyAvailabilityResponse>> getStrategyAvailability(
             @AuthenticationPrincipal AccessUser user

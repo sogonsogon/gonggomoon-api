@@ -8,8 +8,14 @@ import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceExtract
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionAvailabilityResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionSearchResult;
+import com.sogonsogon.gonggomoon.global.docs.ErrorResponseExamples;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +39,25 @@ public class ExperienceExtractionController {
     private final ExperienceExtractionAvailabilityService extractionAvailabilityService;
 
     @Operation(summary = "경험 추출 시작", description = "요청한 입력 데이터를 기반으로 AI 경험 추출 작업을 시작합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "경험 추출 작업 시작 성공"),
+            @ApiResponse(responseCode = "400",
+                    description = "입력값 검증 실패(GLOBAL_INVALID_INPUT_VALUE) / 파일 최대 2개 초과(EXPERIENCE_FILE_ASSET_COUNT_EXCEEDED) / 중복 fileAssetId(EXPERIENCE_DUPLICATE_FILE_ASSET_ID) / 존재하지 않거나 본인 소유가 아닌 파일(EXPERIENCE_INVALID_FILE_ASSET_REQUEST)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.EXPERIENCE_INVALID_FILE_ASSET_REQUEST))),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (액세스 토큰 누락/만료)"),
+            @ApiResponse(responseCode = "409",
+                    description = "이번 주 경험 추출 가능 횟수 초과(EXPERIENCE_WEEKLY_LIMIT_EXCEEDED)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.EXPERIENCE_WEEKLY_LIMIT_EXCEEDED))),
+            @ApiResponse(responseCode = "500",
+                    description = "AI 서버 오류(AI_SERVER_ERROR)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.AI_SERVER_ERROR)))
+    })
     @PostMapping("/extractions")
     public ResponseEntity<BaseResponse<ExperienceExtractionResponse>> startExperienceExtraction(
             @AuthenticationPrincipal AccessUser user,
@@ -42,6 +67,10 @@ public class ExperienceExtractionController {
     }
 
     @Operation(summary = "경험 추출 가능 여부 조회", description = "로그인한 사용자가 경험 추출을 수행할 수 있는지 가능 여부를 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "경험 추출 가능 여부 조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (액세스 토큰 누락/만료)")
+    })
     @GetMapping("/extractions/availability")
     public ResponseEntity<BaseResponse<ExperienceExtractionAvailabilityResult>> getExtractionAvailability(
             @AuthenticationPrincipal AccessUser user
@@ -56,6 +85,20 @@ public class ExperienceExtractionController {
     * ExperienceExtraction 단일 조회 API
     * */
     @Operation(summary = "경험 추출 단일 조회", description = "추출 ID에 해당하는 경험 추출 작업의 결과를 단건 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "경험 추출 결과 단건 조회 성공"),
+            @ApiResponse(responseCode = "400",
+                    description = "추출된 경험이 비어 있음(EXTRACTED_EXPERIENCE_IS_EMPTY)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.EXTRACTED_EXPERIENCE_IS_EMPTY))),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (액세스 토큰 누락/만료)"),
+            @ApiResponse(responseCode = "404",
+                    description = "추출 작업을 찾을 수 없거나 본인 소유가 아님(EXTRACTED_EXPERIENCE_NOT_FOUND)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.EXTRACTED_EXPERIENCE_NOT_FOUND)))
+    })
     @GetMapping("/extractions/{extractionId}")
     public ResponseEntity<BaseResponse<ExperienceExtractionSearchResult>> getExperienceExtraction(
         @AuthenticationPrincipal AccessUser user,
