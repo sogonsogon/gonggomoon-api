@@ -5,6 +5,7 @@ import com.sogonsogon.gonggomoon.domain.post.application.PostService;
 import com.sogonsogon.gonggomoon.domain.post.dto.response.PostResponse;
 import com.sogonsogon.gonggomoon.domain.post.dto.response.PostsResponse;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Hidden
+@Deprecated
 @Tag(name = "공고", description = "공고 조회 및 검색 관련 API")
 @RestController
 @RequestMapping("/api/v1/posts")

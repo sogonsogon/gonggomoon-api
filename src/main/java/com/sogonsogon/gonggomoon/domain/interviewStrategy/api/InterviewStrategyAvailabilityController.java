@@ -5,6 +5,7 @@ import com.sogonsogon.gonggomoon.domain.interviewStrategy.api.response.Interview
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.application.InterviewStrategyAvailabilityService;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.application.result.InterviewStrategyAvailabilityResult;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Hidden
+@Deprecated
 @Tag(name = "면접 전략 생성 가능 여부", description = "면접 전략 질문 세트 생성 가능 여부 조회 API")
 @RestController
 @RequestMapping("/api/v1")

@@ -9,6 +9,7 @@ import com.sogonsogon.gonggomoon.domain.file.application.result.UploadFileResult
 import com.sogonsogon.gonggomoon.domain.file.application.result.UploadedFileListResult;
 import com.sogonsogon.gonggomoon.domain.file.domain.DocumentCategory;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+@Hidden
+@Deprecated
 @Tag(name = "파일", description = "파일 업로드, 목록 조회, 삭제 API")
 @RestController
 @RequestMapping("/api/v2")

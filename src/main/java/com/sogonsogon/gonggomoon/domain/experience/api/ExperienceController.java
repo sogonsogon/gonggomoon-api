@@ -11,6 +11,7 @@ import com.sogonsogon.gonggomoon.domain.experience.application.result.CreateExpe
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceDetailResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceListResult;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -69,6 +70,8 @@ public class ExperienceController {
      * @param experienceId
      * @return
      */
+    @Deprecated
+    @Hidden
     @Operation(summary = "경험 삭제", description = "경험 ID에 해당하는 경험을 삭제합니다.")
     @DeleteMapping("/{experienceId}")
     public ResponseEntity<BaseResponse<Void>> deleteExperience(@AuthenticationPrincipal AccessUser user,
@@ -92,6 +95,8 @@ public class ExperienceController {
     /**
      * 경험 상세를 조회합니다.
      */
+    @Deprecated
+    @Hidden
     @Operation(summary = "경험 상세 조회", description = "경험 ID에 해당하는 경험의 상세 정보를 조회합니다.")
     @GetMapping("/{experienceId}")
     public ResponseEntity<BaseResponse<ExperienceDetailResponse>> getExperienceDetail(@AuthenticationPrincipal AccessUser user,

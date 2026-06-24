@@ -5,6 +5,7 @@ import com.sogonsogon.gonggomoon.domain.auth.application.AuthService;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.TokenCookieManager;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.security.PermitAll;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Hidden
+@Deprecated
 @Tag(name = "인증", description = "로그아웃 및 토큰 재발급 등 인증 관련 API")
 @RestController
 @RequiredArgsConstructor

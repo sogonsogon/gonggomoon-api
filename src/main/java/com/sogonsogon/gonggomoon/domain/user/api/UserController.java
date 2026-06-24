@@ -5,6 +5,7 @@ import com.sogonsogon.gonggomoon.domain.user.api.dto.UserReadResponse;
 import com.sogonsogon.gonggomoon.domain.user.application.UserService;
 import com.sogonsogon.gonggomoon.domain.user.domain.User;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,8 @@ public class UserController {
     @Autowired
     public UserController(UserService userService) {this.userService = userService;}
 
+    @Deprecated
+    @Hidden
     @Operation(summary = "내 정보 조회", description = "현재 로그인한 사용자의 정보를 조회한다.")
     @GetMapping("/me")
     public ResponseEntity<BaseResponse<UserReadResponse>> getUserInfo(@AuthenticationPrincipal AccessUser user) {
