@@ -22,15 +22,15 @@ class PortfolioStrategyAiServiceGeneratorTest {
     private PortfolioStrategyAiServiceGenerator generator;
 
     @Test
-    void request_passesPostIdToAiService() {
+    void request_passesPostAnalysisIdToAiService() {
         Long userId = 1L;
         Long portfolioStrategyId = 100L;
-        Long postId = 10L;
+        Long postAnalysisId = 10L;
         List<Experience> experiences = List.of();
         String positionType = "BACKEND";
         String industryType = "핀테크";
 
-        generator.request(userId, portfolioStrategyId, experiences, positionType, industryType, postId);
+        generator.request(userId, portfolioStrategyId, experiences, positionType, industryType, postAnalysisId);
 
         verify(aiService).requestPortfolioStrategyGeneration(
                 userId,
@@ -38,7 +38,7 @@ class PortfolioStrategyAiServiceGeneratorTest {
                 experiences,
                 positionType,
                 industryType,
-                postId
+                postAnalysisId
         );
     }
 }

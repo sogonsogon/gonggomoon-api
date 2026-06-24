@@ -11,6 +11,6 @@ public interface PortfolioStrategyContentGenerator {
             List<Experience> experiences,
             String positionType,
             String industryType,
-            Long postId
+            Long postAnalysisId
     );
 }

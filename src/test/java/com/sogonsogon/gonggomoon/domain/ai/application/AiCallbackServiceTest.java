@@ -63,6 +63,7 @@ public class AiCallbackServiceTest {
                     USER_ID,
                     JobType.BACKEND,
                     INDUSTRY_ID,
+                    null,
                     2,
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))

@@ -77,7 +77,7 @@ class PortfolioStrategyServiceTest {
 
     private static final Long INDUSTRY_ID = 1L;
 
-    private static final Long POST_ID = 10L;
+    private static final Long POST_ANALYSIS_ID = 10L;
 
     @Nested
     @DisplayName("generate")
@@ -90,7 +90,7 @@ class PortfolioStrategyServiceTest {
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
                     INDUSTRY_ID,
-                    POST_ID,
+                    POST_ANALYSIS_ID,
                     null
             );
 
@@ -112,7 +112,7 @@ class PortfolioStrategyServiceTest {
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
                     INDUSTRY_ID,
-                    POST_ID,
+                    POST_ANALYSIS_ID,
                     List.of()
             );
 
@@ -134,7 +134,7 @@ class PortfolioStrategyServiceTest {
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
                     INDUSTRY_ID,
-                    POST_ID,
+                    POST_ANALYSIS_ID,
                     List.of(1L, 2L)
             );
 
@@ -164,7 +164,7 @@ class PortfolioStrategyServiceTest {
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
                     INDUSTRY_ID,
-                    POST_ID,
+                    POST_ANALYSIS_ID,
                     List.of(1L, 2L)
             );
 
@@ -178,6 +178,7 @@ class PortfolioStrategyServiceTest {
                     USER_ID,
                     req.jobType(),
                     req.industryId(),
+                    req.postAnalysisId(),
                     experiences.size(),
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
@@ -208,7 +209,7 @@ class PortfolioStrategyServiceTest {
                     anyList(),
                     anyString(),
                     nullable(String.class),
-                    eq(req.postId())
+                    eq(req.postAnalysisId())
             );
         }
 
@@ -219,7 +220,7 @@ class PortfolioStrategyServiceTest {
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
                     JobType.BACKEND,
                     INDUSTRY_ID,
-                    POST_ID,
+                    POST_ANALYSIS_ID,
                     List.of(1L)
             );
 
@@ -248,7 +249,7 @@ class PortfolioStrategyServiceTest {
             setField(portfolioStrategyService, "weeklyLimitEnabled", true);
 
             GeneratePortfolioStrategyRequest req =
-                    new GeneratePortfolioStrategyRequest(JobType.BACKEND, 1L, POST_ID, List.of(1L, 2L));
+                    new GeneratePortfolioStrategyRequest(JobType.BACKEND, 1L, POST_ANALYSIS_ID, List.of(1L, 2L));
 
             Experience experience1 = createExperience(USER_ID, "캡스톤 프로젝트");
             Experience experience2 = createExperience(USER_ID, "인턴 경험");
@@ -273,7 +274,7 @@ class PortfolioStrategyServiceTest {
             setField(portfolioStrategyService, "weeklyLimitEnabled", true);
 
             GeneratePortfolioStrategyRequest req =
-                    new GeneratePortfolioStrategyRequest(JobType.BACKEND, 1L, POST_ID, List.of(1L, 2L));
+                    new GeneratePortfolioStrategyRequest(JobType.BACKEND, 1L, POST_ANALYSIS_ID, List.of(1L, 2L));
 
             Experience experience1 = createExperience(USER_ID, "캡스톤 프로젝트");
             Experience experience2 = createExperience(USER_ID, "인턴 경험");
@@ -285,6 +286,7 @@ class PortfolioStrategyServiceTest {
                     USER_ID,
                     req.jobType(),
                     req.industryId(),
+                    req.postAnalysisId(),
                     experiences.size(),
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
@@ -321,7 +323,7 @@ class PortfolioStrategyServiceTest {
                             eq(experiences),
                             eq(req.jobType().name()),
                             nullable(String.class),
-                            eq(req.postId())
+                            eq(req.postAnalysisId())
                     );
         }
     }
@@ -590,6 +592,7 @@ class PortfolioStrategyServiceTest {
                 userId,
                 jobType,
                 industryId,
+                null,
                 1,
                 createdAt,
                 generatedDate

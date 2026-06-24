@@ -103,13 +103,13 @@ public class AiService {
         List<Experience> experiences,
         String positionType,
         String industryType,
-        Long postId) {
+        Long postAnalysisId) {
 
         // DTO 생성
         PortfolioStrategyRequest request = new PortfolioStrategyRequest(
             userId,
             portfolioStrategyId,
-            postId,
+            postAnalysisId,
             experiences,
             positionType,
             industryType
