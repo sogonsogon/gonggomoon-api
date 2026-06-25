@@ -90,6 +90,7 @@ public class PortfolioStrategyService {
                 userId,
                 req.jobType(),
                 req.industryId(),
+                req.postAnalysisId(),
                 experiences.size(),
                 now,
                 today);
@@ -108,7 +109,8 @@ public class PortfolioStrategyService {
                 draftStrategy.getId(),
                 experiences,
                 req.jobType().name(),
-                industryName);
+                industryName,
+                req.postAnalysisId());
 
         return GeneratePortfolioStrategyResult.from(draftStrategy.getId());
     }

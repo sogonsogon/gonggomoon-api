@@ -94,11 +94,22 @@ public class AiService {
         List<Experience> experiences,
         String positionType,
         String industryType) {
+        requestPortfolioStrategyGeneration(userId, portfolioStrategyId, experiences, positionType, industryType, null);
+    }
+
+    public void requestPortfolioStrategyGeneration(
+        Long userId,
+        Long portfolioStrategyId,
+        List<Experience> experiences,
+        String positionType,
+        String industryType,
+        Long postAnalysisId) {
 
         // DTO 생성
         PortfolioStrategyRequest request = new PortfolioStrategyRequest(
             userId,
             portfolioStrategyId,
+            postAnalysisId,
             experiences,
             positionType,
             industryType

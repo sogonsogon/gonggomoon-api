@@ -50,6 +50,9 @@ public class PortfolioStrategy {
 
     private Long industryId;
 
+    @Column(name = "post_analysis_id")
+    private Long postAnalysisId;
+
     /**
      * 전략 생성 상태
      */
@@ -74,6 +77,7 @@ public class PortfolioStrategy {
             Long userId,
             JobType jobType,
             Long industryId,
+            Long postAnalysisId,
             int selectedExperienceCount,
             Instant now,
             LocalDate generatedDate
@@ -89,6 +93,7 @@ public class PortfolioStrategy {
                 .userId(userId)
                 .jobType(jobType)
                 .industryId(industryId)
+                .postAnalysisId(postAnalysisId)
                 .selectedExperienceCount(selectedExperienceCount)
                 .createdAt(now)
                 .generatedDate(generatedDate)
