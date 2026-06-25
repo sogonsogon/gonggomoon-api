@@ -10,6 +10,7 @@ import com.sogonsogon.gonggomoon.domain.interviewStrategy.application.result.Gen
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.application.result.InterviewQuestionSetListResult;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.application.result.InterviewStrategyDetailResult;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,6 +26,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Hidden
+@Deprecated
 @Tag(name = "면접 전략", description = "면접 전략 질문 세트 생성, 조회, 삭제 API")
 @RestController
 @RequestMapping("/api/v1")

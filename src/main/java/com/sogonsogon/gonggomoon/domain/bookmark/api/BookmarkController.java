@@ -5,6 +5,7 @@ import com.sogonsogon.gonggomoon.domain.bookmark.application.BookmarkService;
 import com.sogonsogon.gonggomoon.domain.bookmark.dto.BookmarkListResponse;
 import com.sogonsogon.gonggomoon.domain.bookmark.dto.CreateBookmarkRequest;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Hidden
+@Deprecated
 @Tag(name = "북마크", description = "공고 북마크 생성, 조회, 삭제 API")
 @RestController
 @RequestMapping("/api/v1/bookmarks")

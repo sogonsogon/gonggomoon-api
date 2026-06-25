@@ -10,8 +10,15 @@ import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceService
 import com.sogonsogon.gonggomoon.domain.experience.application.result.CreateExperienceResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceDetailResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceListResult;
+import com.sogonsogon.gonggomoon.global.docs.ErrorResponseExamples;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +48,15 @@ public class ExperienceController {
      * @return
      */
     @Operation(summary = "경험 생성", description = "로그인한 사용자가 입력한 내용을 기반으로 경험을 수기로 생성합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "경험 생성 성공"),
+            @ApiResponse(responseCode = "400",
+                    description = "입력값 검증 실패(GLOBAL_INVALID_INPUT_VALUE) / 종료일이 시작일보다 이전(EXPERIENCE_INVALID_DATE_RANGE)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.VALIDATION))),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (액세스 토큰 누락/만료)")
+    })
     @PostMapping
     public ResponseEntity<BaseResponse<CreateExperienceResponse>> createExperience(@AuthenticationPrincipal AccessUser user,
                                                                                   @RequestBody @Valid CreateExperienceRequest req) {
@@ -55,6 +71,20 @@ public class ExperienceController {
      * @return
      */
     @Operation(summary = "경험 수정", description = "경험 ID에 해당하는 경험을 요청 내용으로 수정합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "경험 수정 성공"),
+            @ApiResponse(responseCode = "400",
+                    description = "입력값 검증 실패(GLOBAL_INVALID_INPUT_VALUE) / 종료일이 시작일보다 이전(EXPERIENCE_INVALID_DATE_RANGE)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.VALIDATION))),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (액세스 토큰 누락/만료)"),
+            @ApiResponse(responseCode = "404",
+                    description = "경험을 찾을 수 없거나 본인 소유가 아님(EXPERIENCE_NOT_FOUND)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.EXPERIENCE_NOT_FOUND)))
+    })
     @PatchMapping("/{experienceId}")
     public ResponseEntity<BaseResponse<ExperienceDetailResponse>> updateExperience(@AuthenticationPrincipal AccessUser user,
                                                                    @PathVariable("experienceId") Long experienceId,
@@ -69,6 +99,8 @@ public class ExperienceController {
      * @param experienceId
      * @return
      */
+    @Deprecated
+    @Hidden
     @Operation(summary = "경험 삭제", description = "경험 ID에 해당하는 경험을 삭제합니다.")
     @DeleteMapping("/{experienceId}")
     public ResponseEntity<BaseResponse<Void>> deleteExperience(@AuthenticationPrincipal AccessUser user,
@@ -82,6 +114,10 @@ public class ExperienceController {
      * 경험 목록을 조회합니다.
      */
     @Operation(summary = "경험 목록 조회", description = "로그인한 사용자가 등록한 경험 목록을 조회합니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "경험 목록 조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (액세스 토큰 누락/만료)")
+    })
     @GetMapping
     public ResponseEntity<BaseResponse<ExperienceListResponse>> getExperiencesList(@AuthenticationPrincipal AccessUser user) {
         ExperienceListResult result = experienceService.getExperiencesList(user.getId());
@@ -92,6 +128,8 @@ public class ExperienceController {
     /**
      * 경험 상세를 조회합니다.
      */
+    @Deprecated
+    @Hidden
     @Operation(summary = "경험 상세 조회", description = "경험 ID에 해당하는 경험의 상세 정보를 조회합니다.")
     @GetMapping("/{experienceId}")
     public ResponseEntity<BaseResponse<ExperienceDetailResponse>> getExperienceDetail(@AuthenticationPrincipal AccessUser user,
