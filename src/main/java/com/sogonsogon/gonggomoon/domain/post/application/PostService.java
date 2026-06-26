@@ -14,24 +14,24 @@ import org.springframework.stereotype.Service;
 @Service
 public class PostService {
 
-    private final PostRepository postRepository;
-
-    public PostService(PostRepository postRepository) {
-        this.postRepository = postRepository;
-    }
-
-    public Page<PostsResponse> searchPosts(SearchPostRequest request, Pageable pageable) {
-
-        return postRepository.searchPosts(request.jobType(), PostStatus.PUBLISHED, request.title(), pageable);
-    }
-
-    public PostResponse getPost(Long id) {
-
-        PostResponse response = postRepository.getPost(id)
-                .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_PUBLISHED));
-
-        if (response.status() != PostStatus.PUBLISHED) throw new BaseException(PostErrorCode.POST_NOT_PUBLISHED);
-
-        return response;
-    }
+//    private final PostRepository postRepository;
+//
+//    public PostService(PostRepository postRepository) {
+//        this.postRepository = postRepository;
+//    }
+//
+//    public Page<PostsResponse> searchPosts(SearchPostRequest request, Pageable pageable) {
+//
+//        return postRepository.searchPosts(request.jobType(), PostStatus.PUBLISHED, request.title(), pageable);
+//    }
+//
+//    public PostResponse getPost(Long id) {
+//
+//        PostResponse response = postRepository.getPost(id)
+//                .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_PUBLISHED));
+//
+//        if (response.status() != PostStatus.PUBLISHED) throw new BaseException(PostErrorCode.POST_NOT_PUBLISHED);
+//
+//        return response;
+//    }
 }

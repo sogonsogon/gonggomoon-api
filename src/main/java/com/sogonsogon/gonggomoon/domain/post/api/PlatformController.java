@@ -1,7 +1,5 @@
 package com.sogonsogon.gonggomoon.domain.post.api;
 
-import com.sogonsogon.gonggomoon.domain.post.application.PlatformService;
-import com.sogonsogon.gonggomoon.domain.post.dto.response.PlatformListResponse;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,16 +16,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/platforms")
 public class PlatformController {
 
-    private final PlatformService platformService;
-
-    public PlatformController(PlatformService platformService) {
-        this.platformService = platformService;
-    }
-
-    @Operation(summary = "플랫폼 목록 조회", description = "등록된 전체 플랫폼 목록을 조회합니다.")
-    @GetMapping
-    public ResponseEntity<BaseResponse<PlatformListResponse>> getPlatforms() {
-
-        return ResponseEntity.ok(BaseResponse.success(platformService.getPlatformAll()));
-    }
+//    private final PlatformService platformService;
+//
+//    public PlatformController(PlatformService platformService) {
+//        this.platformService = platformService;
+//    }
+//
+//    @Operation(summary = "플랫폼 목록 조회", description = "등록된 전체 플랫폼 목록을 조회합니다.")
+//    @GetMapping
+//    public ResponseEntity<BaseResponse<PlatformListResponse>> getPlatforms() {
+//
+//        return ResponseEntity.ok(BaseResponse.success(platformService.getPlatformAll()));
+//    }
 }
