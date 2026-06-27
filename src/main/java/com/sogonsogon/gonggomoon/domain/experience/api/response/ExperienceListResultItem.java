@@ -14,6 +14,7 @@ public record ExperienceListResultItem(
         Long experienceId,
         String title,
         String experienceType,
+        String experienceContent,
         String startDate,
         String endDate
 ) {
@@ -24,6 +25,7 @@ public record ExperienceListResultItem(
                 .experienceId(e.getId())
                 .title(e.getTitle())
                 .experienceType(e.getExperienceType().name())
+                .experienceContent(e.getExperienceContent())
                 .startDate(formatYm(e.getStartDate()))
                 .endDate(formatYm(e.getEndDate()))
                 .build();
