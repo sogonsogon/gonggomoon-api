@@ -2,7 +2,6 @@ package com.sogonsogon.gonggomoon.domain.post.api;
 
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.post.dto.request.SubmitPostRequest;
-import com.sogonsogon.gonggomoon.domain.post.application.SubmissionService;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,19 +22,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/posts/submissions")
 public class SubmissionController {
 
-    private final SubmissionService submissionService;
-
-    public SubmissionController(SubmissionService submissionService) {
-        this.submissionService = submissionService;
-    }
-
-    @Operation(summary = "공고 제출 등록", description = "인증된 사용자가 새로운 공고 제보를 등록합니다.")
-    @PostMapping
-    public ResponseEntity<BaseResponse<Void>> submitPost(@RequestBody @Valid SubmitPostRequest request,
-                                                         @AuthenticationPrincipal AccessUser user) {
-
-        submissionService.submitPost(request, user.getId());
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success());
-    }
+//    private final SubmissionService submissionService;
+//
+//    public SubmissionController(SubmissionService submissionService) {
+//        this.submissionService = submissionService;
+//    }
+//
+//    @Operation(summary = "공고 제출 등록", description = "인증된 사용자가 새로운 공고 제보를 등록합니다.")
+//    @PostMapping
+//    public ResponseEntity<BaseResponse<Void>> submitPost(@RequestBody @Valid SubmitPostRequest request,
+//                                                         @AuthenticationPrincipal AccessUser user) {
+//
+//        submissionService.submitPost(request, user.getId());
+//
+//        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success());
+//    }
 }

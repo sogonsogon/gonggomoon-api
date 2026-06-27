@@ -26,38 +26,38 @@ import java.util.List;
 @RequestMapping("/api/v1/posts")
 public class PostController {
 
-    private final PostService postService;
-
-    public PostController(PostService postService) {
-        this.postService = postService;
-    }
-
-    @Operation(summary = "공고 목록 검색", description = "검색 조건과 페이징 정보를 받아 공고 목록을 페이지 단위로 조회합니다.")
-    @GetMapping
-    public ResponseEntity<BaseResponse<BaseResponse.PageResponse<PostsResponse>>> searchPosts(
-            @ModelAttribute SearchPostRequest request,
-            Pageable pageable
-    ) {
-
-        Page<PostsResponse> page = postService.searchPosts(request, pageable);
-
-        return ResponseEntity.ok(BaseResponse.success(
-                BaseResponse.PageResponse.<PostsResponse>builder()
-                        .content(page.getContent())
-                        .pageInfo(BaseResponse.PageInfo.builder()
-                                .currentPage(page.getNumber())
-                                .totalPages(page.getTotalPages())
-                                .totalElements(page.getTotalElements())
-                                .hasNext(page.hasNext())
-                                .build())
-                        .build())
-        );
-    }
-
-    @Operation(summary = "공고 상세 조회", description = "공고 ID로 단일 공고의 상세 정보를 조회합니다.")
-    @GetMapping("/{id}")
-    public ResponseEntity<BaseResponse<PostResponse>> getPost(@PathVariable Long id) {
-
-        return ResponseEntity.ok(BaseResponse.success(postService.getPost(id)));
-    }
+//    private final PostService postService;
+//
+//    public PostController(PostService postService) {
+//        this.postService = postService;
+//    }
+//
+//    @Operation(summary = "공고 목록 검색", description = "검색 조건과 페이징 정보를 받아 공고 목록을 페이지 단위로 조회합니다.")
+//    @GetMapping
+//    public ResponseEntity<BaseResponse<BaseResponse.PageResponse<PostsResponse>>> searchPosts(
+//            @ModelAttribute SearchPostRequest request,
+//            Pageable pageable
+//    ) {
+//
+//        Page<PostsResponse> page = postService.searchPosts(request, pageable);
+//
+//        return ResponseEntity.ok(BaseResponse.success(
+//                BaseResponse.PageResponse.<PostsResponse>builder()
+//                        .content(page.getContent())
+//                        .pageInfo(BaseResponse.PageInfo.builder()
+//                                .currentPage(page.getNumber())
+//                                .totalPages(page.getTotalPages())
+//                                .totalElements(page.getTotalElements())
+//                                .hasNext(page.hasNext())
+//                                .build())
+//                        .build())
+//        );
+//    }
+//
+//    @Operation(summary = "공고 상세 조회", description = "공고 ID로 단일 공고의 상세 정보를 조회합니다.")
+//    @GetMapping("/{id}")
+//    public ResponseEntity<BaseResponse<PostResponse>> getPost(@PathVariable Long id) {
+//
+//        return ResponseEntity.ok(BaseResponse.success(postService.getPost(id)));
+//    }
 }
