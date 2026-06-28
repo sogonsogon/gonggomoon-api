@@ -9,6 +9,12 @@ import java.util.Optional;
 public interface PortfolioStrategyRepository {
     Optional<PortfolioStrategy> findByIdAndUserId(Long id, Long userId);
 
+    Optional<PortfolioStrategy> findFirstByUserIdAndPostAnalysisIdAndStatusOrderByCreatedAtDesc(
+            Long userId,
+            Long postAnalysisId,
+            PortfolioStrategyGenerateStatus status
+    );
+
     PortfolioStrategy save(PortfolioStrategy portfolioStrategy);
 
     void delete(PortfolioStrategy portfolioStrategy);

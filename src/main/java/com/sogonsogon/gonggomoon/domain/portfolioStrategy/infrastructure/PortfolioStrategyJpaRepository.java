@@ -20,6 +20,7 @@ public interface PortfolioStrategyJpaRepository
             ps.id,
             ps.jobType,
             coalesce(i.name, '마스터'),
+            ps.status,
             ps.createdAt
         )
         from PortfolioStrategy ps

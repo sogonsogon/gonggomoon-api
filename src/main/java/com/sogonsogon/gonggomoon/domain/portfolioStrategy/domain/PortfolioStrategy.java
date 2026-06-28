@@ -45,7 +45,7 @@ public class PortfolioStrategy {
     private String resultJson;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column
     private JobType jobType;
 
     private Long industryId;
@@ -99,6 +99,47 @@ public class PortfolioStrategy {
                 .generatedDate(generatedDate)
                 .status(PortfolioStrategyGenerateStatus.PROCESSING)
                 .build();
+    }
+
+    public static PortfolioStrategy createDraft(
+            Long userId,
+            Long postAnalysisId,
+            Instant now,
+            LocalDate generatedDate
+    ) {
+        ValidationUtils.requireNonNull(userId, PortfolioStrategyErrorCode.USERID_REQUIRED);
+
+        // 프로그래밍 오류
+        Objects.requireNonNull(now, "now must not be null");
+        Objects.requireNonNull(generatedDate, "generatedDate must not be null");
+
+        return PortfolioStrategy.builder()
+                .userId(userId)
+                .postAnalysisId(postAnalysisId)
+                .selectedExperienceCount(0)
+                .createdAt(now)
+                .generatedDate(generatedDate)
+                .status(PortfolioStrategyGenerateStatus.DRAFT)
+                .build();
+    }
+
+    public void startProcessing(
+            JobType jobType,
+            Long industryId,
+            int selectedExperienceCount
+    ) {
+        if (this.status != PortfolioStrategyGenerateStatus.DRAFT) {
+            throw new BaseException(PortfolioStrategyErrorCode.INVALID_STATUS);
+        }
+
+        if (selectedExperienceCount <= 0) {
+            throw new BaseException(PortfolioStrategyErrorCode.EXPERIENCE_IDS_REQUIRED);
+        }
+
+        this.jobType = jobType;
+        this.industryId = industryId;
+        this.selectedExperienceCount = selectedExperienceCount;
+        this.status = PortfolioStrategyGenerateStatus.PROCESSING;
     }
 
     public void updateStatus(PortfolioStrategyGenerateStatus status) {

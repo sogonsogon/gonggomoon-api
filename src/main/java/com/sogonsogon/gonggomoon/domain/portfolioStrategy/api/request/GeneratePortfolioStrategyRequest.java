@@ -7,8 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record GeneratePortfolioStrategyRequest(
-        @Schema(description = "지원 직무", example = "BACKEND", requiredMode = Schema.RequiredMode.REQUIRED)
-        @NotNull(message = "직무 선택은 필수입니다.") JobType jobType,
+        @Schema(description = "지원 직무 (선택)", example = "BACKEND")
+        JobType jobType,
         @Schema(description = "산업 ID (선택)", example = "3")
         Long industryId,
         @NotNull(message = "postAnalysisId는 필수입니다.") Long postAnalysisId,
