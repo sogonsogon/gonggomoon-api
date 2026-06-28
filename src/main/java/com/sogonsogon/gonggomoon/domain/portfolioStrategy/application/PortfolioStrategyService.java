@@ -60,19 +60,20 @@ public class PortfolioStrategyService {
         }
 
         /**
-         * now : 기준 시각 1개
-         * today : 그 시각에서 파생된 날짜
-         */
-        Instant now = Instant.now();
-        LocalDate today = now.atZone(KST).toLocalDate();
-
-        /**
          * 경험 목록 조회
          */
         List<Experience> experiences = experienceRepository.findAllByIdInAndUserId(req.experienceIds(), userId);
         if (experiences.size() != req.experienceIds().size()) {
             throw new BaseException(PortfolioStrategyErrorCode.REQUESTED_EXPERIENCE_NOT_FOUND);
         }
+
+        PortfolioStrategy draftStrategy = portfolioStrategyRepository
+                .findFirstByUserIdAndPostAnalysisIdAndStatusOrderByCreatedAtDesc(
+                        userId,
+                        req.postAnalysisId(),
+                        PortfolioStrategyGenerateStatus.DRAFT
+                )
+                .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
 
         /**
          * 이번 주 성공한 전략 생성 횟수를 검증
@@ -81,21 +82,8 @@ public class PortfolioStrategyService {
             throw new BaseException(PortfolioStrategyErrorCode.WEEKLY_LIMIT_EXCEEDED);
         }
 
-        /**
-         * 포트폴리오 전략 엔티티 생성
-         * 기본 값으로 생성하는 이유는 AI가 포트폴리오 전략을 생성하고 난 후,
-         * 어떤 portfolio_strategy에 그 값을 저장해야하는지 명시
-         */
-        PortfolioStrategy strategy = PortfolioStrategy.create(
-                userId,
-                req.jobType(),
-                req.industryId(),
-                req.postAnalysisId(),
-                experiences.size(),
-                now,
-                today);
-
-        PortfolioStrategy draftStrategy = portfolioStrategyRepository.save(strategy);
+        draftStrategy.startProcessing(req.jobType(), req.industryId(), experiences.size());
+        portfolioStrategyRepository.save(draftStrategy);
 
         /**
          * 산업 조회 및 산업이름 반환
@@ -108,11 +96,22 @@ public class PortfolioStrategyService {
                 userId,
                 draftStrategy.getId(),
                 experiences,
-                req.jobType().name(),
+                draftStrategy.getJobType() == null ? null : draftStrategy.getJobType().name(),
                 industryName,
-                req.postAnalysisId());
+                draftStrategy.getPostAnalysisId());
 
         return GeneratePortfolioStrategyResult.from(draftStrategy.getId());
+    }
+
+    @Transactional
+    public Long createDraft(Long userId, Long postAnalysisId) {
+        Instant now = Instant.now();
+        LocalDate today = now.atZone(KST).toLocalDate();
+
+        PortfolioStrategy draft = PortfolioStrategy.createDraft(userId, postAnalysisId, now, today);
+        PortfolioStrategy savedDraft = portfolioStrategyRepository.save(draft);
+
+        return savedDraft.getId();
     }
 
     /**
@@ -131,7 +130,8 @@ public class PortfolioStrategyService {
         PortfolioStrategy portfolioStrategy = portfolioStrategyRepository.findByIdAndUserId(strategyId, userId)
                 .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
 
-        if (portfolioStrategy.getStatus() == PortfolioStrategyGenerateStatus.PROCESSING) {
+        if (portfolioStrategy.getStatus() == PortfolioStrategyGenerateStatus.DRAFT ||
+                portfolioStrategy.getStatus() == PortfolioStrategyGenerateStatus.PROCESSING) {
             throw new BaseException(PortfolioStrategyErrorCode.RESULT_NOT_READY);
         }
 
