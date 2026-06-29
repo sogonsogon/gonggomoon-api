@@ -15,6 +15,7 @@ import com.sogonsogon.gonggomoon.domain.ai.infrastructure.InterviewQuestionResul
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceType;
+import com.sogonsogon.gonggomoon.domain.file.application.FileAssetService;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.JobType;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategy;
@@ -79,6 +80,9 @@ public class AiCallbackServiceTest {
 
     @Mock
     private ObjectMapper objectMapper;
+
+    @Mock
+    private FileAssetService fileAssetService;
 
     @InjectMocks
     private AiCallbackService aiCallbackService;
@@ -166,6 +170,8 @@ public class AiCallbackServiceTest {
             assertEquals(ExtractionStatus.READY, extractedExperience.getStatus());
             assertNull(extractedExperience.getExperiences());
             verify(extractedExperienceRepository).saveAll(List.of(extractedExperience));
+            // 추출 완료 후 임시 파일 정리가 호출되어야 한다.
+            verify(fileAssetService).deleteTemporaryFiles(List.of(10L));
         }
 
         @Test
