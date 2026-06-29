@@ -94,6 +94,12 @@ ai:
     base-url: ${AI_SERVER_URL}
     internal-api-key: ${INTERNAL_API_KEY}
 
+gcp:
+  cloud-tasks:
+    project-id: ${GCP_PROJECT_ID}
+    location: ${CLOUD_TASKS_LOCATION}
+    queue: ${CLOUD_TASKS_QUEUE}
+
 strategy:
   portfolio:
     weekly-limit-enabled: ${PORTFOLIO_WEEKLY_LIMIT_ENABLED}
