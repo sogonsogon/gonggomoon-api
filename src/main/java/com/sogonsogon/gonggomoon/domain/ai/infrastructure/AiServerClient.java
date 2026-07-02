@@ -13,6 +13,7 @@ import com.sogonsogon.gonggomoon.domain.ai.dto.request.InterviewStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.PortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.ai.error.AiErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AiServerClient {
 
+    // 신규 AI 워커의 단일 진입점. 워커는 body의 job_type으로 작업을 분기한다.
+    private static final String TASKS_EXECUTE_PATH = "/tasks/execute";
+    private static final String EXPERIENCE_EXTRACTION_JOB_TYPE = "EXPERIENCE_EXTRACTION";
+    private static final String EXPERIENCE_EXTRACTION_CALLBACK_PATH = "/api/v1/callbacks/experience-extraction";
+
     private final CloudTasksClient cloudTasksClient;
     private final ObjectMapper objectMapper;
 
@@ -32,6 +38,9 @@ public class AiServerClient {
 
     @Value("${ai.server.internal-api-key}")
     private String internalApiKey;
+
+    @Value("${ai.callback.base-url}")
+    private String callbackBaseUrl;
 
     @Value("${gcp.cloud-tasks.project-id}")
     private String projectId;
@@ -44,10 +53,17 @@ public class AiServerClient {
 
     /*
     * 경험 추출 요청을 Cloud Tasks 큐에 등록하는 메서드
-    * (큐에 등록되면 Cloud Tasks가 AI 서버로 HTTP POST를 비동기 전송한다)
+    * 워커(/tasks/execute)가 기대하는 형식(job_type, user_id, callback_url, file_asset_ids)으로 변환한다.
+    * 큐에 등록되면 Cloud Tasks가 워커로 HTTP POST를 비동기 전송한다.
     * */
-    public void requestExperienceExtraction(ExperienceExtractionAiServerRequest request) {
-        enqueue("/api/v1/jobs/experience-extraction", request);
+    public void requestExperienceExtraction(Long userId, List<ExperienceExtractionAiServerRequest.FileAssetTarget> fileAssetTargets) {
+        ExperienceExtractionAiServerRequest request = new ExperienceExtractionAiServerRequest(
+            EXPERIENCE_EXTRACTION_JOB_TYPE,
+            userId,
+            callbackBaseUrl + EXPERIENCE_EXTRACTION_CALLBACK_PATH,
+            fileAssetTargets
+        );
+        enqueue(TASKS_EXECUTE_PATH, request);
     }
 
     /*

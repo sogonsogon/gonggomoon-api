@@ -9,28 +9,25 @@ import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
 import com.sogonsogon.gonggomoon.domain.ai.dto.response.ExperienceExtractResponse;
 import com.sogonsogon.gonggomoon.domain.ai.error.ExtractedExperienceErrorCode;
-import com.sogonsogon.gonggomoon.domain.experience.api.request.ExperienceExtractRequest;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionSearchResult;
-import com.sogonsogon.gonggomoon.domain.file.domain.FileAsset;
-import com.sogonsogon.gonggomoon.domain.file.domain.FileAssetRepository;
 import com.sogonsogon.gonggomoon.domain.experience.error.ExperienceErrorCode;
+import com.sogonsogon.gonggomoon.domain.file.api.request.UploadFileRequest;
+import com.sogonsogon.gonggomoon.domain.file.application.FileAssetService;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashSet;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class ExperienceExtractionService {
 
-    private static final int MAX_FILE_ASSET_COUNT = 2;
-
     private final AiService aiService;
-    private final FileAssetRepository fileAssetRepository;
+    private final FileAssetService fileAssetService;
     private final ExtractedExperienceRepository extractedExperienceRepository;
     private final AiUsagePolicyService aiUsagePolicyService;
 
@@ -39,31 +36,43 @@ public class ExperienceExtractionService {
 
     /*
     * AI 경험 추출 요청 처리
+    *
+    * 파일을 임시로 업로드한 뒤 AI 추출 작업을 시작한다.
+    * 원본 파일은 추출 완료(콜백) 시점에 삭제되며, 실패 시에는 즉시 정리한다.
     * */
-    public ExperienceExtractionResult startExperienceExtraction (ExperienceExtractRequest req, Long userId) {
-        validateRequestFileAssetIds(req.fileAssetIds());
-        List<FileAsset> fileAssets = fileAssetRepository.findAllByIdInAndUserId(req.fileAssetIds(), userId);
-
-        // 존재하지 않는 파일이 있거나, 다른 유저 파일이 섞였을 때
-        if (fileAssets.size() != req.fileAssetIds().size()) {
-            throw new BaseException(ExperienceErrorCode.INVALID_FILE_ASSET_REQUEST);
-        }
-
+    public ExperienceExtractionResult startExperienceExtraction(UploadFileRequest req, MultipartFile file, Long userId) {
+        // 1. 주간 사용량 예약 (가장 먼저 차감하여 업로드/발행 실패 시 환불 처리)
         if (weeklyLimitEnabled && !aiUsagePolicyService.reserve(userId, AiUsageType.EXPERIENCE_EXTRACTION)) {
             throw new BaseException(ExperienceErrorCode.WEEKLY_LIMIT_EXCEEDED);
         }
 
+        // 2. 파일 임시 업로드 (S3 + FileAsset 생성)
+        Long fileAssetId;
+        try {
+            fileAssetId = fileAssetService.uploadFile(userId, req, file).fileAssetId();
+        } catch (RuntimeException exception) {
+            refundUsage(userId);
+            throw exception;
+        }
+
+        // 3. 추출 작업 생성 + Cloud Tasks 발행
         ExperienceExtractResponse aiResponse;
         try {
-            aiResponse = aiService.requestExperienceExtraction(userId, req.fileAssetIds());
+            aiResponse = aiService.requestExperienceExtraction(userId, List.of(fileAssetId));
         } catch (RuntimeException exception) {
-            if (weeklyLimitEnabled) {
-                aiUsagePolicyService.refund(userId, AiUsageType.EXPERIENCE_EXTRACTION, aiUsagePolicyService.currentWeekStartDate());
-            }
+            refundUsage(userId);
+            // 발행에 실패하면 워커가 처리하지 않으므로 임시 파일을 즉시 정리한다.
+            fileAssetService.deleteTemporaryFiles(List.of(fileAssetId));
             throw exception;
         }
 
         return ExperienceExtractionResult.from(aiResponse.extractedExperienceIds());
+    }
+
+    private void refundUsage(Long userId) {
+        if (weeklyLimitEnabled) {
+            aiUsagePolicyService.refund(userId, AiUsageType.EXPERIENCE_EXTRACTION, aiUsagePolicyService.currentWeekStartDate());
+        }
     }
 
     /*
@@ -82,22 +91,6 @@ public class ExperienceExtractionService {
 
         List<ExperienceItem> experience_items = experiences.getExperiences();
         return ExperienceExtractionSearchResult.of(experience_items);
-    }
-
-    private void validateRequestFileAssetIds(List<Long> fileAssetIds) {
-        // 3개 이상 요청했을 때
-        if (fileAssetIds.size() > MAX_FILE_ASSET_COUNT) {
-            throw new BaseException(ExperienceErrorCode.FILE_ASSET_COUNT_EXCEEDED);
-        }
-
-        // [1, 1] 같이 중복 요청했을 때
-        if (hasDuplicate(fileAssetIds)) {
-            throw new BaseException(ExperienceErrorCode.DUPLICATE_FILE_ASSET_ID);
-        }
-    }
-
-    private boolean hasDuplicate(List<Long> fileAssetIds) {
-        return fileAssetIds.size() != new HashSet<>(fileAssetIds).size();
     }
 
 }

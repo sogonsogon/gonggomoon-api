@@ -93,6 +93,15 @@ ai:
   server:
     base-url: ${AI_SERVER_URL}
     internal-api-key: ${INTERNAL_API_KEY}
+  callback:
+    # 워커가 결과를 회신할 수 있는, 외부에서 접근 가능한 API 서버 base URL
+    base-url: ${API_CALLBACK_BASE_URL}
+
+gcp:
+  cloud-tasks:
+    project-id: ${GCP_PROJECT_ID}
+    location: ${CLOUD_TASKS_LOCATION}
+    queue: ${CLOUD_TASKS_QUEUE}
 
 gcp:
   cloud-tasks:

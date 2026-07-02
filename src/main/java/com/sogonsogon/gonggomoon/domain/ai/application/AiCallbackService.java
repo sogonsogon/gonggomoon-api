@@ -19,6 +19,7 @@ import com.sogonsogon.gonggomoon.domain.ai.infrastructure.InterviewQuestionResul
 
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
+import com.sogonsogon.gonggomoon.domain.file.application.FileAssetService;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewGenerateStatus;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategy;
@@ -55,6 +56,7 @@ public class AiCallbackService {
     private final InterviewQuestionResultMapper interviewQuestionResultMapper;
     private final AiUsagePolicyService aiUsagePolicyService;
     private final AiJobSseService aiJobSseService;
+    private final FileAssetService fileAssetService;
 
     private final ObjectMapper objectMapper;
 
@@ -96,6 +98,8 @@ public class AiCallbackService {
                     experiencesToUpdate.get(0).getGeneratedDate()
                 );
             }
+            // 실패한 경우에도 더 이상 처리되지 않으므로 임시 파일을 정리한다.
+            deleteTempFilesAfterCommit(collectFileAssetIds(experiencesToUpdate));
             notifyJobStatusAfterCommit(request.userId(), AiFunctions.EXTRACT_EXPERIENCE, ids, AiFunctionStatus.FAILED);
             return;
         }
@@ -130,7 +134,22 @@ public class AiCallbackService {
 
         experienceRepository.saveAll(experiencesToSave);
         extractedExperienceRepository.saveAll(entitiesToSave);
+        // 추출이 끝난 원본 파일은 더 이상 필요 없으므로 정리한다. (커밋 이후 실행)
+        deleteTempFilesAfterCommit(collectFileAssetIds(foundExperiences));
         notifyJobStatusAfterCommit(request.userId(), AiFunctions.EXTRACT_EXPERIENCE, ids, AiFunctionStatus.READY);
+    }
+
+    private List<Long> collectFileAssetIds(List<ExtractedExperience> extractedExperiences) {
+        return extractedExperiences.stream()
+            .map(ExtractedExperience::getFileAssetId)
+            .toList();
+    }
+
+    private void deleteTempFilesAfterCommit(List<Long> fileAssetIds) {
+        if (fileAssetIds.isEmpty()) {
+            return;
+        }
+        runAfterCommit(() -> fileAssetService.deleteTemporaryFiles(fileAssetIds));
     }
 
     private List<Experience> toExperiences(Long userId, Experiences experiences) {

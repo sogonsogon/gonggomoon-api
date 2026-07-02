@@ -5,7 +5,6 @@ import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractionStatus;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.AiFunctionStatusRequest;
-import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractionAiServerRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.InterviewStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.PortfolioStrategyRequest;
@@ -48,15 +47,11 @@ public class AiService {
     * @return 경험 추출 응답 DTO
     * */
     public ExperienceExtractResponse requestExperienceExtraction(Long userId, List<Long> fileAssetIds) {
-
-         // DTO 생성
-        ExperienceExtractRequest request = new ExperienceExtractRequest(userId, fileAssetIds);
         LocalDate generatedDate = Instant.now().atZone(KST).toLocalDate();
 
-        // ExtractedExperience 엔티티 생성
-
-        List<ExtractedExperience> extractedExperiences = request.fileAssetIds().stream()
-            .map(fileAssetId -> ExtractedExperience.create(request.userId(), fileAssetId, generatedDate))
+        // ExtractedExperience 엔티티 생성 (fileAssetId 1건당 추출 작업 1건)
+        List<ExtractedExperience> extractedExperiences = fileAssetIds.stream()
+            .map(fileAssetId -> ExtractedExperience.create(userId, fileAssetId, generatedDate))
             .toList();
         Iterable<ExtractedExperience> savedExtractedExperienceIterable = extractedExperienceRepository.saveAll(extractedExperiences);
         List<ExtractedExperience> savedExtractedExperiences = StreamSupport
@@ -67,14 +62,20 @@ public class AiService {
             .map(ExtractedExperience::getId)
             .toList();
 
-        // AI 서버에 경험 추출 요청 전송
-        ExperienceExtractionAiServerRequest aiServerRequest = new ExperienceExtractionAiServerRequest(savedExtractedExperienceIds);
+        // 워커가 S3에서 다운로드할 파일과 결과 매핑용 (file_asset_id ↔ extracted_experience_id) 쌍
+        List<ExperienceExtractionAiServerRequest.FileAssetTarget> fileAssetTargets = savedExtractedExperiences.stream()
+            .map(extractedExperience -> new ExperienceExtractionAiServerRequest.FileAssetTarget(
+                extractedExperience.getFileAssetId(),
+                extractedExperience.getId()
+            ))
+            .toList();
+
+        // AI 워커에 경험 추출 요청 전송 (Cloud Tasks)
         try {
-            aiServerClient.requestExperienceExtraction(aiServerRequest);
+            aiServerClient.requestExperienceExtraction(userId, fileAssetTargets);
         } catch (RuntimeException exception) {
-            savedExtractedExperiences.forEach(extractedExperience -> {
-                extractedExperience.updateStatus(ExtractionStatus.FAILED);
-            });
+            savedExtractedExperiences.forEach(extractedExperience ->
+                extractedExperience.updateStatus(ExtractionStatus.FAILED));
             extractedExperienceRepository.saveAll(savedExtractedExperiences);
             throw exception;
         }

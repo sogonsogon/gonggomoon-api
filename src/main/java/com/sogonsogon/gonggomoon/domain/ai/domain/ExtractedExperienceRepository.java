@@ -1,5 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.ai.domain;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.List;
 
@@ -14,4 +15,6 @@ public interface ExtractedExperienceRepository {
     Optional<ExtractedExperience> findByUserIdAndId(Long userId, Long id);
 
     List<ExtractedExperience> findAllById(Iterable<Long> ids);
+
+    List<ExtractedExperience> findAllByStatusAndCreatedAtBefore(ExtractionStatus status, Instant createdAt);
 }

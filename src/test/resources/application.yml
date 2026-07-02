@@ -66,4 +66,12 @@ ai:
   server:
     base-url: http://localhost:8000
     internal-api-key: "test-internal-api-key"
+  callback:
+    base-url: http://localhost:8080
+
+gcp:
+  cloud-tasks:
+    project-id: "test-project"
+    location: "asia-northeast3"
+    queue: "test-queue"
 
