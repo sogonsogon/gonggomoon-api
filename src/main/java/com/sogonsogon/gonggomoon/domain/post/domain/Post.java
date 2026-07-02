@@ -42,6 +42,9 @@ public class Post {
     @Column(name = "created_by", nullable = false, updatable = false)
     private Long createdBy;
 
+    @Column(name = "analysis_id")
+    private Long analysisId;
+
     protected Post() {}
 
     @Builder
@@ -56,5 +59,14 @@ public class Post {
                 .url(url)
                 .userId(userId)
                 .build();
+    }
+
+    public void success(Long analysisId) {
+        this.status = PostStatus.SUCCESS;
+        this.analysisId = analysisId;
+    }
+
+    public void failed() {
+        this.status = PostStatus.FAILED;
     }
 }

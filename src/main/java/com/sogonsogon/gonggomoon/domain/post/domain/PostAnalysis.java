@@ -24,13 +24,13 @@ public class PostAnalysis {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "post_id", nullable = false)
-    private Long postId;
+    @Column(name = "post_url", columnDefinition = "TEXT", unique = true)
+    private String postUrl;
 
-    @Column(name = "title", nullable = false)
+    @Column(name = "title")
     private String title;
 
-    //TODO 요약 내용을 하나로 처리 하는게 맞을까? 제목은 하나의 컬럼으로 저장하는데?
+    //TODO 요약 내용을 하나로 처리?
     @Column(name = "summary", columnDefinition = "TEXT")
     private String summary;
 
@@ -41,15 +41,15 @@ public class PostAnalysis {
     protected PostAnalysis() {}
 
     @Builder
-    private PostAnalysis(Long postId, String title, String summary) {
-        this.postId = postId;
+    private PostAnalysis(String postUrl, String title, String summary) {
+        this.postUrl = postUrl;
         this.title = title;
         this.summary = summary;
     }
 
-    public static PostAnalysis create(Long postId, String title, String summary) {
+    public static PostAnalysis create(String postUrl, String title, String summary) {
         return PostAnalysis.builder()
-                .postId(postId)
+                .postUrl(postUrl)
                 .title(title)
                 .summary(summary)
                 .build();

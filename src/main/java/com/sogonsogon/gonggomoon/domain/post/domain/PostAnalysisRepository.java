@@ -1,8 +1,9 @@
 package com.sogonsogon.gonggomoon.domain.post.domain;
 
-public interface PostAnalysisRepository {
+import java.util.Optional;
 
-//    boolean existsByUrlAndUserIdAndStatus(String url, Long id, PostSubmissionStatus status);
-//
-//    PostAnalysis save(PostAnalysis postSubmission);
+public interface PostAnalysisRepository {
+    Optional<PostAnalysis> findByUrl(String url);
+
+    void save(PostAnalysis postAnalysis);
 }
