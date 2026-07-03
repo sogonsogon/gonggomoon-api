@@ -5,5 +5,5 @@ import java.util.Optional;
 public interface PostAnalysisRepository {
     Optional<PostAnalysis> findByUrl(String url);
 
-    void save(PostAnalysis postAnalysis);
+    PostAnalysis save(PostAnalysis postAnalysis);
 }
