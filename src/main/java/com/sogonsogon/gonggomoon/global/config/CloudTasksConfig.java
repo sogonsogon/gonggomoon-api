@@ -1,8 +1,11 @@
 package com.sogonsogon.gonggomoon.global.config;
 
+import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.cloud.tasks.v2.CloudTasksClient;
+import com.google.cloud.tasks.v2.CloudTasksSettings;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import java.io.IOException;
 
@@ -16,7 +19,18 @@ public class CloudTasksConfig {
      * - Cloud Run: 실행 서비스 계정 자동 사용
      * */
     @Bean(destroyMethod = "close")
+    @Profile("!test")
     public CloudTasksClient cloudTasksClient() throws IOException {
         return CloudTasksClient.create();
+    }
+
+    @Bean(destroyMethod = "close")
+    @Profile("test")
+    public CloudTasksClient testCloudTasksClient() throws IOException {
+        CloudTasksSettings settings = CloudTasksSettings.newBuilder()
+            .setCredentialsProvider(NoCredentialsProvider.create())
+            .build();
+
+        return CloudTasksClient.create(settings);
     }
 }
