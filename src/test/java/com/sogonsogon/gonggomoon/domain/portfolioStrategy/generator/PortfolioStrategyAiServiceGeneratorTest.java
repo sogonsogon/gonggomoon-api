@@ -27,17 +27,13 @@ class PortfolioStrategyAiServiceGeneratorTest {
         Long portfolioStrategyId = 100L;
         Long postAnalysisId = 10L;
         List<Experience> experiences = List.of();
-        String positionType = "BACKEND";
-        String industryType = "핀테크";
 
-        generator.request(userId, portfolioStrategyId, experiences, positionType, industryType, postAnalysisId);
+        generator.request(userId, portfolioStrategyId, experiences, postAnalysisId);
 
         verify(aiService).requestPortfolioStrategyGeneration(
                 userId,
                 portfolioStrategyId,
                 experiences,
-                positionType,
-                industryType,
                 postAnalysisId
         );
     }

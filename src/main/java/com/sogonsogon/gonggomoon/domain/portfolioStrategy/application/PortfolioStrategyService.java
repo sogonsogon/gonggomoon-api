@@ -82,22 +82,14 @@ public class PortfolioStrategyService {
             throw new BaseException(PortfolioStrategyErrorCode.WEEKLY_LIMIT_EXCEEDED);
         }
 
-        draftStrategy.startProcessing(req.jobType(), req.industryId(), experiences.size());
+        draftStrategy.startProcessing(experiences.size());
         portfolioStrategyRepository.save(draftStrategy);
-
-        /**
-         * 산업 조회 및 산업이름 반환
-         * 산업을 조회하는 이유는 AI에게 포트폴리오 전략을 생성할 때, 값으로 넣어주기 위함
-         */
-        String industryName = resolveIndustryName(draftStrategy, req.industryId());
 
         // AI Service에 포폴 전략 생성 요청
         portfolioStrategyContentGenerator.request(
                 userId,
                 draftStrategy.getId(),
                 experiences,
-                draftStrategy.getJobType() == null ? null : draftStrategy.getJobType().name(),
-                industryName,
                 draftStrategy.getPostAnalysisId());
 
         return GeneratePortfolioStrategyResult.from(draftStrategy.getId());
