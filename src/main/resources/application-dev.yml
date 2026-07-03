@@ -115,3 +115,7 @@ strategy:
 experience:
   extraction:
     weekly-limit-enabled: ${EXPERIENCE_EXTRACTION_WEEKLY_LIMIT_ENABLED}
+
+tavily:
+  base-url: ${TAVILY_BASE_URL}
+  api-key: ${TAVILY_API_KEY}
