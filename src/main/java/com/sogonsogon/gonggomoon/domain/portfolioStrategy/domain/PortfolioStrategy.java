@@ -123,11 +123,7 @@ public class PortfolioStrategy {
                 .build();
     }
 
-    public void startProcessing(
-            JobType jobType,
-            Long industryId,
-            int selectedExperienceCount
-    ) {
+    public void startProcessing(int selectedExperienceCount) {
         if (this.status != PortfolioStrategyGenerateStatus.DRAFT) {
             throw new BaseException(PortfolioStrategyErrorCode.INVALID_STATUS);
         }
@@ -136,8 +132,6 @@ public class PortfolioStrategy {
             throw new BaseException(PortfolioStrategyErrorCode.EXPERIENCE_IDS_REQUIRED);
         }
 
-        this.jobType = jobType;
-        this.industryId = industryId;
         this.selectedExperienceCount = selectedExperienceCount;
         this.status = PortfolioStrategyGenerateStatus.PROCESSING;
     }

@@ -18,10 +18,8 @@ public class PortfolioStrategyAiServiceGenerator implements PortfolioStrategyCon
             Long userId,
             Long portfolioStrategyId,
             List<Experience> experiences,
-            String positionType,
-            String industryType,
             Long postAnalysisId
     ) {
-        aiService.requestPortfolioStrategyGeneration(userId, portfolioStrategyId, experiences, positionType, industryType, postAnalysisId);
+        aiService.requestPortfolioStrategyGeneration(userId, portfolioStrategyId, experiences, postAnalysisId);
     }
 }

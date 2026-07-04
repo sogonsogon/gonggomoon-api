@@ -117,8 +117,6 @@ class PortfolioStrategyServiceTest {
         void generate_fail_whenExperienceIdsIsNull() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    JobType.BACKEND,
-                    INDUSTRY_ID,
                     POST_ANALYSIS_ID,
                     null
             );
@@ -139,8 +137,6 @@ class PortfolioStrategyServiceTest {
         void generate_fail_whenExperienceIdsIsEmpty() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    JobType.BACKEND,
-                    INDUSTRY_ID,
                     POST_ANALYSIS_ID,
                     List.of()
             );
@@ -161,8 +157,6 @@ class PortfolioStrategyServiceTest {
         void generate_fail_whenSomeRequestedExperiencesAreNotFound() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    JobType.BACKEND,
-                    INDUSTRY_ID,
                     POST_ANALYSIS_ID,
                     List.of(1L, 2L)
             );
@@ -191,8 +185,6 @@ class PortfolioStrategyServiceTest {
         void generate_success() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    JobType.BACKEND,
-                    INDUSTRY_ID,
                     POST_ANALYSIS_ID,
                     List.of(1L, 2L)
             );
@@ -200,8 +192,6 @@ class PortfolioStrategyServiceTest {
             Experience experience1 = createExperience(USER_ID, "캡스톤 프로젝트");
             Experience experience2 = createExperience(USER_ID, "인턴 경험");
             List<Experience> experiences = List.of(experience1, experience2);
-
-            Industry industry = createIndustry(INDUSTRY_ID, "핀테크");
 
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
@@ -216,8 +206,6 @@ class PortfolioStrategyServiceTest {
                     .thenReturn(experiences);
             when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY))
                     .thenReturn(true);
-            when(industryRepository.findById(anyLong()))
-                    .thenReturn(Optional.of(industry));
             when(portfolioStrategyRepository.findFirstByUserIdAndPostAnalysisIdAndStatusOrderByCreatedAtDesc(
                     USER_ID,
                     req.postAnalysisId(),
@@ -231,36 +219,31 @@ class PortfolioStrategyServiceTest {
             assertNotNull(result);
             assertEquals(100L, result.strategyId());
             assertEquals(PortfolioStrategyGenerateStatus.PROCESSING, draftStrategy.getStatus());
-            assertEquals(req.jobType(), draftStrategy.getJobType());
-            assertEquals(req.industryId(), draftStrategy.getIndustryId());
+            assertNull(draftStrategy.getJobType());
+            assertNull(draftStrategy.getIndustryId());
             assertEquals(experiences.size(), draftStrategy.getSelectedExperienceCount());
 
             verify(portfolioStrategyRepository).save(draftStrategy);
             verify(portfolioStrategyContentGenerator).request(
-                    anyLong(),
-                    anyLong(),
-                    anyList(),
-                    anyString(),
-                    nullable(String.class),
+                    eq(USER_ID),
+                    eq(100L),
+                    eq(experiences),
                     eq(req.postAnalysisId())
             );
+            verifyNoInteractions(industryRepository);
         }
 
         @Test
-        @DisplayName("jobType이 null이어도 draft를 PROCESSING으로 전환하고 AI 생성 요청을 보낸다")
-        void generate_success_whenJobTypeIsNull() {
+        @DisplayName("직무와 산업 없이 draft를 PROCESSING으로 전환하고 AI 생성 요청을 보낸다")
+        void generate_success_withoutJobTypeAndIndustry() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    null,
-                    INDUSTRY_ID,
                     POST_ANALYSIS_ID,
                     List.of(1L)
             );
 
             Experience experience = createExperience(USER_ID, "캡스톤 프로젝트");
             List<Experience> experiences = List.of(experience);
-            Industry industry = createIndustry(INDUSTRY_ID, "핀테크");
-            when(industry.getName()).thenReturn("핀테크");
 
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
@@ -279,8 +262,6 @@ class PortfolioStrategyServiceTest {
             )).thenReturn(Optional.of(draftStrategy));
             when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY))
                     .thenReturn(true);
-            when(industryRepository.findById(req.industryId()))
-                    .thenReturn(Optional.of(industry));
 
             // when
             GeneratePortfolioStrategyResult result = portfolioStrategyService.generate(USER_ID, req);
@@ -290,15 +271,15 @@ class PortfolioStrategyServiceTest {
             assertEquals(100L, result.strategyId());
             assertEquals(PortfolioStrategyGenerateStatus.PROCESSING, draftStrategy.getStatus());
             assertNull(draftStrategy.getJobType());
+            assertNull(draftStrategy.getIndustryId());
 
             verify(portfolioStrategyContentGenerator).request(
                     eq(USER_ID),
                     eq(100L),
                     eq(experiences),
-                    isNull(),
-                    eq("핀테크"),
                     eq(req.postAnalysisId())
             );
+            verifyNoInteractions(industryRepository);
         }
 
         @Test
@@ -306,8 +287,6 @@ class PortfolioStrategyServiceTest {
         void generate_fail_whenWeeklyLimitReached() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    JobType.BACKEND,
-                    INDUSTRY_ID,
                     POST_ANALYSIS_ID,
                     List.of(1L)
             );
@@ -351,7 +330,7 @@ class PortfolioStrategyServiceTest {
             setField(portfolioStrategyService, "weeklyLimitEnabled", true);
 
             GeneratePortfolioStrategyRequest req =
-                    new GeneratePortfolioStrategyRequest(JobType.BACKEND, 1L, POST_ANALYSIS_ID, List.of(1L, 2L));
+                    new GeneratePortfolioStrategyRequest(POST_ANALYSIS_ID, List.of(1L, 2L));
 
             Experience experience1 = createExperience(USER_ID, "캡스톤 프로젝트");
             Experience experience2 = createExperience(USER_ID, "인턴 경험");
@@ -389,13 +368,11 @@ class PortfolioStrategyServiceTest {
             setField(portfolioStrategyService, "weeklyLimitEnabled", true);
 
             GeneratePortfolioStrategyRequest req =
-                    new GeneratePortfolioStrategyRequest(JobType.BACKEND, 1L, POST_ANALYSIS_ID, List.of(1L, 2L));
+                    new GeneratePortfolioStrategyRequest(POST_ANALYSIS_ID, List.of(1L, 2L));
 
             Experience experience1 = createExperience(USER_ID, "캡스톤 프로젝트");
             Experience experience2 = createExperience(USER_ID, "인턴 경험");
             List<Experience> experiences = List.of(experience1, experience2);
-
-            Industry industry = createIndustry(1L, "핀테크");
 
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
@@ -414,8 +391,6 @@ class PortfolioStrategyServiceTest {
                     req.postAnalysisId(),
                     PortfolioStrategyGenerateStatus.DRAFT
             )).thenReturn(Optional.of(draftStrategy));
-            when(industryRepository.findById(req.industryId()))
-                    .thenReturn(Optional.of(industry));
 
             // when
             GeneratePortfolioStrategyResult result = portfolioStrategyService.generate(USER_ID, req);
@@ -427,8 +402,6 @@ class PortfolioStrategyServiceTest {
             verify(aiUsagePolicyService).reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY);
             verify(experienceRepository)
                     .findAllByIdInAndUserId(req.experienceIds(), USER_ID);
-            verify(industryRepository)
-                    .findById(req.industryId());
             verify(portfolioStrategyRepository)
                     .save(draftStrategy);
             verify(portfolioStrategyContentGenerator)
@@ -436,10 +409,9 @@ class PortfolioStrategyServiceTest {
                             eq(USER_ID),
                             eq(100L),
                             eq(experiences),
-                            eq(req.jobType().name()),
-                            nullable(String.class),
                             eq(req.postAnalysisId())
                     );
+            verifyNoInteractions(industryRepository);
         }
     }
 
