@@ -75,3 +75,6 @@ gcp:
     location: "asia-northeast3"
     queue: "test-queue"
 
+tavily:
+  base-url: https://api.tavily.com
+  api-key: "test-api-key"
