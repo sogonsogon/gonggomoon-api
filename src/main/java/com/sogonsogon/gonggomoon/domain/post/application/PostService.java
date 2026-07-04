@@ -35,7 +35,7 @@ public class PostService {
         Post newPost = Post.create(request.postUrl(), userId);
         postRepository.save(newPost);
 
-        Optional<PostAnalysis> cached = postAnalysisRepository.findByUrl(request.postUrl());
+        Optional<PostAnalysis> cached = postAnalysisRepository.findByPostUrl(request.postUrl());
         if (cached.isPresent()) {
             PostAnalysis analysis = cached.get();
             newPost.success(analysis.getId());
