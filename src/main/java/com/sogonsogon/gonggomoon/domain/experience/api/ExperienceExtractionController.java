@@ -2,12 +2,13 @@ package com.sogonsogon.gonggomoon.domain.experience.api;
 
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.experience.api.response.ExperienceExtractionResponse;
-import com.sogonsogon.gonggomoon.domain.file.api.request.UploadFileRequest;
 import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceExtractionAvailabilityService;
 import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceExtractionService;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionAvailabilityResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionSearchResult;
+import com.sogonsogon.gonggomoon.domain.file.api.request.UploadFileRequest;
+import com.sogonsogon.gonggomoon.domain.file.domain.DocumentCategory;
 import com.sogonsogon.gonggomoon.global.docs.ErrorResponseExamples;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -63,8 +64,9 @@ public class ExperienceExtractionController {
     @PostMapping(value = "/extractions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<BaseResponse<ExperienceExtractionResponse>> startExperienceExtraction(
             @AuthenticationPrincipal AccessUser user,
-            @RequestPart("request") @Valid UploadFileRequest req,
+//            @RequestPart("request") @Valid UploadFileRequest req,
             @RequestPart("file") MultipartFile file) {
+        UploadFileRequest req = new UploadFileRequest(DocumentCategory.RESUME);
         ExperienceExtractionResult result = extractionService.startExperienceExtraction(req, file, user.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(ExperienceExtractionResponse.from(result)));
     }
