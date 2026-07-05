@@ -10,6 +10,7 @@ import com.sogonsogon.gonggomoon.domain.industry.domain.Industry;
 import com.sogonsogon.gonggomoon.domain.industry.domain.IndustryRepository;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.api.request.GeneratePortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.GeneratePortfolioStrategyResult;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyDetailQueryResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyDetailResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResultItem;
@@ -425,6 +426,7 @@ class PortfolioStrategyServiceTest {
             // given
             PortfolioStrategyListResultItem strategy1 = createPortfolioStrategyListItem(
                     100L,
+                    "백엔드 개발자 채용",
                     JobType.BACKEND,
                     "핀테크",
                     PortfolioStrategyGenerateStatus.READY,
@@ -433,6 +435,7 @@ class PortfolioStrategyServiceTest {
 
             PortfolioStrategyListResultItem strategy2 = createPortfolioStrategyListItem(
                     99L,
+                    "서버 개발자 채용",
                     JobType.BACKEND,
                     "마스터",
                     PortfolioStrategyGenerateStatus.DRAFT,
@@ -454,6 +457,7 @@ class PortfolioStrategyServiceTest {
 
             PortfolioStrategyListResultItem first = result.contents().get(0);
             assertEquals(100L, first.strategyId());
+            assertEquals("백엔드 개발자 채용", first.postAnalysisTitle());
             assertEquals(JobType.BACKEND, first.jobType());
             assertEquals("핀테크", first.industryName());
             assertEquals(PortfolioStrategyGenerateStatus.READY, first.status());
@@ -461,6 +465,7 @@ class PortfolioStrategyServiceTest {
 
             PortfolioStrategyListResultItem second = result.contents().get(1);
             assertEquals(99L, second.strategyId());
+            assertEquals("서버 개발자 채용", second.postAnalysisTitle());
             assertEquals(JobType.BACKEND, second.jobType());
             assertEquals("마스터", second.industryName());
             assertEquals(PortfolioStrategyGenerateStatus.DRAFT, second.status());
@@ -539,8 +544,11 @@ class PortfolioStrategyServiceTest {
             Industry industry = mock(Industry.class);
             when(industry.getName()).thenReturn("핀테크");
 
-            when(portfolioStrategyRepository.findByIdAndUserId(strategyId, USER_ID))
-                    .thenReturn(Optional.of(portfolioStrategy));
+            when(portfolioStrategyRepository.findPortfolioStrategyDetailByIdAndUserId(strategyId, USER_ID))
+                    .thenReturn(Optional.of(new PortfolioStrategyDetailQueryResult(
+                            portfolioStrategy,
+                            "백엔드 개발자 채용"
+                    )));
             when(objectMapper.readValue(portfolioStrategy.getResultJson(), PortfolioStrategyContent.class))
                     .thenReturn(content);
             when(industryRepository.findById(INDUSTRY_ID))
@@ -553,6 +561,7 @@ class PortfolioStrategyServiceTest {
             // then
             assertNotNull(result);
             assertEquals(strategyId, result.strategyId());
+            assertEquals("백엔드 개발자 채용", result.postAnalysisTitle());
             assertEquals(JobType.BACKEND, result.jobType());
             assertEquals("핀테크", result.industryName());
             assertEquals(1, result.selectedExperienceCount());
@@ -579,7 +588,7 @@ class PortfolioStrategyServiceTest {
             assertEquals(1, result.improvementGuides().size());
             assertEquals("성과 수치 보완", result.improvementGuides().get(0).title());
 
-            verify(portfolioStrategyRepository).findByIdAndUserId(strategyId, USER_ID);
+            verify(portfolioStrategyRepository).findPortfolioStrategyDetailByIdAndUserId(strategyId, USER_ID);
             verify(objectMapper).readValue(portfolioStrategy.getResultJson(), PortfolioStrategyContent.class);
         }
 
@@ -589,7 +598,7 @@ class PortfolioStrategyServiceTest {
             // given
             Long strategyId = 100L;
 
-            when(portfolioStrategyRepository.findByIdAndUserId(strategyId, USER_ID))
+            when(portfolioStrategyRepository.findPortfolioStrategyDetailByIdAndUserId(strategyId, USER_ID))
                     .thenReturn(Optional.empty());
 
             // when
@@ -600,7 +609,7 @@ class PortfolioStrategyServiceTest {
 
             // then
             assertEquals(PortfolioStrategyErrorCode.NOT_FOUND, exception.getErrorCode());
-            verify(portfolioStrategyRepository).findByIdAndUserId(strategyId, USER_ID);
+            verify(portfolioStrategyRepository).findPortfolioStrategyDetailByIdAndUserId(strategyId, USER_ID);
             verifyNoInteractions(objectMapper);
         }
 
@@ -617,8 +626,11 @@ class PortfolioStrategyServiceTest {
             );
             ReflectionTestUtils.setField(portfolioStrategy, "id", strategyId);
 
-            when(portfolioStrategyRepository.findByIdAndUserId(strategyId, USER_ID))
-                    .thenReturn(Optional.of(portfolioStrategy));
+            when(portfolioStrategyRepository.findPortfolioStrategyDetailByIdAndUserId(strategyId, USER_ID))
+                    .thenReturn(Optional.of(new PortfolioStrategyDetailQueryResult(
+                            portfolioStrategy,
+                            "백엔드 개발자 채용"
+                    )));
 
             // when
             BaseException exception = assertThrows(
@@ -628,7 +640,7 @@ class PortfolioStrategyServiceTest {
 
             // then
             assertEquals(PortfolioStrategyErrorCode.RESULT_NOT_READY, exception.getErrorCode());
-            verify(portfolioStrategyRepository).findByIdAndUserId(strategyId, USER_ID);
+            verify(portfolioStrategyRepository).findPortfolioStrategyDetailByIdAndUserId(strategyId, USER_ID);
             verifyNoInteractions(objectMapper);
         }
     }
@@ -686,6 +698,7 @@ class PortfolioStrategyServiceTest {
 
     private PortfolioStrategyListResultItem createPortfolioStrategyListItem(
             Long id,
+            String postAnalysisTitle,
             JobType jobType,
             String industryName,
             PortfolioStrategyGenerateStatus status,
@@ -693,6 +706,7 @@ class PortfolioStrategyServiceTest {
     ) {
         return PortfolioStrategyListResultItem.builder()
                 .strategyId(id)
+                .postAnalysisTitle(postAnalysisTitle)
                 .jobType(jobType)
                 .industryName(industryName)
                 .status(status)

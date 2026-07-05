@@ -9,6 +9,7 @@ import java.time.Instant;
 @Builder
 public record PortfolioStrategyListResultItem(
         Long strategyId,
+        String postAnalysisTitle,
         JobType jobType,
         String industryName,
         PortfolioStrategyGenerateStatus status,

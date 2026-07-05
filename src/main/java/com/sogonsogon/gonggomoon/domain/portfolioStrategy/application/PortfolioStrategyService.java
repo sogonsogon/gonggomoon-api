@@ -11,6 +11,7 @@ import com.sogonsogon.gonggomoon.domain.industry.domain.IndustryRepository;
 import com.sogonsogon.gonggomoon.domain.industry.error.IndustryErrorCode;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.api.request.GeneratePortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.GeneratePortfolioStrategyResult;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyDetailQueryResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyDetailResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResultItem;
@@ -119,8 +120,8 @@ public class PortfolioStrategyService {
      * 포트폴리오 전략 상세 조회 서비스
      */
     public PortfolioStrategyDetailResult getPortfolioStrategyDetail(Long strategyId, Long userId) {
-        PortfolioStrategy portfolioStrategy = portfolioStrategyRepository.findByIdAndUserId(strategyId, userId)
-                .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
+        PortfolioStrategyDetailQueryResult queryResult = getPortfolioStrategyDetailQueryResult(strategyId, userId);
+        PortfolioStrategy portfolioStrategy = queryResult.portfolioStrategy();
 
         if (portfolioStrategy.getStatus() == PortfolioStrategyGenerateStatus.DRAFT ||
                 portfolioStrategy.getStatus() == PortfolioStrategyGenerateStatus.PROCESSING) {
@@ -147,7 +148,16 @@ public class PortfolioStrategyService {
 
         String industryName = resolveIndustryName(portfolioStrategy, industryId);
 
-        return PortfolioStrategyDetailResult.of(portfolioStrategy, content, industryName);
+        return PortfolioStrategyDetailResult.of(portfolioStrategy, queryResult.postAnalysisTitle(), content, industryName);
+    }
+
+    /**
+     * 상세 조회에 필요한 포트폴리오 전략과 채용 공고 분석 제목을 함께 조회한다.
+     */
+    private PortfolioStrategyDetailQueryResult getPortfolioStrategyDetailQueryResult(Long strategyId, Long userId) {
+        return portfolioStrategyRepository
+                .findPortfolioStrategyDetailByIdAndUserId(strategyId, userId)
+                .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
     }
 
     /**
