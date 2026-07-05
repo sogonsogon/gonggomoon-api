@@ -1,6 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain;
 
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResultItem;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyDetailQueryResult;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,6 +21,8 @@ public interface PortfolioStrategyRepository {
     void delete(PortfolioStrategy portfolioStrategy);
 
     List<PortfolioStrategyListResultItem> findPortfolioStrategyListByUserId(Long userId);
+
+    Optional<PortfolioStrategyDetailQueryResult> findPortfolioStrategyDetailByIdAndUserId(Long id, Long userId);
 
     boolean existsByUserIdAndGeneratedDate(Long userId, LocalDate today);
 
