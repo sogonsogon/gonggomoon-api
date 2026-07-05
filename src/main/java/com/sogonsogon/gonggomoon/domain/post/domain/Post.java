@@ -16,6 +16,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
 
+/**
+ * 유저 요청 이력
+ */
 @Entity
 @Getter
 @EntityListeners(AuditingEntityListener.class)
@@ -26,7 +29,7 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 2083, name = "url")
+    @Column(length = 2048, name = "url")
     private String url;
 
     //TODO STATUS 이름도 좀 더 생각해야 할듯
@@ -45,19 +48,35 @@ public class Post {
     @Column(name = "analysis_id")
     private Long analysisId;
 
+    @Column(name = "file_asset_id")
+    private Long fileAssetId;
+
     protected Post() {}
 
     @Builder
-    private Post(String url, Long userId) {
+    private Post(String url, Long userId, PostStatus status, Long analysisId, Long fileAssetId) {
         this.url = url;
         this.createdBy = userId;
-        this.status = PostStatus.PENDING;
+        this.status = status;
+        this.analysisId = analysisId;
+        this.fileAssetId = fileAssetId;
     }
 
-    public static Post create(String url, Long userId) {
+    public static Post create(String url, Long userId, Long fileAssetId) {
         return Post.builder()
                 .url(url)
                 .userId(userId)
+                .status(PostStatus.PENDING)
+                .fileAssetId(fileAssetId)
+                .build();
+    }
+
+    public static Post createFromCache(String url, Long userId, Long analysisId) {
+        return Post.builder()
+                .url(url)
+                .userId(userId)
+                .status(PostStatus.SUCCESS)
+                .analysisId(analysisId)
                 .build();
     }
 
