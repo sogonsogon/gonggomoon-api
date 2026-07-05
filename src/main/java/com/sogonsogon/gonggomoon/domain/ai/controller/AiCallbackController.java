@@ -46,4 +46,12 @@ public class AiCallbackController {
         return ResponseEntity.ok(BaseResponse.success("AI 면접 전략 생성 콜백 처리 완료"));
     }
 
+    @PostMapping("/post-analysis")
+    public ResponseEntity<BaseResponse<String>> handlePostAnalysisCallback(
+            @RequestBody @Valid BaseCallbackRequest request
+    ) {
+        aiCallbackService.createPostAnalysis(request);
+
+        return ResponseEntity.ok(BaseResponse.success("공고 URL 분석 콜백 처리 완료"));
+    }
 }

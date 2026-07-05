@@ -11,6 +11,7 @@ import com.google.protobuf.ByteString;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractionAiServerRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.InterviewStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.PortfolioStrategyRequest;
+import com.sogonsogon.gonggomoon.domain.ai.dto.request.PostAnalysisAiServerRequest;
 import com.sogonsogon.gonggomoon.domain.ai.error.AiErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import java.util.List;
@@ -29,6 +30,7 @@ public class AiServerClient {
     private static final String TASKS_EXECUTE_PATH = "/tasks/execute";
     private static final String EXPERIENCE_EXTRACTION_JOB_TYPE = "EXPERIENCE_EXTRACTION";
     private static final String EXPERIENCE_EXTRACTION_CALLBACK_PATH = "/api/v1/callbacks/experience-extraction";
+    private static final String POST_ANALYSIS_CALLBACK_PATH = "/api/v1/callbacks/post-analysis";
 
     private final CloudTasksClient cloudTasksClient;
     private final ObjectMapper objectMapper;
@@ -78,6 +80,16 @@ public class AiServerClient {
      * */
     public void requestInterviewStrategyGeneration(InterviewStrategyRequest request) {
         enqueue("/api/v1/jobs/interview-strategy-generation", request);
+    }
+
+    public void requestPostAnalysis(Long userId, Long postId, Long fileAssetId) {
+        PostAnalysisAiServerRequest request = new PostAnalysisAiServerRequest(
+                userId,
+                callbackBaseUrl + POST_ANALYSIS_CALLBACK_PATH,
+                postId,
+                fileAssetId
+        );
+        enqueue("/api/v1/jobs/post-analysis", request);
     }
 
     /*
