@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 public record PortfolioStrategyDetailResponse(
         Long strategyId,
+        String postAnalysisTitle,
         JobType jobType,
         String industryName,
         int selectedExperienceCount,
@@ -28,6 +29,7 @@ public record PortfolioStrategyDetailResponse(
     public static PortfolioStrategyDetailResponse from (PortfolioStrategyDetailResult result) {
         return PortfolioStrategyDetailResponse.builder()
                 .strategyId(result.strategyId())
+                .postAnalysisTitle(result.postAnalysisTitle())
                 .jobType(result.jobType())
                 .industryName(result.industryName())
                 .selectedExperienceCount(result.selectedExperienceCount())

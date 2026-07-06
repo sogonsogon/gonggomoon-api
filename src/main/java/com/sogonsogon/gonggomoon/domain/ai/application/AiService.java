@@ -97,9 +97,8 @@ public class AiService {
         Long userId,
         Long portfolioStrategyId,
         List<Experience> experiences,
-        String positionType,
-        String industryType) {
-        requestPortfolioStrategyGeneration(userId, portfolioStrategyId, experiences, positionType, industryType, null);
+        Long postAnalysisId) {
+        requestPortfolioStrategyGeneration(userId, portfolioStrategyId, experiences, null, "마스터", postAnalysisId);
     }
 
     public void requestPortfolioStrategyGeneration(

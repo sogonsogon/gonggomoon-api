@@ -100,12 +100,6 @@ gcp:
     location: ${CLOUD_TASKS_LOCATION}
     queue: ${CLOUD_TASKS_QUEUE}
 
-gcp:
-  cloud-tasks:
-    project-id: ${GCP_PROJECT_ID}
-    location: ${CLOUD_TASKS_LOCATION}
-    queue: ${CLOUD_TASKS_QUEUE}
-
 strategy:
   portfolio:
     weekly-limit-enabled: ${PORTFOLIO_WEEKLY_LIMIT_ENABLED}
@@ -115,3 +109,7 @@ strategy:
 experience:
   extraction:
     weekly-limit-enabled: ${EXPERIENCE_EXTRACTION_WEEKLY_LIMIT_ENABLED}
+
+tavily:
+  base-url: ${TAVILY_BASE_URL}
+  api-key: ${TAVILY_API_KEY}

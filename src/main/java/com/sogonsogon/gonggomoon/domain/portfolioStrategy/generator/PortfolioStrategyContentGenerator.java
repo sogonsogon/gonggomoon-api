@@ -9,8 +9,6 @@ public interface PortfolioStrategyContentGenerator {
             Long userId,
             Long portfolioStrategyId,
             List<Experience> experiences,
-            String positionType,
-            String industryType,
             Long postAnalysisId
     );
 }
