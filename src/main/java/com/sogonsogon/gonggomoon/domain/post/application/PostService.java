@@ -1,79 +1,118 @@
 package com.sogonsogon.gonggomoon.domain.post.application;
 
+import com.sogonsogon.gonggomoon.domain.ai.application.AiService;
+import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
+import com.sogonsogon.gonggomoon.domain.file.api.request.UploadFileRequest;
+import com.sogonsogon.gonggomoon.domain.file.application.FileAssetService;
+import com.sogonsogon.gonggomoon.domain.file.domain.DocumentCategory;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.PortfolioStrategyService;
 import com.sogonsogon.gonggomoon.domain.post.domain.Post;
-import com.sogonsogon.gonggomoon.domain.post.domain.PostAnalysis;
-import com.sogonsogon.gonggomoon.domain.post.domain.PostAnalysisRepository;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysis;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysisRepository;
 import com.sogonsogon.gonggomoon.domain.post.domain.PostRepository;
-import com.sogonsogon.gonggomoon.domain.post.dto.request.SummaryRequest;
-import com.sogonsogon.gonggomoon.domain.post.dto.response.SummaryResponse;
+import com.sogonsogon.gonggomoon.domain.post.dto.request.PostAnalysisRequest;
+import com.sogonsogon.gonggomoon.domain.post.dto.response.PostAnalysisResponse;
 import com.sogonsogon.gonggomoon.domain.post.dto.response.TavilyExtractResponse;
+import com.sogonsogon.gonggomoon.domain.post.error.PostErrorCode;
+import com.sogonsogon.gonggomoon.global.error.BaseException;
+import com.sogonsogon.gonggomoon.global.post.InMemoryMultipartFile;
 import com.sogonsogon.gonggomoon.global.post.TavilyClient;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
+@Slf4j
 @Service
 public class PostService {
 
     private final PostRepository postRepository;
     private final PostAnalysisRepository postAnalysisRepository;
     private final TavilyClient tavilyClient;
+    private final AiService aiService;
+    private final FileAssetService fileAssetService;
+    private final AiUsagePolicyService aiUsagePolicyService;
+    private final PortfolioStrategyService portfolioStrategyService;
+
+    @Value("${feature.weekly-limit-enabled:true}")
+    private boolean weeklyLimitEnabled;
 
     public PostService(PostRepository postRepository,
                        PostAnalysisRepository postAnalysisRepository,
-                       TavilyClient tavilyClient) {
+                       TavilyClient tavilyClient,
+                       AiService aiService,
+                       FileAssetService fileAssetService,
+                       AiUsagePolicyService aiUsagePolicyService,
+                       PortfolioStrategyService portfolioStrategyService) {
         this.postRepository = postRepository;
         this.postAnalysisRepository = postAnalysisRepository;
         this.tavilyClient = tavilyClient;
+        this.aiService = aiService;
+        this.fileAssetService = fileAssetService;
+        this.aiUsagePolicyService = aiUsagePolicyService;
+        this.portfolioStrategyService = portfolioStrategyService;
     }
 
-    @Transactional
-    public SummaryResponse extractAndRefinedPost(SummaryRequest request, Long userId) {
+    public PostAnalysisResponse startPostAnalysis(PostAnalysisRequest request, Long userId) {
 
-        Post newPost = Post.create(request.postUrl(), userId);
+//        if (weeklyLimitEnabled && !aiUsagePolicyService.reserve(userId, AiUsageType.POST_ANALYSIS)) {
+//            throw new BaseException(PostErrorCode.WEEKLY_LIMIT_EXCEEDED);
+//        }
+
+        // 2. 캐시 확인 - 이미 분석된 URL이면 AI 호출 없이 즉시 반환
+        Optional<PostAnalysis> cached = postAnalysisRepository.findByUrl(request.postUrl());
+        if (cached.isPresent()) {
+            Post cachedPost = Post.createFromCache(request.postUrl(), userId, cached.get().getId());
+            postRepository.save(cachedPost);
+
+            portfolioStrategyService.createDraft(userId, cached.get().getId());
+
+            return PostAnalysisResponse.from(cachedPost);
+        }
+
+        String rawContent;
+
+        //TODO 77-96 주간 제한 추가 시 try-catch 문 2개 추가 해야함
+        TavilyExtractResponse response = tavilyClient.extract(request.postUrl());
+        List<TavilyExtractResponse.Result> results = response.results();
+
+        //TODO 실패시 처리 로직
+        if (results == null || results.isEmpty()){
+            //TODO 에러 코드 확인
+            log.warn("Tavily 추출 실패 url={}, failedResults={}", request.postUrl(), response.failedResults());
+            throw new BaseException(PostErrorCode.EXTRACTION_FAILED);
+        }
+
+        rawContent = results.get(0).rawContent();
+
+        Long fileAssetId;
+
+        InMemoryMultipartFile textFile = InMemoryMultipartFile.fromText(
+                rawContent, "raw_content_" + UUID.randomUUID() + ".txt"
+        );
+
+        UploadFileRequest uploadFileRequest = new UploadFileRequest(DocumentCategory.OTHER);
+        fileAssetId = fileAssetService.uploadFile(userId, uploadFileRequest, textFile).fileAssetId();
+
+        Post newPost = Post.create(request.postUrl(), userId, fileAssetId);
         postRepository.save(newPost);
 
-        Optional<PostAnalysis> cached = postAnalysisRepository.findByPostUrl(request.postUrl());
-        if (cached.isPresent()) {
-            PostAnalysis analysis = cached.get();
-            newPost.success(analysis.getId());
-            return new SummaryResponse(
-                    newPost.getId(),
-                    newPost.getUrl(),
-                    newPost.getStatus(),
-                    analysis.getTitle(),
-                    analysis.getSummary()
-            );
-        }
-
         try {
-            TavilyExtractResponse response = tavilyClient.extract(request.postUrl());
-            List<TavilyExtractResponse.Result> results = response.results();
-
-            //TODO 실패시 처리 로직
-            if (results == null || results.isEmpty()){
-                newPost.failed();
-                return new SummaryResponse(newPost.getId(), newPost.getUrl(), newPost.getStatus(), null, null);
-            }
-
-            String rawContent = results.get(0).rawContent();
-
-            //TODO 이후 LLM 이용 데이터 정리 로직
-            String title = null;
-            String refinedContent = null;
-
-            PostAnalysis postAnalysis = PostAnalysis.create(request.postUrl(), title, refinedContent);
-            postAnalysisRepository.save(postAnalysis);
-
-            newPost.success(postAnalysis.getId());
-
-            return new SummaryResponse(newPost.getId(), newPost.getUrl(), newPost.getStatus(), title, refinedContent);
-
-        } catch (Exception e) {
-            newPost.failed();
-            return new SummaryResponse(newPost.getId(), newPost.getUrl(), newPost.getStatus(), null, null);
+            aiService.requestPostAnalysis(userId, newPost.getId(), fileAssetId);
+        } catch (RuntimeException e) {
+            fileAssetService.deleteTemporaryFiles(List.of(fileAssetId));
+            throw e;
         }
+
+        return PostAnalysisResponse.from(newPost);
     }
+
+//    private void refundUsage(Long userId) {
+//        if (weeklyLimitEnabled) {
+//            aiUsagePolicyService.refund(userId, AiUsageType.POST_ANALYSIS);
+//        }
+//    }
 }

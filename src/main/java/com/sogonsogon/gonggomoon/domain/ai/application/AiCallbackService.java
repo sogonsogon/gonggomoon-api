@@ -11,9 +11,12 @@ import com.sogonsogon.gonggomoon.domain.ai.domain.Experiences;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractionStatus;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysis;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysisRepository;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.BaseCallbackRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.response.AiFunctionStatusResponse;
 import com.sogonsogon.gonggomoon.domain.ai.error.ExtractedExperienceErrorCode;
+import com.sogonsogon.gonggomoon.domain.ai.error.PostAnalysisErrorCode;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.ExperienceResultMapper;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.InterviewQuestionResultMapper;
 
@@ -24,17 +27,23 @@ import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewGenera
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewQuestion;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategy;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategyRepository;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.PortfolioStrategyService;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyGenerateStatus;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.error.InterviewStrategyErrorCode;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.error.PortfolioStrategyErrorCode;
+import com.sogonsogon.gonggomoon.domain.post.domain.Post;
+import com.sogonsogon.gonggomoon.domain.post.domain.PostRepository;
+import com.sogonsogon.gonggomoon.domain.post.domain.PostStatus;
+import com.sogonsogon.gonggomoon.domain.post.error.PostErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +66,9 @@ public class AiCallbackService {
     private final AiUsagePolicyService aiUsagePolicyService;
     private final AiJobSseService aiJobSseService;
     private final FileAssetService fileAssetService;
+    private final PostRepository postRepository;
+    private final PostAnalysisRepository postAnalysisRepository;
+    private final PortfolioStrategyService portfolioStrategyService;
 
     private final ObjectMapper objectMapper;
 
@@ -137,6 +149,151 @@ public class AiCallbackService {
         // 추출이 끝난 원본 파일은 더 이상 필요 없으므로 정리한다. (커밋 이후 실행)
         deleteTempFilesAfterCommit(collectFileAssetIds(foundExperiences));
         notifyJobStatusAfterCommit(request.userId(), AiFunctions.EXTRACT_EXPERIENCE, ids, AiFunctionStatus.READY);
+    }
+
+    /**
+     * AI 워커로부터 "공고 URL 분석" 작업의 처리 결과를 콜백으로 전달받아 반영하는 메서드.
+     *
+     * 워커는 요청 하나(post_id 1건)당 콜백 1건을 보내는 것을 기본으로 하지만,
+     * Cloud Tasks 특성상 동일한 콜백이 중복으로 도착할 수 있다(at-least-once 전송).
+     * 이 메서드는 Post.status를 기준으로 이미 처리된 요청을 스킵하여 중복 처리를 방지한다.
+     *
+     * 처리 흐름:
+     * 1) 콜백 바디(result)에서 post_id 목록을 파싱
+     * 2) 실패 콜백이면 → 해당 Post를 FAILED로 변경하고 임시 파일 정리 후 종료
+     * 3) 성공 콜백이면 → PostAnalysis(분석 결과) 저장 → Post를 SUCCESS로 연결
+     *    → PortfolioStrategy DRAFT row 생성까지 이어서 처리
+     */
+    @Transactional
+    public void createPostAnalysis(BaseCallbackRequest request) {
+
+        // ────────────────────────────────────────────────────────
+        // 1. 콜백 바디 파싱 및 기본 검증
+        //    result는 [{ "post_id": 1, "title": "...", "summary": "..." }, ...] 형태의 배열이어야 한다.
+        // ────────────────────────────────────────────────────────
+        JsonNode resultsNode = request.result();
+
+        if (resultsNode == null || !resultsNode.isArray()) {
+            throw new BaseException(PostAnalysisErrorCode.INVALID_CALLBACK_FORMAT);
+        }
+
+        List<JsonNode> callbackItems = new ArrayList<>();
+        List<Long> ids = new ArrayList<>();
+
+        for (JsonNode itemNode : resultsNode) {
+            long postId = itemNode.path("post_id").asLong(0);
+            if (postId == 0) {
+                throw new BaseException(PostAnalysisErrorCode.INVALID_CALLBACK_FORMAT);
+            }
+            callbackItems.add(itemNode);
+            ids.add(postId);
+        }
+
+        // 콜백에 포함된 post_id들에 해당하는 Post를 한 번에 조회 (N+1 방지)
+        List<Post> foundPosts = postRepository.findAllById(ids);
+        Map<Long, Post> postMap = foundPosts.stream()
+                .collect(Collectors.toMap(Post::getId, Function.identity()));
+
+        // ────────────────────────────────────────────────────────
+        // 2. 실패 케이스
+        //    분석 자체가 실패했으므로 PostAnalysis/PortfolioStrategy는 생성하지 않는다.
+        //    Post 상태만 FAILED로 남기고, 더 이상 쓰이지 않는 임시 파일을 정리한다.
+        // ────────────────────────────────────────────────────────
+        if (request.status() == AiJobStatus.FAILED) {
+
+            // 주간 이용 횟수 환불 대상 여부를 미리 판단해둔다.
+            // (아직 PENDING인 요청만 환불 대상 - 이미 실패 처리된 요청을 중복 환불하지 않기 위함)
+            // 지금은 사용하지 않음
+            boolean shouldRefund = foundPosts.stream()
+                    .anyMatch(post -> post.getStatus() == PostStatus.PENDING);
+
+            for (Post post : foundPosts) {
+                post.failed();
+            }
+            postRepository.saveAll(foundPosts);
+
+            // TODO: 주간 이용 횟수 제한 기능이 아직 비활성화 상태라 주석 처리됨.
+            //  기능 복원 시 아래 refund 호출을 활성화할 것.
+            //  단, 요청 시점과 콜백 시점의 날짜(주)가 다를 수 있으므로
+            //  Post 생성 시점에 저장해둔 generatedDate를 기준으로 계산해야 한다.
+//        if (shouldRefund && !foundPosts.isEmpty()) {
+//            aiUsagePolicyService.refund(foundPosts.get(0).getCreatedBy(), AiUsageType.POST_ANALYSIS);
+//        }
+
+            cleanupTemporaryFiles(foundPosts);
+            notifyJobStatusAfterCommit(request.userId(), AiFunctions.POST_ANALYSIS, ids, AiFunctionStatus.FAILED);
+            return;
+        }
+
+        // ────────────────────────────────────────────────────────
+        // 3. 성공 케이스 - PostAnalysis 생성
+        //    이미 SUCCESS/FAILED로 처리된 Post는 중복 콜백이므로 건너뛴다.
+        //    (PostAnalysis.url은 unique 제약이라, 중복 저장을 시도하면 예외가 발생한다)
+        // ────────────────────────────────────────────────────────
+        List<PostAnalysis> analysesToSave = new ArrayList<>();
+
+        for (JsonNode itemNode : callbackItems) {
+            long postId = itemNode.path("post_id").asLong();
+            Post foundPost = postMap.get(postId);
+
+            if (foundPost == null) {
+                throw new BaseException(PostErrorCode.POST_NOT_FOUND);
+            }
+            if (foundPost.getStatus() != PostStatus.PENDING) {
+                continue; // 이미 처리된 요청(중복 콜백) - 스킵
+            }
+
+            String title = itemNode.path("title").asText(null);
+            String summary = itemNode.path("summary").asText(null);
+
+            analysesToSave.add(PostAnalysis.create(foundPost.getUrl(), title, summary));
+        }
+
+        List<PostAnalysis> savedAnalyses = postAnalysisRepository.saveAll(analysesToSave);
+
+        // 방금 저장한 PostAnalysis를 url 기준으로 매핑해, 아래에서 Post와 다시 연결할 때 사용한다.
+        // (postId를 직접 들고 있지 않으므로 url을 매개로 연결 - 동일 배치 내 url 중복 시 예외 위험 있음,
+        //  현재는 요청이 1건씩만 발행되므로 문제되지 않음)
+        Map<String, Long> urlToAnalysisId = savedAnalyses.stream()
+                .collect(Collectors.toMap(PostAnalysis::getUrl, PostAnalysis::getId));
+
+        // ────────────────────────────────────────────────────────
+        // 4. 성공 케이스 - Post 연결 + 포트폴리오 전략 DRAFT 생성
+        //    분석이 확정된 시점에, 유저가 이 분석 결과로 전략을 생성할 수 있도록
+        //    PortfolioStrategy를 DRAFT 상태로 미리 만들어둔다.
+        //    (같은 URL이어도 유저가 다른 소스로 전략을 여러 번 만들 수 있으므로 매번 새로 생성)
+        // ────────────────────────────────────────────────────────
+        List<Post> postsToSave = new ArrayList<>();
+        for (JsonNode itemNode : callbackItems) {
+            long postId = itemNode.path("post_id").asLong();
+            Post foundPost = postMap.get(postId);
+
+            if (foundPost == null || foundPost.getStatus() != PostStatus.PENDING) {
+                continue;
+            }
+
+            Long analysisId = urlToAnalysisId.get(foundPost.getUrl());
+            foundPost.success(analysisId);
+            postsToSave.add(foundPost);
+
+            portfolioStrategyService.createDraft(foundPost.getCreatedBy(), analysisId);
+        }
+
+        postRepository.saveAll(postsToSave);
+        cleanupTemporaryFiles(foundPosts);
+        notifyJobStatusAfterCommit(request.userId(), AiFunctions.POST_ANALYSIS, ids, AiFunctionStatus.READY);
+    }
+
+    /**
+     * 분석이 종료된(성공/실패 무관) Post들이 갖고 있던 임시 rawContent 파일(S3)을 정리한다.
+     * 더 이상 워커가 접근할 필요가 없어진 파일이므로, 콜백 처리 직후 삭제 대상이 된다.
+     */
+    private void cleanupTemporaryFiles(List<Post> posts) {
+        List<Long> fileAssetIds = posts.stream()
+                .map(Post::getFileAssetId)
+                .filter(Objects::nonNull)
+                .toList();
+        fileAssetService.deleteTemporaryFiles(fileAssetIds);
     }
 
     private List<Long> collectFileAssetIds(List<ExtractedExperience> extractedExperiences) {

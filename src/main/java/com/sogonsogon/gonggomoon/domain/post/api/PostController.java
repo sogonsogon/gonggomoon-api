@@ -2,11 +2,12 @@ package com.sogonsogon.gonggomoon.domain.post.api;
 
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.post.application.PostService;
-import com.sogonsogon.gonggomoon.domain.post.dto.request.SummaryRequest;
-import com.sogonsogon.gonggomoon.domain.post.dto.response.SummaryResponse;
+import com.sogonsogon.gonggomoon.domain.post.dto.request.PostAnalysisRequest;
+import com.sogonsogon.gonggomoon.domain.post.dto.response.PostAnalysisResponse;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,11 +27,11 @@ public class PostController {
     }
 
     @PostMapping
-    public ResponseEntity<BaseResponse<SummaryResponse>> extractAndRefined(@Valid @RequestBody SummaryRequest request,
-                                                                           @AuthenticationPrincipal AccessUser user) {
-        SummaryResponse response = postService.extractAndRefinedPost(request, user.getId());
+    public ResponseEntity<BaseResponse<PostAnalysisResponse>> extractAndRefined(@Valid @RequestBody PostAnalysisRequest request,
+                                                                                @AuthenticationPrincipal AccessUser user) {
+        PostAnalysisResponse response = postService.startPostAnalysis(request, user.getId());
 
-        return ResponseEntity.ok(BaseResponse.success(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(BaseResponse.success(response));
     }
 
 }

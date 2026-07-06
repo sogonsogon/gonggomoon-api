@@ -17,6 +17,9 @@ import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyGenerateStatus;
+import com.sogonsogon.gonggomoon.domain.post.domain.Post;
+import com.sogonsogon.gonggomoon.domain.post.domain.PostRepository;
+import com.sogonsogon.gonggomoon.domain.post.error.PostErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,6 +40,7 @@ public class AiService {
     private final InterviewStrategyRepository interviewStrategyRepository;
     private final AiServerClient aiServerClient;
     private final AiJobSseService aiJobSseService;
+    private final PostRepository postRepository;
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
@@ -149,6 +153,18 @@ public class AiService {
                     interviewStrategyRepository.save(interviewStrategy);
                 });
             throw exception;
+        }
+    }
+
+    public void requestPostAnalysis(Long userId, Long postId, Long fileAssetId) {
+        try {
+            aiServerClient.requestPostAnalysis(userId, postId, fileAssetId);
+        } catch (RuntimeException exception) {
+            Post post = postRepository.findById(postId)
+                    .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_FOUND));
+            post.failed();
+            postRepository.save(post);
+            throw new BaseException(AiErrorCode.AI_SERVER_ERROR);
         }
     }
 

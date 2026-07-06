@@ -1,4 +1,4 @@
-package com.sogonsogon.gonggomoon.domain.post.domain;
+package com.sogonsogon.gonggomoon.domain.ai.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,8 +24,8 @@ public class PostAnalysis {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "post_url", columnDefinition = "TEXT", unique = true)
-    private String postUrl;
+    @Column(name = "url", columnDefinition = "TEXT", unique = true)
+    private String url;
 
     @Column(name = "title")
     private String title;
@@ -41,17 +41,18 @@ public class PostAnalysis {
     protected PostAnalysis() {}
 
     @Builder
-    private PostAnalysis(String postUrl, String title, String summary) {
-        this.postUrl = postUrl;
+    private PostAnalysis(String url, String title, String summary) {
+        this.url = url;
         this.title = title;
         this.summary = summary;
     }
 
-    public static PostAnalysis create(String postUrl, String title, String summary) {
+    public static PostAnalysis create(String url, String title, String summary) {
         return PostAnalysis.builder()
-                .postUrl(postUrl)
+                .url(url)
                 .title(title)
                 .summary(summary)
                 .build();
     }
+
 }
