@@ -2,15 +2,9 @@ package com.sogonsogon.gonggomoon.domain.experience.application;
 
 import com.sogonsogon.gonggomoon.domain.ai.application.AiService;
 import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
-import com.sogonsogon.gonggomoon.domain.ai.domain.ExperienceItem;
-import com.sogonsogon.gonggomoon.domain.ai.domain.Experiences;
-import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
-import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
 import com.sogonsogon.gonggomoon.domain.ai.dto.response.ExperienceExtractResponse;
-import com.sogonsogon.gonggomoon.domain.ai.error.ExtractedExperienceErrorCode;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionResult;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionSearchResult;
 import com.sogonsogon.gonggomoon.domain.experience.error.ExperienceErrorCode;
 import com.sogonsogon.gonggomoon.domain.file.api.request.UploadFileRequest;
 import com.sogonsogon.gonggomoon.domain.file.application.FileAssetService;
@@ -28,7 +22,6 @@ public class ExperienceExtractionService {
 
     private final AiService aiService;
     private final FileAssetService fileAssetService;
-    private final ExtractedExperienceRepository extractedExperienceRepository;
     private final AiUsagePolicyService aiUsagePolicyService;
 
     @Value("${experience.extraction.weekly-limit-enabled:true}")
@@ -39,6 +32,8 @@ public class ExperienceExtractionService {
     *
     * 파일을 임시로 업로드한 뒤 AI 추출 작업을 시작한다.
     * 원본 파일은 추출 완료(콜백) 시점에 삭제되며, 실패 시에는 즉시 정리한다.
+    * 반환되는 extractionId는 추출 결과가 아니라 작업 핸들이며,
+    * 클라이언트는 이 값으로 상태 조회(SSE)를 구독한 뒤 완료 시 경험 리스트를 다시 조회한다.
     * */
     public ExperienceExtractionResult startExperienceExtraction(UploadFileRequest req, MultipartFile file, Long userId) {
         // 1. 주간 사용량 예약 (가장 먼저 차감하여 업로드/발행 실패 시 환불 처리)
@@ -66,31 +61,14 @@ public class ExperienceExtractionService {
             throw exception;
         }
 
-        return ExperienceExtractionResult.from(aiResponse.extractedExperienceIds());
+        // 파일 1건당 추출 작업 1건이므로 단일 작업 ID를 반환한다.
+        return ExperienceExtractionResult.from(aiResponse.extractedExperienceIds().get(0));
     }
 
     private void refundUsage(Long userId) {
         if (weeklyLimitEnabled) {
             aiUsagePolicyService.refund(userId, AiUsageType.EXPERIENCE_EXTRACTION, aiUsagePolicyService.currentWeekStartDate());
         }
-    }
-
-    /*
-    * 추출된 경험 조회 요청 처리
-    * */
-    public ExperienceExtractionSearchResult getExperienceExtraction(Long extractionId, Long userId) {
-        ExtractedExperience foundData = extractedExperienceRepository.findByUserIdAndId(userId, extractionId).orElseThrow(
-            () -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND)
-        );
-
-        Experiences experiences = foundData.getExperiences();
-
-        if (experiences == null) {
-            throw new BaseException(ExtractedExperienceErrorCode.EXPERIENCES_IS_EMPTY);
-        }
-
-        List<ExperienceItem> experience_items = experiences.getExperiences();
-        return ExperienceExtractionSearchResult.of(experience_items);
     }
 
 }

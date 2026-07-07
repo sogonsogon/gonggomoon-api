@@ -74,14 +74,6 @@ public final class ErrorResponseExamples {
               "timestamp": "2026-06-24T10:30:00Z"
             }""";
 
-    public static final String EXTRACTED_EXPERIENCE_IS_EMPTY = """
-            {
-              "success": false,
-              "code": "EXTRACTED_EXPERIENCE_IS_EMPTY",
-              "message": "추출된 경험이 존재하지 않습니다.",
-              "timestamp": "2026-06-24T10:30:00Z"
-            }""";
-
     // ===== 사용자 / 인증 (User / Auth) =====
     public static final String USER_NOT_FOUND = """
             {

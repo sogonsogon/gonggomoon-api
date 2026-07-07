@@ -6,7 +6,6 @@ import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceExtract
 import com.sogonsogon.gonggomoon.domain.experience.application.ExperienceExtractionService;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionAvailabilityResult;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionResult;
-import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionSearchResult;
 import com.sogonsogon.gonggomoon.domain.file.api.request.UploadFileRequest;
 import com.sogonsogon.gonggomoon.domain.file.domain.DocumentCategory;
 import com.sogonsogon.gonggomoon.global.docs.ErrorResponseExamples;
@@ -25,7 +24,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -84,33 +82,5 @@ public class ExperienceExtractionController {
                 extractionAvailabilityService.getAvailability(user.getId());
 
         return ResponseEntity.ok(BaseResponse.success(result));
-    }
-
-    /*
-    * ExperienceExtraction 단일 조회 API
-    * */
-    @Operation(summary = "경험 추출 단일 조회", description = "추출 ID에 해당하는 경험 추출 작업의 결과를 단건 조회합니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "경험 추출 결과 단건 조회 성공"),
-            @ApiResponse(responseCode = "400",
-                    description = "추출된 경험이 비어 있음(EXTRACTED_EXPERIENCE_IS_EMPTY)",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = BaseResponse.class),
-                            examples = @ExampleObject(value = ErrorResponseExamples.EXTRACTED_EXPERIENCE_IS_EMPTY))),
-            @ApiResponse(responseCode = "401", description = "인증 실패 (액세스 토큰 누락/만료)"),
-            @ApiResponse(responseCode = "404",
-                    description = "추출 작업을 찾을 수 없거나 본인 소유가 아님(EXTRACTED_EXPERIENCE_NOT_FOUND)",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = BaseResponse.class),
-                            examples = @ExampleObject(value = ErrorResponseExamples.EXTRACTED_EXPERIENCE_NOT_FOUND)))
-    })
-    @GetMapping("/extractions/{extractionId}")
-    public ResponseEntity<BaseResponse<ExperienceExtractionSearchResult>> getExperienceExtraction(
-        @AuthenticationPrincipal AccessUser user,
-        @PathVariable Long extractionId
-    ) {
-        ExperienceExtractionSearchResult response = extractionService.getExperienceExtraction(extractionId, user.getId());
-
-        return ResponseEntity.ok(BaseResponse.success(response));
     }
 }
