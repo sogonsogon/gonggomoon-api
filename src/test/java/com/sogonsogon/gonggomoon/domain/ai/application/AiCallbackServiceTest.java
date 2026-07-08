@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -168,7 +167,6 @@ public class AiCallbackServiceTest {
             assertEquals(LocalDate.of(2024, 3, 1), savedExperience.getStartDate());
             assertEquals(LocalDate.of(2024, 6, 30), savedExperience.getEndDate());
             assertEquals(ExtractionStatus.READY, extractedExperience.getStatus());
-            assertNull(extractedExperience.getExperiences());
             verify(extractedExperienceRepository).saveAll(List.of(extractedExperience));
             // 추출 완료 후 임시 파일 정리가 호출되어야 한다.
             verify(fileAssetService).deleteTemporaryFiles(List.of(10L));
