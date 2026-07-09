@@ -85,6 +85,7 @@ public class AiServerClient {
 
     public void requestPostAnalysis(Long userId, Long postId, Long fileAssetId) {
         PostAnalysisAiServerRequest request = new PostAnalysisAiServerRequest(
+                postId,
                 userId,
                 callbackBaseUrl + POST_ANALYSIS_CALLBACK_PATH,
                 postId,
