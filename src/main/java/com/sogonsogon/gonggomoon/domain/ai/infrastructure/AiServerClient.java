@@ -58,8 +58,9 @@ public class AiServerClient {
     * 워커(/tasks/execute)가 기대하는 형식(job_type, user_id, callback_url, file_asset_ids)으로 변환한다.
     * 큐에 등록되면 Cloud Tasks가 워커로 HTTP POST를 비동기 전송한다.
     * */
-    public void requestExperienceExtraction(Long userId, List<ExperienceExtractionAiServerRequest.FileAssetTarget> fileAssetTargets) {
+    public void requestExperienceExtraction(Long extractionId, Long userId, List<ExperienceExtractionAiServerRequest.FileAssetTarget> fileAssetTargets) {
         ExperienceExtractionAiServerRequest request = new ExperienceExtractionAiServerRequest(
+            extractionId,
             EXPERIENCE_EXTRACTION_JOB_TYPE,
             userId,
             callbackBaseUrl + EXPERIENCE_EXTRACTION_CALLBACK_PATH,

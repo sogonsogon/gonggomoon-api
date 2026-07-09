@@ -7,8 +7,12 @@ import java.util.List;
  * 경험 추출 작업을 AI 워커(/tasks/execute)로 전달하기 위한 메시지 바디.
  * 워커는 job_type으로 작업을 분기하고, file_asset_ids로 S3 파일을 내려받아 처리한 뒤
  * callback_url로 결과를 회신한다.
+ * id는 콜백의 최상위 id로 에코백되는 추출 작업(extracted_experience) ID다.
  */
 public record ExperienceExtractionAiServerRequest(
+    @JsonProperty("id")
+    Long id,
+
     @JsonProperty("job_type")
     String jobType,
 
