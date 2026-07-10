@@ -29,6 +29,7 @@ public class AiServerClient {
     // 신규 AI 워커의 단일 진입점. 워커는 body의 job_type으로 작업을 분기한다.
     private static final String TASKS_EXECUTE_PATH = "/tasks/execute";
     private static final String EXPERIENCE_EXTRACTION_JOB_TYPE = "EXPERIENCE_EXTRACTION";
+    private static final String POST_ANALYSIS_JOB_TYPE = "POST_ANALYSIS";
     private static final String EXPERIENCE_EXTRACTION_CALLBACK_PATH = "/api/v1/callbacks/experience-extraction";
     private static final String POST_ANALYSIS_CALLBACK_PATH = "/api/v1/callbacks/post-analysis";
 
@@ -82,11 +83,16 @@ public class AiServerClient {
         enqueue(TASKS_EXECUTE_PATH, request);
     }
 
+    /*
+     * 공고 분석 요청을 Cloud Tasks 큐에 등록하는 메서드
+     * 워커는 S3에 업로드된 공고 원문(file_asset_id)을 내려받아 분석한다.
+     * */
     public void requestPostAnalysis(Long userId, Long postId, Long fileAssetId) {
         PostAnalysisAiServerRequest request = new PostAnalysisAiServerRequest(
+                postId,
+                POST_ANALYSIS_JOB_TYPE,
                 userId,
                 callbackBaseUrl + POST_ANALYSIS_CALLBACK_PATH,
-                postId,
                 fileAssetId
         );
         enqueue(TASKS_EXECUTE_PATH, request);
