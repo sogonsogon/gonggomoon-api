@@ -4,7 +4,14 @@ import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.post.application.PostService;
 import com.sogonsogon.gonggomoon.domain.post.dto.request.PostAnalysisRequest;
 import com.sogonsogon.gonggomoon.domain.post.dto.response.PostAnalysisResponse;
+import com.sogonsogon.gonggomoon.global.docs.ErrorResponseExamples;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -26,6 +33,30 @@ public class PostController {
         this.postService = postService;
     }
 
+    @Operation(summary = "공고 URL 분석 시작",
+            description = "채용 공고 URL의 콘텐츠를 추출하여 AI 분석 작업을 시작합니다. "
+                    + "이미 분석된 URL이면 캐시된 결과로 즉시 SUCCESS 상태를 반환하고, "
+                    + "그렇지 않으면 PENDING 상태로 응답한 뒤 비동기로 분석이 진행됩니다. "
+                    + "응답의 postId로 분석 상태를 조회(SSE)할 수 있습니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "공고 분석 작업 시작 성공 (캐시 적중 시 즉시 SUCCESS)"),
+            @ApiResponse(responseCode = "400",
+                    description = "입력값 검증 실패(GLOBAL_INVALID_INPUT_VALUE) - URL 누락 등",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.VALIDATION))),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (액세스 토큰 누락/만료)"),
+            @ApiResponse(responseCode = "422",
+                    description = "URL에서 콘텐츠 추출 실패(EXTRACTION_FAILED)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.POST_EXTRACTION_FAILED))),
+            @ApiResponse(responseCode = "500",
+                    description = "AI 서버 오류(AI_SERVER_ERROR)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.AI_SERVER_ERROR)))
+    })
     @PostMapping
     public ResponseEntity<BaseResponse<PostAnalysisResponse>> extractAndRefined(@Valid @RequestBody PostAnalysisRequest request,
                                                                                 @AuthenticationPrincipal AccessUser user) {
