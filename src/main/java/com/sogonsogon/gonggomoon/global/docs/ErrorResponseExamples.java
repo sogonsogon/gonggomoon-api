@@ -74,6 +74,15 @@ public final class ErrorResponseExamples {
               "timestamp": "2026-06-24T10:30:00Z"
             }""";
 
+    // ===== 공고 (Post) =====
+    public static final String POST_EXTRACTION_FAILED = """
+            {
+              "success": false,
+              "code": "EXTRACTION_FAILED",
+              "message": "URL에서 콘텐츠를 추출하지 못했습니다.",
+              "timestamp": "2026-06-24T10:30:00Z"
+            }""";
+
     // ===== 사용자 / 인증 (User / Auth) =====
     public static final String USER_NOT_FOUND = """
             {
