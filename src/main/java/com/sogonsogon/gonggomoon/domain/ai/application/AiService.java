@@ -183,6 +183,7 @@ public class AiService {
             case EXTRACT_EXPERIENCE -> getExperienceExtractionStatus(userId, request.id());
             case PORTFOLIO_STRATEGY -> getPortfolioStrategyGenerationStatus(userId, request.id());
             case INTERVIEW_STRATEGY -> getInterviewStrategyGenerationStatus(userId, request.id());
+            case POST_ANALYSIS -> getPostAnalysisStatus(userId, request.id());
             default -> throw new BaseException(AiErrorCode.INVALID_TYPE);
         };
         
@@ -240,5 +241,20 @@ public class AiService {
         return interviewStrategyRepository.findByIdAndUserId(extractedExperienceId, userId)
             .map(strategy -> strategy.getStatus().name())
             .orElseThrow(() -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND));
+    }
+
+    /*
+    * 공고 분석 상태 조회 - Post 테이블의 status를 AiFunctionStatus로 매핑하여 반환한다.
+    * */
+    private String getPostAnalysisStatus(Long userId, Long postId) {
+        Post foundPost = postRepository.findById(postId)
+            .filter(post -> post.getCreatedBy().equals(userId))
+            .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_FOUND));
+
+        return switch (foundPost.getStatus()) {
+            case PENDING -> AiFunctionStatus.PROCESSING.name();
+            case SUCCESS -> AiFunctionStatus.READY.name();
+            case FAILED -> AiFunctionStatus.FAILED.name();
+        };
     }
 }
