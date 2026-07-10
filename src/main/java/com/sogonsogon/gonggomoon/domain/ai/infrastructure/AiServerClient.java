@@ -72,14 +72,14 @@ public class AiServerClient {
      * 포트폴리오 요청을 Cloud Tasks 큐에 등록하는 메서드
      * */
     public void requestPortfolioStrategyGeneration(PortfolioStrategyRequest request) {
-        enqueue("/api/v1/jobs/portfolio-strategy-generation", request);
+        enqueue(TASKS_EXECUTE_PATH, request);
     }
 
     /*
      * 면접 전략 생성 요청을 Cloud Tasks 큐에 등록하는 메서드
      * */
     public void requestInterviewStrategyGeneration(InterviewStrategyRequest request) {
-        enqueue("/api/v1/jobs/interview-strategy-generation", request);
+        enqueue(TASKS_EXECUTE_PATH, request);
     }
 
     public void requestPostAnalysis(Long userId, Long postId, Long fileAssetId) {
@@ -89,7 +89,7 @@ public class AiServerClient {
                 postId,
                 fileAssetId
         );
-        enqueue("/api/v1/jobs/post-analysis", request);
+        enqueue(TASKS_EXECUTE_PATH, request);
     }
 
     /*
