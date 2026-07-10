@@ -74,11 +74,12 @@ public final class ErrorResponseExamples {
               "timestamp": "2026-06-24T10:30:00Z"
             }""";
 
-    public static final String EXTRACTED_EXPERIENCE_IS_EMPTY = """
+    // ===== 공고 (Post) =====
+    public static final String POST_EXTRACTION_FAILED = """
             {
               "success": false,
-              "code": "EXTRACTED_EXPERIENCE_IS_EMPTY",
-              "message": "추출된 경험이 존재하지 않습니다.",
+              "code": "EXTRACTION_FAILED",
+              "message": "URL에서 콘텐츠를 추출하지 못했습니다.",
               "timestamp": "2026-06-24T10:30:00Z"
             }""";
 

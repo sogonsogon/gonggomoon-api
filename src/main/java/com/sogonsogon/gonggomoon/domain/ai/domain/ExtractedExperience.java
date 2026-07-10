@@ -8,8 +8,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -65,13 +63,6 @@ public class ExtractedExperience {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    /**
-     * 추출된 경험 목록 jsonb
-     */
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "experiences", columnDefinition = "jsonb")
-    private Experiences experiences;
-
     @Builder
     private ExtractedExperience(
         Long userId,
@@ -92,10 +83,6 @@ public class ExtractedExperience {
             .status(ExtractionStatus.PROCESSING)
             .generatedDate(generatedDate)
             .build();
-    }
-
-    public void updateExperiences(Experiences experiences) {
-        this.experiences = experiences;
     }
 
     public void updateStatus(ExtractionStatus newStatus) {

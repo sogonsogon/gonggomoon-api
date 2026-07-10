@@ -75,8 +75,9 @@ public class AiService {
             .toList();
 
         // AI 워커에 경험 추출 요청 전송 (Cloud Tasks)
+        // 파일 1건당 요청 1건이므로 첫 번째 작업 ID가 콜백 id로 에코백된다.
         try {
-            aiServerClient.requestExperienceExtraction(userId, fileAssetTargets);
+            aiServerClient.requestExperienceExtraction(savedExtractedExperienceIds.get(0), userId, fileAssetTargets);
         } catch (RuntimeException exception) {
             savedExtractedExperiences.forEach(extractedExperience ->
                 extractedExperience.updateStatus(ExtractionStatus.FAILED));

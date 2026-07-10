@@ -3,7 +3,6 @@ package com.sogonsogon.gonggomoon.domain.experience.application;
 import com.sogonsogon.gonggomoon.domain.ai.application.AiService;
 import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
-import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.dto.response.ExperienceExtractResponse;
 import com.sogonsogon.gonggomoon.domain.ai.error.AiErrorCode;
 import com.sogonsogon.gonggomoon.domain.experience.application.result.ExperienceExtractionResult;
@@ -36,16 +35,13 @@ public class ExperienceExtractionServiceTest {
 
     private static final Long USER_ID = 1L;
     private static final Long FILE_ASSET_ID = 10L;
-    private static final List<Long> EXTRACTED_EXPERIENCE_IDS = List.of(100L);
+    private static final Long EXTRACTION_ID = 100L;
 
     @Mock
     private AiService aiService;
 
     @Mock
     private FileAssetService fileAssetService;
-
-    @Mock
-    private ExtractedExperienceRepository extractedExperienceRepository;
 
     @Mock
     private AiUsagePolicyService aiUsagePolicyService;
@@ -63,7 +59,7 @@ public class ExperienceExtractionServiceTest {
     class StartExperienceExtraction {
 
         @Test
-        @DisplayName("파일을 임시 업로드하고 AI 경험 추출을 요청한 뒤 extractedExperienceId를 반환한다")
+        @DisplayName("파일을 임시 업로드하고 AI 경험 추출을 요청한 뒤 추출 작업 ID를 반환한다")
         void startExperienceExtraction_success() {
             // given
             ReflectionTestUtils.setField(experienceExtractionService, "weeklyLimitEnabled", true);
@@ -73,14 +69,14 @@ public class ExperienceExtractionServiceTest {
             when(fileAssetService.uploadFile(USER_ID, request, file))
                     .thenReturn(new UploadFileResult(FILE_ASSET_ID));
             when(aiService.requestExperienceExtraction(USER_ID, List.of(FILE_ASSET_ID)))
-                    .thenReturn(new ExperienceExtractResponse(EXTRACTED_EXPERIENCE_IDS));
+                    .thenReturn(new ExperienceExtractResponse(List.of(EXTRACTION_ID)));
 
             // when
             ExperienceExtractionResult result =
                     experienceExtractionService.startExperienceExtraction(request, file, USER_ID);
 
             // then
-            assertEquals(EXTRACTED_EXPERIENCE_IDS, result.extractedExperienceIds());
+            assertEquals(EXTRACTION_ID, result.extractionId());
 
             verify(aiUsagePolicyService).reserve(USER_ID, AiUsageType.EXPERIENCE_EXTRACTION);
             verify(fileAssetService).uploadFile(USER_ID, request, file);

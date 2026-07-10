@@ -27,7 +27,9 @@ public class TavilyClient {
         TavilyExtractRequest request = new TavilyExtractRequest(
                 apiKey,
                 List.of(url),
-                "advanced"
+                "advanced",
+                false,
+                "text"
         );
 
         return restClient.post()

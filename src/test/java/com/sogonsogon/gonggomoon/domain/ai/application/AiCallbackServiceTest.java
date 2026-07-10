@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiJobStatus;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExperienceItem;
 import com.sogonsogon.gonggomoon.domain.ai.domain.Experiences;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
@@ -42,13 +43,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -168,10 +169,43 @@ public class AiCallbackServiceTest {
             assertEquals(LocalDate.of(2024, 3, 1), savedExperience.getStartDate());
             assertEquals(LocalDate.of(2024, 6, 30), savedExperience.getEndDate());
             assertEquals(ExtractionStatus.READY, extractedExperience.getStatus());
-            assertNull(extractedExperience.getExperiences());
             verify(extractedExperienceRepository).saveAll(List.of(extractedExperience));
             // 추출 완료 후 임시 파일 정리가 호출되어야 한다.
             verify(fileAssetService).deleteTemporaryFiles(List.of(10L));
+        }
+
+        @Test
+        @DisplayName("실패 콜백에 result가 없으면 최상위 id로 폴백하여 추출 작업을 FAILED 처리한다")
+        void createExtractedExperience_failed_fallsBackToTopLevelId() {
+            // given
+            Long extractedExperienceId = 1L;
+            BaseCallbackRequest request = new BaseCallbackRequest(
+                    "EXTRACT_EXPERIENCE",
+                    extractedExperienceId,
+                    USER_ID,
+                    AiJobStatus.FAILED,
+                    null,
+                    "worker error",
+                    1,
+                    Instant.now()
+            );
+            ExtractedExperience extractedExperience =
+                    ExtractedExperience.create(USER_ID, 10L, LocalDate.now());
+            ReflectionTestUtils.setField(extractedExperience, "id", extractedExperienceId);
+
+            when(extractedExperienceRepository.findAllById(List.of(extractedExperienceId)))
+                    .thenReturn(List.of(extractedExperience));
+
+            // when
+            aiCallbackService.createExtractedExperience(request);
+
+            // then
+            assertEquals(ExtractionStatus.FAILED, extractedExperience.getStatus());
+            verify(extractedExperienceRepository).saveAll(List.of(extractedExperience));
+            verify(aiUsagePolicyService).refund(
+                    USER_ID, AiUsageType.EXPERIENCE_EXTRACTION, extractedExperience.getGeneratedDate());
+            verify(fileAssetService).deleteTemporaryFiles(List.of(10L));
+            verifyNoInteractions(experienceRepository);
         }
 
         @Test

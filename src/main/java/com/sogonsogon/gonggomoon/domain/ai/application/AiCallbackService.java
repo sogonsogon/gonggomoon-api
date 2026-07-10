@@ -74,28 +74,13 @@ public class AiCallbackService {
 
     @Transactional
     public void createExtractedExperience(BaseCallbackRequest request) {
-        JsonNode resultsNode = request.result();
-
-        if (resultsNode == null || !resultsNode.isArray()) {
-            throw new BaseException(ExtractedExperienceErrorCode.INVALID_RESULT_FORMAT);
-        }
-
-        List<JsonNode> callbackItems = new ArrayList<>();
-        List<Long> ids = new ArrayList<>();
-
-        for (JsonNode itemNode : resultsNode) {
-            long extractedExperienceId = itemNode.path("extracted_experience_id").asLong(0);
-
-            if (extractedExperienceId == 0) {
-                throw new BaseException(ExtractedExperienceErrorCode.INVALID_RESULT_FORMAT);
-            }
-
-            callbackItems.add(itemNode);
-            ids.add(extractedExperienceId);
-        }
-
-        // 경험 추출 실패 업데이트
+        // 실패 콜백은 result가 없거나 불완전할 수 있으므로 관대하게 파싱하고,
+        // 대상 ID를 찾지 못하면 요청의 최상위 id(추출 작업 ID)로 폴백한다.
         if (request.status() == AiJobStatus.FAILED) {
+            List<Long> ids = parseExtractedExperienceIds(request.result());
+            if (ids.isEmpty()) {
+                ids = List.of(request.id());
+            }
             List<ExtractedExperience> experiencesToUpdate = extractedExperienceRepository.findAllById(ids);
             boolean shouldRefund = experiencesToUpdate.stream()
                 .anyMatch(experience -> experience.getStatus() == ExtractionStatus.PROCESSING);
@@ -114,6 +99,26 @@ public class AiCallbackService {
             deleteTempFilesAfterCommit(collectFileAssetIds(experiencesToUpdate));
             notifyJobStatusAfterCommit(request.userId(), AiFunctions.EXTRACT_EXPERIENCE, ids, AiFunctionStatus.FAILED);
             return;
+        }
+
+        JsonNode resultsNode = request.result();
+
+        if (resultsNode == null || !resultsNode.isArray()) {
+            throw new BaseException(ExtractedExperienceErrorCode.INVALID_RESULT_FORMAT);
+        }
+
+        List<JsonNode> callbackItems = new ArrayList<>();
+        List<Long> ids = new ArrayList<>();
+
+        for (JsonNode itemNode : resultsNode) {
+            long extractedExperienceId = itemNode.path("extracted_experience_id").asLong(0);
+
+            if (extractedExperienceId == 0) {
+                throw new BaseException(ExtractedExperienceErrorCode.INVALID_RESULT_FORMAT);
+            }
+
+            callbackItems.add(itemNode);
+            ids.add(extractedExperienceId);
         }
 
         List<ExtractedExperience> foundExperiences = extractedExperienceRepository.findAllById(ids);
@@ -240,6 +245,28 @@ public class AiCallbackService {
         fileAssetService.deleteTemporaryFiles(fileAssetIds);
     }
 
+    /**
+     * 실패 콜백용 관대한 파서. result 배열에서 extracted_experience_id를 수집하되,
+     * result가 없거나 형식이 달라도 예외 없이 빈 리스트를 반환한다.
+     */
+    private List<Long> parseExtractedExperienceIds(JsonNode resultsNode) {
+        return parseIdsLeniently(resultsNode, "extracted_experience_id");
+    }
+
+    private List<Long> parseIdsLeniently(JsonNode resultsNode, String idFieldName) {
+        if (resultsNode == null || !resultsNode.isArray()) {
+            return List.of();
+        }
+        List<Long> ids = new ArrayList<>();
+        for (JsonNode itemNode : resultsNode) {
+            long id = itemNode.path(idFieldName).asLong(0);
+            if (id != 0) {
+                ids.add(id);
+            }
+        }
+        return ids;
+    }
+
     private List<Long> collectFileAssetIds(List<ExtractedExperience> extractedExperiences) {
         return extractedExperiences.stream()
             .map(ExtractedExperience::getFileAssetId)
@@ -351,7 +378,8 @@ public class AiCallbackService {
         }
 
         // 결과에서 questions 추출하기 (실제 필드명은 AI 서버에서 보내주는 결과에 따라 달라질 수 있음)
-        JsonNode questionsNode = request.result().get("questions");
+        // 성공 콜백인데 result가 없으면 매퍼에서 형식 오류 예외가 발생한다.
+        JsonNode questionsNode = request.result() == null ? null : request.result().get("questions");
 
         // interview strategy에 questions 저장하기
         List<InterviewQuestion> interviewQuestions = interviewQuestionResultMapper.toInterviewQuestions(questionsNode, foundStrategy);
