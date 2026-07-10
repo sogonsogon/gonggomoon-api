@@ -10,6 +10,8 @@ import com.sogonsogon.gonggomoon.domain.ai.domain.Experiences;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractionStatus;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysis;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysisRepository;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.BaseCallbackRequest;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.ExperienceResultMapper;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.InterviewQuestionResultMapper;
@@ -18,10 +20,14 @@ import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceType;
 import com.sogonsogon.gonggomoon.domain.file.application.FileAssetService;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategyRepository;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.PortfolioStrategyService;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.JobType;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.error.PortfolioStrategyErrorCode;
+import com.sogonsogon.gonggomoon.domain.post.domain.Post;
+import com.sogonsogon.gonggomoon.domain.post.domain.PostRepository;
+import com.sogonsogon.gonggomoon.domain.post.domain.PostStatus;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -84,6 +90,15 @@ public class AiCallbackServiceTest {
 
     @Mock
     private FileAssetService fileAssetService;
+
+    @Mock
+    private PostRepository postRepository;
+
+    @Mock
+    private PostAnalysisRepository postAnalysisRepository;
+
+    @Mock
+    private PortfolioStrategyService portfolioStrategyService;
 
     @InjectMocks
     private AiCallbackService aiCallbackService;
@@ -206,6 +221,46 @@ public class AiCallbackServiceTest {
                     USER_ID, AiUsageType.EXPERIENCE_EXTRACTION, extractedExperience.getGeneratedDate());
             verify(fileAssetService).deleteTemporaryFiles(List.of(10L));
             verifyNoInteractions(experienceRepository);
+        }
+
+        @Test
+        @DisplayName("공고 분석 성공 콜백은 최상위 id로 Post를 찾아 분석 결과를 저장하고 DRAFT 전략을 생성한다")
+        void createPostAnalysis_success_singleObjectResult() throws Exception {
+            // given
+            Long postId = 5L;
+            Long analysisId = 77L;
+            JsonNode resultNode = new ObjectMapper().readTree("""
+                    { "title": "백엔드 채용", "summary": "3년차 백엔드 개발자" }
+                    """);
+            BaseCallbackRequest request = new BaseCallbackRequest(
+                    "POST_ANALYSIS",
+                    postId,
+                    USER_ID,
+                    AiJobStatus.COMPLETED,
+                    resultNode,
+                    null,
+                    1,
+                    Instant.now()
+            );
+
+            Post post = Post.create("https://example.com/jobs/1", USER_ID, 10L);
+            ReflectionTestUtils.setField(post, "id", postId);
+
+            PostAnalysis savedAnalysis = PostAnalysis.create("https://example.com/jobs/1", "백엔드 채용", "3년차 백엔드 개발자");
+            ReflectionTestUtils.setField(savedAnalysis, "id", analysisId);
+
+            when(postRepository.findById(postId)).thenReturn(Optional.of(post));
+            when(postAnalysisRepository.save(any(PostAnalysis.class))).thenReturn(savedAnalysis);
+
+            // when
+            aiCallbackService.createPostAnalysis(request);
+
+            // then
+            assertEquals(PostStatus.SUCCESS, post.getStatus());
+            assertEquals(analysisId, post.getAnalysisId());
+            verify(postRepository).save(post);
+            verify(portfolioStrategyService).createDraft(USER_ID, analysisId);
+            verify(fileAssetService).deleteTemporaryFiles(List.of(10L));
         }
 
         @Test

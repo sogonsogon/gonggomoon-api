@@ -6,5 +6,9 @@ import java.util.Optional;
 public interface PostAnalysisRepository {
     Optional<PostAnalysis> findByUrl(String url);
 
+    Optional<PostAnalysis> findById(Long id);
+
+    PostAnalysis save(PostAnalysis entity);
+
     <S extends PostAnalysis> List<S> saveAll(Iterable<S> entities);
 }

@@ -211,89 +211,43 @@ public class AiCallbackService {
         }
 
         // ────────────────────────────────────────────────────────
-        // 2. 콜백 바디 파싱 및 기본 검증
-        //    result는 [{ "post_id": 1, "title": "...", "summary": "..." }, ...] 형태의 배열이어야 한다.
+        // 2. 성공 케이스 - 콜백 바디 검증
+        //    신규 워커는 요청 1건(post 1건)에 대한 분석 결과를 단일 객체
+        //    { "title": "...", "summary": "...", ... } 형태로 반환하며,
+        //    대상 post는 콜백의 최상위 id로 식별한다.
         // ────────────────────────────────────────────────────────
-        JsonNode resultsNode = request.result();
+        JsonNode resultNode = request.result();
 
-        if (resultsNode == null || !resultsNode.isArray()) {
+        if (resultNode == null || !resultNode.isObject()) {
             throw new BaseException(PostAnalysisErrorCode.INVALID_CALLBACK_FORMAT);
         }
 
-        List<JsonNode> callbackItems = new ArrayList<>();
-        List<Long> ids = new ArrayList<>();
+        Long postId = request.id();
+        Post foundPost = postRepository.findById(postId)
+                .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_FOUND));
 
-        for (JsonNode itemNode : resultsNode) {
-            long postId = itemNode.path("post_id").asLong(0);
-            if (postId == 0) {
-                throw new BaseException(PostAnalysisErrorCode.INVALID_CALLBACK_FORMAT);
-            }
-            callbackItems.add(itemNode);
-            ids.add(postId);
+        if (foundPost.getStatus() != PostStatus.PENDING) {
+            return; // 이미 처리된 요청(중복 콜백) - 스킵
         }
 
-        // 콜백에 포함된 post_id들에 해당하는 Post를 한 번에 조회 (N+1 방지)
-        List<Post> foundPosts = postRepository.findAllById(ids);
-        Map<Long, Post> postMap = foundPosts.stream()
-                .collect(Collectors.toMap(Post::getId, Function.identity()));
-
         // ────────────────────────────────────────────────────────
-        // 3. 성공 케이스 - PostAnalysis 생성
-        //    이미 SUCCESS/FAILED로 처리된 Post는 중복 콜백이므로 건너뛴다.
-        //    (PostAnalysis.url은 unique 제약이라, 중복 저장을 시도하면 예외가 발생한다)
-        // ────────────────────────────────────────────────────────
-        List<PostAnalysis> analysesToSave = new ArrayList<>();
-
-        for (JsonNode itemNode : callbackItems) {
-            long postId = itemNode.path("post_id").asLong();
-            Post foundPost = postMap.get(postId);
-
-            if (foundPost == null) {
-                throw new BaseException(PostErrorCode.POST_NOT_FOUND);
-            }
-            if (foundPost.getStatus() != PostStatus.PENDING) {
-                continue; // 이미 처리된 요청(중복 콜백) - 스킵
-            }
-
-            String title = itemNode.path("title").asText(null);
-            String summary = itemNode.path("summary").asText(null);
-
-            analysesToSave.add(PostAnalysis.create(foundPost.getUrl(), title, summary));
-        }
-
-        List<PostAnalysis> savedAnalyses = postAnalysisRepository.saveAll(analysesToSave);
-
-        // 방금 저장한 PostAnalysis를 url 기준으로 매핑해, 아래에서 Post와 다시 연결할 때 사용한다.
-        // (postId를 직접 들고 있지 않으므로 url을 매개로 연결 - 동일 배치 내 url 중복 시 예외 위험 있음,
-        //  현재는 요청이 1건씩만 발행되므로 문제되지 않음)
-        Map<String, Long> urlToAnalysisId = savedAnalyses.stream()
-                .collect(Collectors.toMap(PostAnalysis::getUrl, PostAnalysis::getId));
-
-        // ────────────────────────────────────────────────────────
-        // 4. 성공 케이스 - Post 연결 + 포트폴리오 전략 DRAFT 생성
+        // 3. 성공 케이스 - PostAnalysis 저장 + Post 연결 + 포트폴리오 전략 DRAFT 생성
         //    분석이 확정된 시점에, 유저가 이 분석 결과로 전략을 생성할 수 있도록
         //    PortfolioStrategy를 DRAFT 상태로 미리 만들어둔다.
-        //    (같은 URL이어도 유저가 다른 소스로 전략을 여러 번 만들 수 있으므로 매번 새로 생성)
         // ────────────────────────────────────────────────────────
-        List<Post> postsToSave = new ArrayList<>();
-        for (JsonNode itemNode : callbackItems) {
-            long postId = itemNode.path("post_id").asLong();
-            Post foundPost = postMap.get(postId);
+        String title = resultNode.path("title").asText(null);
+        String summary = resultNode.path("summary").asText(null);
 
-            if (foundPost == null || foundPost.getStatus() != PostStatus.PENDING) {
-                continue;
-            }
+        PostAnalysis savedAnalysis = postAnalysisRepository.save(
+                PostAnalysis.create(foundPost.getUrl(), title, summary));
 
-            Long analysisId = urlToAnalysisId.get(foundPost.getUrl());
-            foundPost.success(analysisId);
-            postsToSave.add(foundPost);
+        foundPost.success(savedAnalysis.getId());
+        postRepository.save(foundPost);
 
-            portfolioStrategyService.createDraft(foundPost.getCreatedBy(), analysisId);
-        }
+        portfolioStrategyService.createDraft(foundPost.getCreatedBy(), savedAnalysis.getId());
 
-        postRepository.saveAll(postsToSave);
-        cleanupTemporaryFiles(foundPosts);
-        notifyJobStatusAfterCommit(request.userId(), AiFunctions.POST_ANALYSIS, ids, AiFunctionStatus.READY);
+        cleanupTemporaryFiles(List.of(foundPost));
+        notifyJobStatusAfterCommit(request.userId(), AiFunctions.POST_ANALYSIS, List.of(postId), AiFunctionStatus.READY);
     }
 
     /**

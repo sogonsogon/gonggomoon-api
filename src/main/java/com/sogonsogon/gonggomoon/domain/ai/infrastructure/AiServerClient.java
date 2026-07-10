@@ -13,6 +13,7 @@ import com.sogonsogon.gonggomoon.domain.ai.dto.request.InterviewStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.PortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.PostAnalysisAiServerRequest;
 import com.sogonsogon.gonggomoon.domain.ai.error.AiErrorCode;
+import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,12 @@ public class AiServerClient {
     // 신규 AI 워커의 단일 진입점. 워커는 body의 job_type으로 작업을 분기한다.
     private static final String TASKS_EXECUTE_PATH = "/tasks/execute";
     private static final String EXPERIENCE_EXTRACTION_JOB_TYPE = "EXPERIENCE_EXTRACTION";
+    private static final String PORTFOLIO_STRATEGY_JOB_TYPE = "PORTFOLIO_STRATEGY_GENERATION";
+    private static final String INTERVIEW_STRATEGY_JOB_TYPE = "INTERVIEW_STRATEGY_GENERATION";
+    private static final String POST_ANALYSIS_JOB_TYPE = "POST_ANALYSIS";
     private static final String EXPERIENCE_EXTRACTION_CALLBACK_PATH = "/api/v1/callbacks/experience-extraction";
+    private static final String PORTFOLIO_STRATEGY_CALLBACK_PATH = "/api/v1/callbacks/portfolio-strategy-generation";
+    private static final String INTERVIEW_STRATEGY_CALLBACK_PATH = "/api/v1/callbacks/interview-strategy-generation";
     private static final String POST_ANALYSIS_CALLBACK_PATH = "/api/v1/callbacks/post-analysis";
 
     private final CloudTasksClient cloudTasksClient;
@@ -70,28 +76,53 @@ public class AiServerClient {
     }
 
     /*
-     * 포트폴리오 요청을 Cloud Tasks 큐에 등록하는 메서드
+     * 포트폴리오 전략 생성 요청을 Cloud Tasks 큐에 등록하는 메서드
+     * 워커는 DB 조회 없이 메시지에 인라인된 경험/공고 분석 데이터로 전략을 생성한다.
      * */
-    public void requestPortfolioStrategyGeneration(PortfolioStrategyRequest request) {
-        enqueue("/api/v1/jobs/portfolio-strategy-generation", request);
+    public void requestPortfolioStrategyGeneration(
+        Long portfolioStrategyId,
+        Long userId,
+        List<Experience> experiences,
+        String positionType,
+        String industryType,
+        PortfolioStrategyRequest.PostAnalysisInput postAnalysis) {
+        PortfolioStrategyRequest request = new PortfolioStrategyRequest(
+            portfolioStrategyId,
+            PORTFOLIO_STRATEGY_JOB_TYPE,
+            userId,
+            callbackBaseUrl + PORTFOLIO_STRATEGY_CALLBACK_PATH,
+            experiences,
+            positionType,
+            industryType,
+            postAnalysis
+        );
+        enqueue(TASKS_EXECUTE_PATH, request);
     }
 
     /*
      * 면접 전략 생성 요청을 Cloud Tasks 큐에 등록하는 메서드
+     * 워커는 최상위 id(면접 전략 ID)로 DB에서 파일을 조회해 처리한다.
      * */
-    public void requestInterviewStrategyGeneration(InterviewStrategyRequest request) {
-        enqueue("/api/v1/jobs/interview-strategy-generation", request);
+    public void requestInterviewStrategyGeneration(Long interviewStrategyId, Long userId) {
+        InterviewStrategyRequest request = new InterviewStrategyRequest(
+            interviewStrategyId,
+            INTERVIEW_STRATEGY_JOB_TYPE,
+            userId,
+            callbackBaseUrl + INTERVIEW_STRATEGY_CALLBACK_PATH
+        );
+        enqueue(TASKS_EXECUTE_PATH, request);
     }
 
     public void requestPostAnalysis(Long userId, Long postId, Long fileAssetId) {
         PostAnalysisAiServerRequest request = new PostAnalysisAiServerRequest(
                 postId,
+                POST_ANALYSIS_JOB_TYPE,
                 userId,
                 callbackBaseUrl + POST_ANALYSIS_CALLBACK_PATH,
                 postId,
                 fileAssetId
         );
-        enqueue("/api/v1/jobs/post-analysis", request);
+        enqueue(TASKS_EXECUTE_PATH, request);
     }
 
     /*

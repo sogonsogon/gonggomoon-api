@@ -4,10 +4,12 @@ import com.sogonsogon.gonggomoon.domain.ai.domain.AiFunctionStatus;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractionStatus;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysis;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysisRepository;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.AiFunctionStatusRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractionAiServerRequest;
-import com.sogonsogon.gonggomoon.domain.ai.dto.request.InterviewStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.PortfolioStrategyRequest;
+import com.sogonsogon.gonggomoon.domain.ai.error.PostAnalysisErrorCode;
 import com.sogonsogon.gonggomoon.domain.ai.dto.response.AiFunctionStatusResponse;
 import com.sogonsogon.gonggomoon.domain.ai.dto.response.ExperienceExtractResponse;
 import com.sogonsogon.gonggomoon.domain.ai.error.AiErrorCode;
@@ -41,6 +43,7 @@ public class AiService {
     private final AiServerClient aiServerClient;
     private final AiJobSseService aiJobSseService;
     private final PostRepository postRepository;
+    private final PostAnalysisRepository postAnalysisRepository;
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
@@ -99,7 +102,8 @@ public class AiService {
         Long portfolioStrategyId,
         List<Experience> experiences,
         Long postAnalysisId) {
-        requestPortfolioStrategyGeneration(userId, portfolioStrategyId, experiences, null, "마스터", postAnalysisId);
+        // 워커는 position_type/industry_type을 필수 문자열로 요구하므로 기본값을 전달한다.
+        requestPortfolioStrategyGeneration(userId, portfolioStrategyId, experiences, "마스터", "마스터", postAnalysisId);
     }
 
     public void requestPortfolioStrategyGeneration(
@@ -110,19 +114,19 @@ public class AiService {
         String industryType,
         Long postAnalysisId) {
 
-        // DTO 생성
-        PortfolioStrategyRequest request = new PortfolioStrategyRequest(
-            userId,
-            portfolioStrategyId,
-            postAnalysisId,
-            experiences,
-            positionType,
-            industryType
+        // 워커는 DB 조회 없이 동작하므로 공고 분석 결과(title/summary)를 메시지에 인라인으로 담는다.
+        PostAnalysis postAnalysis = postAnalysisRepository.findById(postAnalysisId)
+            .orElseThrow(() -> new BaseException(PostAnalysisErrorCode.NOT_FOUND));
+
+        PortfolioStrategyRequest.PostAnalysisInput postAnalysisInput = new PortfolioStrategyRequest.PostAnalysisInput(
+            postAnalysis.getTitle() == null ? "" : postAnalysis.getTitle(),
+            postAnalysis.getSummary() == null ? "" : postAnalysis.getSummary()
         );
 
         // AI 서버에 포트폴리오 전략 생성 요청 전송
         try {
-            aiServerClient.requestPortfolioStrategyGeneration(request);
+            aiServerClient.requestPortfolioStrategyGeneration(
+                portfolioStrategyId, userId, experiences, positionType, industryType, postAnalysisInput);
         } catch (RuntimeException exception) {
             portfolioStrategyRepository.findByIdAndUserId(portfolioStrategyId, userId)
                 .ifPresent(portfolioStrategy -> {
@@ -141,12 +145,9 @@ public class AiService {
      * */
     public void requestInterviewStrategyGeneration(Long userId, Long interviewStrategyId) {
 
-        // DTO 생성
-        InterviewStrategyRequest request = new InterviewStrategyRequest(userId, interviewStrategyId);
-
-        // AI 서버에 포트폴리오 전략 생성 요청 전송
+        // AI 서버에 면접 전략 생성 요청 전송
         try {
-            aiServerClient.requestInterviewStrategyGeneration(request);
+            aiServerClient.requestInterviewStrategyGeneration(interviewStrategyId, userId);
         } catch (RuntimeException exception) {
             interviewStrategyRepository.findByIdAndUserId(interviewStrategyId, userId)
                 .ifPresent(interviewStrategy -> {
