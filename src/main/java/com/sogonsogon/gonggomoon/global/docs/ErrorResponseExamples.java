@@ -83,6 +83,38 @@ public final class ErrorResponseExamples {
               "timestamp": "2026-06-24T10:30:00Z"
             }""";
 
+    public static final String POST_NOT_FOUND = """
+        {
+          "success": false,
+          "code": "POST_NOT_FOUND",
+          "message": "존재하지 않는 공고입니다.",
+          "timestamp": "2026-06-24T10:30:00Z"
+        }""";
+
+    public static final String POST_ANALYSIS_NOT_FOUND = """
+        {
+          "success": false,
+          "code": "POST_ANALYSIS_NOT_FOUND",
+          "message": "해당 공고의 분석 결과가 존재하지 않습니다.",
+          "timestamp": "2026-06-24T10:30:00Z"
+        }""";
+
+    public static final String POST_NOT_PUBLISHED = """
+        {
+          "success": false,
+          "code": "POST_NOT_PUBLISHED",
+          "message": "접근할 수 없는 공고입니다.",
+          "timestamp": "2026-06-24T10:30:00Z"
+        }""";
+
+    public static final String POST_ACCESS_DENIED = """
+        {
+          "success": false,
+          "code": "POST_ACCESS_DENIED",
+          "message": "본인의 공고만 조회할 수 있습니다.",
+          "timestamp": "2026-06-24T10:30:00Z"
+        }""";
+
     // ===== 사용자 / 인증 (User / Auth) =====
     public static final String USER_NOT_FOUND = """
             {

@@ -7,6 +7,9 @@ public enum PostErrorCode implements BaseErrorCode {
 
     POST_NOT_FOUND("POST_NOT_FOUND", HttpStatus.NOT_FOUND, "존재하지 않는 공고입니다."),
     POST_NOT_PUBLISHED("POST_NOT_PUBLISHED", HttpStatus.FORBIDDEN, "접근할 수 없는 공고입니다."),
+    POST_ANALYSIS_NOT_FOUND("POST_ANALYSIS_NOT_FOUND", HttpStatus.NOT_FOUND, "해당 공고의 분석 결과가 존재하지 않습니다."),
+    POST_ACCESS_DENIED("POST_ACCESS_DENIED", HttpStatus.FORBIDDEN, "본인의 공고만 조회할 수 있습니다."),
+
 
     // Tavily 추출 관련
     EXTRACTION_FAILED("EXTRACTION_FAILED", HttpStatus.UNPROCESSABLE_ENTITY, "URL에서 콘텐츠를 추출하지 못했습니다."),

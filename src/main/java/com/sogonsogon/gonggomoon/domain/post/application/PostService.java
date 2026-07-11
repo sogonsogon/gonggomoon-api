@@ -10,8 +10,10 @@ import com.sogonsogon.gonggomoon.domain.post.domain.Post;
 import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysis;
 import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysisRepository;
 import com.sogonsogon.gonggomoon.domain.post.domain.PostRepository;
+import com.sogonsogon.gonggomoon.domain.post.domain.PostStatus;
 import com.sogonsogon.gonggomoon.domain.post.dto.request.PostAnalysisRequest;
 import com.sogonsogon.gonggomoon.domain.post.dto.response.PostAnalysisResponse;
+import com.sogonsogon.gonggomoon.domain.post.dto.response.PostResponse;
 import com.sogonsogon.gonggomoon.domain.post.dto.response.TavilyExtractResponse;
 import com.sogonsogon.gonggomoon.domain.post.error.PostErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
@@ -20,6 +22,7 @@ import com.sogonsogon.gonggomoon.global.post.TavilyClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -108,6 +111,44 @@ public class PostService {
         }
 
         return PostAnalysisResponse.from(newPost);
+    }
+
+    @Transactional(readOnly = true)
+    public PostResponse getAnalysisByPostId(Long postId, Long userId) {
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_FOUND));
+
+        if (!post.getCreatedBy().equals(userId)) {
+            throw new BaseException(PostErrorCode.POST_ACCESS_DENIED);
+        }
+
+        if (post.getStatus() != PostStatus.SUCCESS) {
+            throw new BaseException(PostErrorCode.POST_NOT_PUBLISHED);
+        }
+
+        Long analysisId = post.getAnalysisId();
+
+        if (analysisId == null) {
+            throw new BaseException(PostErrorCode.POST_ANALYSIS_NOT_FOUND);
+        }
+
+        PostAnalysis postAnalysis = postAnalysisRepository.findById(analysisId)
+                .orElseThrow(() -> new BaseException(PostErrorCode.POST_ANALYSIS_NOT_FOUND));
+
+        return PostResponse.of(postId, postAnalysis);
+    }
+
+    /**
+     * 공고를 삭제합니다.
+     * 주의: 이 메서드는 호출자(Service)가 소유자 검증을 완료했다는 것을 전제로 합니다.
+     */
+    @Transactional
+    public void deletePost(Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_FOUND));
+
+        postRepository.delete(post);
     }
 
 //    private void refundUsage(Long userId) {
