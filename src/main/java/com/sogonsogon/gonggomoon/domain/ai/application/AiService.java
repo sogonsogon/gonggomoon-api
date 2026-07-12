@@ -5,6 +5,8 @@ import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractionStatus;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.AiFunctionStatusRequest;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysis;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysisRepository;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.ExperienceExtractionAiServerRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.InterviewStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.PortfolioStrategyRequest;
@@ -12,6 +14,7 @@ import com.sogonsogon.gonggomoon.domain.ai.dto.response.AiFunctionStatusResponse
 import com.sogonsogon.gonggomoon.domain.ai.dto.response.ExperienceExtractResponse;
 import com.sogonsogon.gonggomoon.domain.ai.error.AiErrorCode;
 import com.sogonsogon.gonggomoon.domain.ai.error.ExtractedExperienceErrorCode;
+import com.sogonsogon.gonggomoon.domain.ai.error.PostAnalysisErrorCode;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.AiServerClient;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategyRepository;
@@ -41,6 +44,7 @@ public class AiService {
     private final AiServerClient aiServerClient;
     private final AiJobSseService aiJobSseService;
     private final PostRepository postRepository;
+    private final PostAnalysisRepository postAnalysisRepository;
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
@@ -110,19 +114,26 @@ public class AiService {
         String industryType,
         Long postAnalysisId) {
 
-        // DTO 생성
-        PortfolioStrategyRequest request = new PortfolioStrategyRequest(
-            userId,
-            portfolioStrategyId,
-            postAnalysisId,
-            experiences,
-            positionType,
-            industryType
-        );
+        // 워커는 DB 조회 없이 인라인 데이터만으로 처리하므로, 경험 목록과 공고 분석 결과를 모두 담아 보낸다.
+        List<PortfolioStrategyRequest.ExperienceInput> experienceInputs = experiences.stream()
+            .map(PortfolioStrategyRequest.ExperienceInput::from)
+            .toList();
+
+        PostAnalysis postAnalysis = postAnalysisRepository.findById(postAnalysisId)
+            .orElseThrow(() -> new BaseException(PostAnalysisErrorCode.NOT_FOUND));
+        PortfolioStrategyRequest.PostAnalysisInput postAnalysisInput =
+            new PortfolioStrategyRequest.PostAnalysisInput(postAnalysis.getTitle(), postAnalysis.getSummary());
 
         // AI 서버에 포트폴리오 전략 생성 요청 전송
         try {
-            aiServerClient.requestPortfolioStrategyGeneration(request);
+            aiServerClient.requestPortfolioStrategyGeneration(
+                portfolioStrategyId,
+                userId,
+                experienceInputs,
+                positionType,
+                industryType,
+                postAnalysisInput
+            );
         } catch (RuntimeException exception) {
             portfolioStrategyRepository.findByIdAndUserId(portfolioStrategyId, userId)
                 .ifPresent(portfolioStrategy -> {

@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 
 public enum PostAnalysisErrorCode implements BaseErrorCode {
     INVALID_CALLBACK_FORMAT("INVALID_CALLBACK_FORMAT", HttpStatus.BAD_REQUEST, "콜백 결과 형식이 올바르지 않습니다."),
+    NOT_FOUND("POST_ANALYSIS_NOT_FOUND", HttpStatus.NOT_FOUND, "공고 분석 결과를 찾을 수 없습니다."),
     ;
 
     private final String code;
