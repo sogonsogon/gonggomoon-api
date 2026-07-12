@@ -9,4 +9,6 @@ public interface PostAnalysisRepository {
     PostAnalysis save(PostAnalysis entity);
 
     <S extends PostAnalysis> List<S> saveAll(Iterable<S> entities);
+
+    Optional<PostAnalysis> findById(Long id);
 }
