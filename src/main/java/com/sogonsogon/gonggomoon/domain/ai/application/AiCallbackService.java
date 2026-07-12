@@ -219,7 +219,9 @@ public class AiCallbackService {
         //    PortfolioStrategy를 DRAFT 상태로 미리 만들어둔다.
         // ────────────────────────────────────────────────────────
         String title = resultNode.path("title").asText(null);
-        String summary = resultNode.path("summary").asText(null);
+        // 분석 결과 전체(summary, company_intro, rnr, required_skills 등)를
+        // JSON 문자열 그대로 summary 컬럼에 저장한다. 소비처에서 파싱해 사용한다.
+        String summary = resultNode.toString();
 
         PostAnalysis savedAnalysis = postAnalysisRepository.save(
                 PostAnalysis.create(foundPost.getUrl(), title, summary));
