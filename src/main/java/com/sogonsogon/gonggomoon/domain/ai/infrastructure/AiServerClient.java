@@ -30,8 +30,10 @@ public class AiServerClient {
     private static final String TASKS_EXECUTE_PATH = "/tasks/execute";
     private static final String EXPERIENCE_EXTRACTION_JOB_TYPE = "EXPERIENCE_EXTRACTION";
     private static final String POST_ANALYSIS_JOB_TYPE = "POST_ANALYSIS";
+    private static final String PORTFOLIO_STRATEGY_JOB_TYPE = "PORTFOLIO_STRATEGY_GENERATION";
     private static final String EXPERIENCE_EXTRACTION_CALLBACK_PATH = "/api/v1/callbacks/experience-extraction";
     private static final String POST_ANALYSIS_CALLBACK_PATH = "/api/v1/callbacks/post-analysis";
+    private static final String PORTFOLIO_STRATEGY_CALLBACK_PATH = "/api/v1/callbacks/portfolio-strategy-generation";
 
     private final CloudTasksClient cloudTasksClient;
     private final ObjectMapper objectMapper;
@@ -71,9 +73,27 @@ public class AiServerClient {
     }
 
     /*
-     * 포트폴리오 요청을 Cloud Tasks 큐에 등록하는 메서드
+     * 포트폴리오 전략 생성 요청을 Cloud Tasks 큐에 등록하는 메서드
+     * 워커(/tasks/execute)가 기대하는 형식(job_type, user_id, callback_url)으로 변환한다.
+     * id(portfolioStrategyId)는 콜백의 최상위 id로 에코백된다.
      * */
-    public void requestPortfolioStrategyGeneration(PortfolioStrategyRequest request) {
+    public void requestPortfolioStrategyGeneration(
+        Long portfolioStrategyId,
+        Long userId,
+        List<PortfolioStrategyRequest.ExperienceInput> experiences,
+        String positionType,
+        String industryType,
+        PortfolioStrategyRequest.PostAnalysisInput postAnalysis) {
+        PortfolioStrategyRequest request = new PortfolioStrategyRequest(
+            portfolioStrategyId,
+            PORTFOLIO_STRATEGY_JOB_TYPE,
+            userId,
+            callbackBaseUrl + PORTFOLIO_STRATEGY_CALLBACK_PATH,
+            experiences,
+            positionType,
+            industryType,
+            postAnalysis
+        );
         enqueue(TASKS_EXECUTE_PATH, request);
     }
 
