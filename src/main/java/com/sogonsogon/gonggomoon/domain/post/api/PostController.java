@@ -1,5 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.post.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.post.application.PostService;
 import com.sogonsogon.gonggomoon.domain.post.dto.request.PostAnalysisRequest;
@@ -93,7 +94,8 @@ public class PostController {
     })
     @GetMapping("/{postId}")
     public ResponseEntity<BaseResponse<PostResponse>> getAnalysis(@PathVariable Long postId,
-                                                                  @AuthenticationPrincipal AccessUser user) {
+                                                                  @AuthenticationPrincipal AccessUser user)
+            throws JsonProcessingException {
         PostResponse response = postService.getAnalysisByPostId(postId, user.getId());
         return ResponseEntity.ok(BaseResponse.success(response));
     }
