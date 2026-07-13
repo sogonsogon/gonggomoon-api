@@ -1,5 +1,6 @@
 package com.sogonsogon.gonggomoon.domain.post.application;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.sogonsogon.gonggomoon.domain.ai.application.AiService;
 import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
 import com.sogonsogon.gonggomoon.domain.file.api.request.UploadFileRequest;
@@ -114,7 +115,7 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public PostResponse getAnalysisByPostId(Long postId, Long userId) {
+    public PostResponse getAnalysisByPostId(Long postId, Long userId) throws JsonProcessingException {
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_FOUND));
