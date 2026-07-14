@@ -11,7 +11,6 @@ import com.sogonsogon.gonggomoon.domain.post.domain.Post;
 import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysis;
 import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysisRepository;
 import com.sogonsogon.gonggomoon.domain.post.domain.PostRepository;
-import com.sogonsogon.gonggomoon.domain.post.domain.PostStatus;
 import com.sogonsogon.gonggomoon.domain.post.dto.request.PostAnalysisRequest;
 import com.sogonsogon.gonggomoon.domain.post.dto.response.PostAnalysisResponse;
 import com.sogonsogon.gonggomoon.domain.post.dto.response.PostResponse;
@@ -114,30 +113,12 @@ public class PostService {
         return PostAnalysisResponse.from(newPost);
     }
 
-    @Transactional(readOnly = true)
-    public PostResponse getAnalysisByPostId(Long postId, Long userId) throws JsonProcessingException {
-
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_FOUND));
-
-        if (!post.getCreatedBy().equals(userId)) {
-            throw new BaseException(PostErrorCode.POST_ACCESS_DENIED);
-        }
-
-        if (post.getStatus() != PostStatus.SUCCESS) {
-            throw new BaseException(PostErrorCode.POST_NOT_PUBLISHED);
-        }
-
-        Long analysisId = post.getAnalysisId();
-
-        if (analysisId == null) {
-            throw new BaseException(PostErrorCode.POST_ANALYSIS_NOT_FOUND);
-        }
+    public PostResponse getAnalysisById(Long analysisId) throws JsonProcessingException {
 
         PostAnalysis postAnalysis = postAnalysisRepository.findById(analysisId)
                 .orElseThrow(() -> new BaseException(PostErrorCode.POST_ANALYSIS_NOT_FOUND));
 
-        return PostResponse.of(postId, postAnalysis);
+        return PostResponse.of(postAnalysis);
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.sogonsogon.gonggomoon.domain.ai.application;
 
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiFunctionStatus;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiFunctions;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperience;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractionStatus;
@@ -18,6 +19,7 @@ import com.sogonsogon.gonggomoon.domain.ai.error.PostAnalysisErrorCode;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.AiServerClient;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategyRepository;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyGenerateStatus;
 import com.sogonsogon.gonggomoon.domain.post.domain.Post;
@@ -197,13 +199,21 @@ public class AiService {
             case POST_ANALYSIS -> getPostAnalysisStatus(userId, request.id());
             default -> throw new BaseException(AiErrorCode.INVALID_TYPE);
         };
-        
+
+        AiFunctionStatus resolvedStatus = AiFunctionStatus.valueOf(status);
+
+        Long strategyId = null;
+        if (request.type() == AiFunctions.POST_ANALYSIS && resolvedStatus == AiFunctionStatus.READY) {
+            strategyId = getStrategyIdByPostId(userId, request.id());
+        }
+
         // DTO 생성 및 반환
         return new AiFunctionStatusResponse(
             request.type(),
             request.id(),
             AiFunctionStatus.valueOf(status),
-            null
+            strategyId,
+                null
         );
     }
 
@@ -263,5 +273,19 @@ public class AiService {
             case SUCCESS -> AiFunctionStatus.READY.name();
             case FAILED -> AiFunctionStatus.FAILED.name();
         };
+    }
+
+    private Long getStrategyIdByPostId(Long userId, Long postId) {
+        Post foundPost = postRepository.findByIdAndCreatedBy(postId, userId)
+                .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_FOUND));
+
+        Long analysisId = foundPost.getAnalysisId();
+        if (analysisId == null) {
+            return null;
+        }
+
+        return portfolioStrategyRepository.findByPostAnalysisId(analysisId)
+                .map(PortfolioStrategy::getId)
+                .orElse(null);
     }
 }

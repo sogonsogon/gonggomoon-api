@@ -229,10 +229,10 @@ public class AiCallbackService {
         foundPost.success(savedAnalysis.getId());
         postRepository.save(foundPost);
 
-        portfolioStrategyService.createDraft(foundPost.getCreatedBy(), savedAnalysis.getId());
+        Long strategyId = portfolioStrategyService.createDraft(foundPost.getCreatedBy(), savedAnalysis.getId());
 
         cleanupTemporaryFiles(List.of(foundPost));
-        notifyJobStatusAfterCommit(request.userId(), AiFunctions.POST_ANALYSIS, postId, AiFunctionStatus.READY);
+        notifyJobStatusAfterCommit(request.userId(), AiFunctions.POST_ANALYSIS, postId, AiFunctionStatus.READY, strategyId);
     }
 
     /**
@@ -403,8 +403,17 @@ public class AiCallbackService {
         runAfterCommit(() -> notifyJobStatus(userId, type, id, status));
     }
 
+    private void notifyJobStatusAfterCommit(Long userId, AiFunctions type, Long id, AiFunctionStatus status, Long extraId) {
+        runAfterCommit(() -> notifyJobStatus(userId, type, id, status, extraId));
+    }
+
     private void notifyJobStatus(Long userId, AiFunctions type, Long id, AiFunctionStatus status) {
-        aiJobSseService.send(userId, new AiFunctionStatusResponse(type, id, status, null));
+        aiJobSseService.send(userId, new AiFunctionStatusResponse(type, id, status,null, null));
+        aiJobSseService.complete(userId, type, id);
+    }
+
+    private void notifyJobStatus(Long userId, AiFunctions type, Long id, AiFunctionStatus status, Long strategyId) {
+        aiJobSseService.send(userId, new AiFunctionStatusResponse(type, id, status, strategyId, null));
         aiJobSseService.complete(userId, type, id);
     }
 
