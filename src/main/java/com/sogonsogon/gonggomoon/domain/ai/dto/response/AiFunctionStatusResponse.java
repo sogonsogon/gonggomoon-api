@@ -8,6 +8,7 @@ public record AiFunctionStatusResponse(
     AiFunctions type,
     Long id,
     AiFunctionStatus status,
+    Long strategyId,
     String error
 ) {
 }

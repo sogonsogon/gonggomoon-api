@@ -6,20 +6,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysis;
 
 public record PostResponse(
-        Long postId,
+        Long postAnalysisId,
         String url,
         String title,
         JsonNode summary
 ) {
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+        private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public static PostResponse of(Long postId, PostAnalysis analysis) throws JsonProcessingException {
-        JsonNode convertedSummary = objectMapper.readTree(analysis.getSummary());
-        return new PostResponse(
-                postId,
-                analysis.getUrl(),
-                analysis.getTitle(),
-                convertedSummary
-        );
+        public static PostResponse of(PostAnalysis analysis) throws JsonProcessingException {
+            JsonNode convertedSummary = objectMapper.readTree(analysis.getSummary());
+            return new PostResponse(
+                    analysis.getId(),
+                    analysis.getUrl(),
+                    analysis.getTitle(),
+                    convertedSummary
+            );
+        }
     }
-}

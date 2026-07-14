@@ -28,4 +28,5 @@ public interface PortfolioStrategyRepository {
 
     int countByUserIdAndGeneratedDate(Long userId, LocalDate generatedDate);
 
+    Optional<PortfolioStrategy> findByPostAnalysisId(Long analysisId);
 }
