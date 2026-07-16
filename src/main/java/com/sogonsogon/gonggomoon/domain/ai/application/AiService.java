@@ -271,15 +271,7 @@ public class AiService {
     }
 
     private Long getStrategyIdByPostId(Long userId, Long postId) {
-        Post foundPost = postRepository.findByIdAndCreatedBy(postId, userId)
-                .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_FOUND));
-
-        Long analysisId = foundPost.getAnalysisId();
-        if (analysisId == null) {
-            return null;
-        }
-
-        return portfolioStrategyRepository.findByPostAnalysisId(analysisId)
+        return portfolioStrategyRepository.findByPostIdAndUserId(postId, userId)
                 .map(PortfolioStrategy::getId)
                 .orElse(null);
     }
