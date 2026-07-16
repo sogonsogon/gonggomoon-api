@@ -229,7 +229,8 @@ public class AiCallbackService {
         foundPost.success(savedAnalysis.getId());
         postRepository.save(foundPost);
 
-        Long strategyId = portfolioStrategyService.createDraft(foundPost.getCreatedBy(), savedAnalysis.getId());
+        Long strategyId = portfolioStrategyService.createDraft(
+                foundPost.getCreatedBy(), foundPost.getId(), savedAnalysis.getId());
 
         cleanupTemporaryFiles(List.of(foundPost));
         notifyJobStatusAfterCommit(request.userId(), AiFunctions.POST_ANALYSIS, postId, AiFunctionStatus.READY, strategyId);

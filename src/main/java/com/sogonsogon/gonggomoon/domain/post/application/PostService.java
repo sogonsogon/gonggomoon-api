@@ -71,7 +71,7 @@ public class PostService {
             Post cachedPost = Post.createFromCache(request.postUrl(), userId, cached.get().getId());
             postRepository.save(cachedPost);
 
-            portfolioStrategyService.createDraft(userId, cached.get().getId());
+            portfolioStrategyService.createDraft(userId, cachedPost.getId(), cached.get().getId());
 
             return PostAnalysisResponse.from(cachedPost);
         }

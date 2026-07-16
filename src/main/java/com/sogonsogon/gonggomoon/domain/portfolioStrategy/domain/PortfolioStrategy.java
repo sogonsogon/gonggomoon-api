@@ -53,6 +53,9 @@ public class PortfolioStrategy {
     @Column(name = "post_analysis_id")
     private Long postAnalysisId;
 
+    @Column(name = "post_id", nullable = false, updatable = false)
+    private Long postId;
+
     /**
      * 전략 생성 상태
      */
@@ -75,6 +78,7 @@ public class PortfolioStrategy {
      * */
     public static PortfolioStrategy create(
             Long userId,
+            Long postId,
             JobType jobType,
             Long industryId,
             Long postAnalysisId,
@@ -83,6 +87,7 @@ public class PortfolioStrategy {
             LocalDate generatedDate
     ) {
         ValidationUtils.requireNonNull(userId, PortfolioStrategyErrorCode.USERID_REQUIRED);
+        ValidationUtils.requireNonNull(postId, PortfolioStrategyErrorCode.POST_ID_REQUIRED);
         ValidationUtils.requireNonNull(jobType, PortfolioStrategyErrorCode.JOB_TYPE_REQUIRED);
 
         // 프로그래밍 오류
@@ -91,6 +96,7 @@ public class PortfolioStrategy {
 
         return PortfolioStrategy.builder()
                 .userId(userId)
+                .postId(postId)
                 .jobType(jobType)
                 .industryId(industryId)
                 .postAnalysisId(postAnalysisId)
@@ -103,11 +109,13 @@ public class PortfolioStrategy {
 
     public static PortfolioStrategy createDraft(
             Long userId,
+            Long postId,
             Long postAnalysisId,
             Instant now,
             LocalDate generatedDate
     ) {
         ValidationUtils.requireNonNull(userId, PortfolioStrategyErrorCode.USERID_REQUIRED);
+        ValidationUtils.requireNonNull(postId, PortfolioStrategyErrorCode.POST_ID_REQUIRED);
 
         // 프로그래밍 오류
         Objects.requireNonNull(now, "now must not be null");
@@ -115,6 +123,7 @@ public class PortfolioStrategy {
 
         return PortfolioStrategy.builder()
                 .userId(userId)
+                .postId(postId)
                 .postAnalysisId(postAnalysisId)
                 .selectedExperienceCount(0)
                 .createdAt(now)

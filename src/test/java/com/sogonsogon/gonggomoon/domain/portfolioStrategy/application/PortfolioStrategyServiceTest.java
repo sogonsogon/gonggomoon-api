@@ -77,6 +77,8 @@ class PortfolioStrategyServiceTest {
 
     private static final Long USER_ID = 1L;
 
+    private static final Long POST_ID = 20L;
+
     private static final Long INDUSTRY_ID = 1L;
 
     private static final Long POST_ANALYSIS_ID = 10L;
@@ -91,6 +93,7 @@ class PortfolioStrategyServiceTest {
             // given
             PortfolioStrategy savedDraft = PortfolioStrategy.createDraft(
                     USER_ID,
+                    POST_ID,
                     POST_ANALYSIS_ID,
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
@@ -101,7 +104,7 @@ class PortfolioStrategyServiceTest {
                     .thenReturn(savedDraft);
 
             // when
-            Long draftId = portfolioStrategyService.createDraft(USER_ID, POST_ANALYSIS_ID);
+            Long draftId = portfolioStrategyService.createDraft(USER_ID, POST_ID, POST_ANALYSIS_ID);
 
             // then
             assertEquals(100L, draftId);
@@ -196,6 +199,7 @@ class PortfolioStrategyServiceTest {
 
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
+                    POST_ID,
                     req.postAnalysisId(),
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
@@ -248,6 +252,7 @@ class PortfolioStrategyServiceTest {
 
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
+                    POST_ID,
                     req.postAnalysisId(),
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
@@ -295,6 +300,7 @@ class PortfolioStrategyServiceTest {
             Experience experience = createExperience(USER_ID, "캡스톤 프로젝트");
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
+                    POST_ID,
                     req.postAnalysisId(),
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
@@ -337,6 +343,7 @@ class PortfolioStrategyServiceTest {
             Experience experience2 = createExperience(USER_ID, "인턴 경험");
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
+                    POST_ID,
                     req.postAnalysisId(),
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
@@ -377,6 +384,7 @@ class PortfolioStrategyServiceTest {
 
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
+                    POST_ID,
                     req.postAnalysisId(),
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
@@ -426,6 +434,7 @@ class PortfolioStrategyServiceTest {
             // given
             PortfolioStrategyListResultItem strategy1 = createPortfolioStrategyListItem(
                     100L,
+                    POST_ID,
                     10L,
                     "백엔드 개발자 채용",
                     JobType.BACKEND,
@@ -436,6 +445,7 @@ class PortfolioStrategyServiceTest {
 
             PortfolioStrategyListResultItem strategy2 = createPortfolioStrategyListItem(
                     99L,
+                    21L,
                     11L,
                     "서버 개발자 채용",
                     JobType.BACKEND,
@@ -459,6 +469,7 @@ class PortfolioStrategyServiceTest {
 
             PortfolioStrategyListResultItem first = result.contents().get(0);
             assertEquals(100L, first.strategyId());
+            assertEquals(POST_ID, first.postId());
             assertEquals(10L, first.postAnalysisId());
             assertEquals("백엔드 개발자 채용", first.postAnalysisTitle());
             assertEquals(JobType.BACKEND, first.jobType());
@@ -468,6 +479,7 @@ class PortfolioStrategyServiceTest {
 
             PortfolioStrategyListResultItem second = result.contents().get(1);
             assertEquals(99L, second.strategyId());
+            assertEquals(21L, second.postId());
             assertEquals(11L, second.postAnalysisId());
             assertEquals("서버 개발자 채용", second.postAnalysisTitle());
             assertEquals(JobType.BACKEND, second.jobType());
@@ -565,6 +577,7 @@ class PortfolioStrategyServiceTest {
             // then
             assertNotNull(result);
             assertEquals(strategyId, result.strategyId());
+            assertEquals(POST_ID, result.postId());
             assertEquals(POST_ANALYSIS_ID, result.postAnalysisId());
             assertEquals("백엔드 개발자 채용", result.postAnalysisTitle());
             assertEquals(JobType.BACKEND, result.jobType());
@@ -625,6 +638,7 @@ class PortfolioStrategyServiceTest {
             Long strategyId = 100L;
             PortfolioStrategy portfolioStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
+                    POST_ID,
                     POST_ANALYSIS_ID,
                     Instant.parse("2026-03-10T10:00:00Z"),
                     LocalDate.of(2026, 3, 10)
@@ -703,6 +717,7 @@ class PortfolioStrategyServiceTest {
 
     private PortfolioStrategyListResultItem createPortfolioStrategyListItem(
             Long id,
+            Long postId,
             Long postAnalysisId,
             String postAnalysisTitle,
             JobType jobType,
@@ -712,6 +727,7 @@ class PortfolioStrategyServiceTest {
     ) {
         return PortfolioStrategyListResultItem.builder()
                 .strategyId(id)
+                .postId(postId)
                 .postAnalysisId(postAnalysisId)
                 .postAnalysisTitle(postAnalysisTitle)
                 .jobType(jobType)
@@ -732,6 +748,7 @@ class PortfolioStrategyServiceTest {
 
         PortfolioStrategy strategy = PortfolioStrategy.create(
                 userId,
+                POST_ID,
                 jobType,
                 industryId,
                 POST_ANALYSIS_ID,

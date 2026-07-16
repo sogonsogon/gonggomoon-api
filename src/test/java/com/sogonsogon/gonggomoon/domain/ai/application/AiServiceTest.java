@@ -88,6 +88,7 @@ class AiServiceTest {
             AiFunctions.POST_ANALYSIS,
             postId,
             AiFunctionStatus.READY,
+            null,
             null
         );
         SseEmitter emitter = new SseEmitter();
