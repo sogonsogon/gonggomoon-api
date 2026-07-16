@@ -20,6 +20,7 @@ public interface PortfolioStrategyJpaRepository
     @Query("""
         select new com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResultItem(
             ps.id,
+            ps.postAnalysisId,
             pa.title,
             ps.jobType,
             coalesce(i.name, '마스터'),
