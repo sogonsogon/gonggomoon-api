@@ -236,11 +236,6 @@ public class AiService {
         return emitter;
     }
 
-    public boolean isTerminalJobStatus(Long userId, AiFunctionStatusRequest request) {
-        AiFunctionStatusResponse response = checkAiFunctionStatus(userId, request);
-        return isTerminalStatus(response.status());
-    }
-
     private boolean isTerminalStatus(AiFunctionStatus status) {
         return status == AiFunctionStatus.READY || status == AiFunctionStatus.FAILED;
     }
