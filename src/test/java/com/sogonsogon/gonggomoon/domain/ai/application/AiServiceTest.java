@@ -1,22 +1,30 @@
 package com.sogonsogon.gonggomoon.domain.ai.application;
 
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiFunctionStatus;
+import com.sogonsogon.gonggomoon.domain.ai.domain.AiFunctions;
 import com.sogonsogon.gonggomoon.domain.ai.domain.ExtractedExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysis;
 import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysisRepository;
+import com.sogonsogon.gonggomoon.domain.ai.dto.request.AiFunctionStatusRequest;
 import com.sogonsogon.gonggomoon.domain.ai.dto.request.PortfolioStrategyRequest;
+import com.sogonsogon.gonggomoon.domain.ai.dto.response.AiFunctionStatusResponse;
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.AiServerClient;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyRepository;
+import com.sogonsogon.gonggomoon.domain.post.domain.Post;
+import com.sogonsogon.gonggomoon.domain.post.domain.PostRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -40,6 +48,9 @@ class AiServiceTest {
 
     @Mock
     private PostAnalysisRepository postAnalysisRepository;
+
+    @Mock
+    private PostRepository postRepository;
 
     @InjectMocks
     private AiService aiService;
@@ -65,5 +76,32 @@ class AiServiceTest {
             null,
             "마스터",
             new PortfolioStrategyRequest.PostAnalysisInput("공고 제목", "공고 요약"));
+    }
+
+    @Test
+    void subscribeSendsTerminalStatusAndCompletesEmitter() {
+        Long userId = 1L;
+        Long postId = 10L;
+        AiFunctionStatusRequest request =
+            new AiFunctionStatusRequest(AiFunctions.POST_ANALYSIS, postId);
+        AiFunctionStatusResponse response = new AiFunctionStatusResponse(
+            AiFunctions.POST_ANALYSIS,
+            postId,
+            AiFunctionStatus.READY,
+            null
+        );
+        SseEmitter emitter = new SseEmitter();
+        Post completedPost = Post.createFromCache("https://example.com/job", userId, 100L);
+
+        when(aiJobSseService.register(userId, AiFunctions.POST_ANALYSIS, postId))
+            .thenReturn(emitter);
+        when(postRepository.findByIdAndCreatedBy(postId, userId))
+            .thenReturn(Optional.of(completedPost));
+
+        SseEmitter result = aiService.subscribe(userId, request);
+
+        assertThat(result).isSameAs(emitter);
+        verify(aiJobSseService).send(userId, response);
+        verify(aiJobSseService).complete(userId, AiFunctions.POST_ANALYSIS, postId);
     }
 }

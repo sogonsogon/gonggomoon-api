@@ -62,10 +62,12 @@ public class AiJobController {
     }
 
     // 2. SSE 추가 (상태 실시간 구독용)
-    @Operation(summary = "AI 작업 상태 실시간 구독", description = "AI 기능 타입과 ID로 작업 상태를 SSE로 실시간 구독하며, 이미 종료된 작업이면 204를 반환한다.")
+    @Operation(
+            summary = "AI 작업 상태 실시간 구독",
+            description = "AI 기능 타입과 ID로 작업 상태를 SSE로 실시간 구독한다. 이미 종료된 작업이면 현재 상태를 한 번 전송한 뒤 연결을 종료한다."
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "SSE 구독 시작 (text/event-stream) - 작업 상태 이벤트 수신"),
-            @ApiResponse(responseCode = "204", description = "이미 종료된 작업 - 구독 없이 종료"),
             @ApiResponse(responseCode = "400",
                     description = "유효하지 않은 type(AI_INVALID_TYPE)",
                     content = @Content(mediaType = "application/json",
@@ -85,10 +87,6 @@ public class AiJobController {
         @RequestParam Long id
     ) {
         AiFunctionStatusRequest request = new AiFunctionStatusRequest(type, id);
-
-        if (aiService.isTerminalJobStatus(user.getId(), request)) {
-            return ResponseEntity.noContent().build();
-        }
 
         return ResponseEntity.ok(aiService.subscribe(user.getId(), request));
     }
