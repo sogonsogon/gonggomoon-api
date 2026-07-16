@@ -11,6 +11,8 @@ import com.sogonsogon.gonggomoon.domain.ai.dto.response.AiFunctionStatusResponse
 import com.sogonsogon.gonggomoon.domain.ai.infrastructure.AiServerClient;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategyRepository;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategy;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyGenerateStatus;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyRepository;
 import com.sogonsogon.gonggomoon.domain.post.domain.Post;
 import com.sogonsogon.gonggomoon.domain.post.domain.PostRepository;
@@ -79,30 +81,41 @@ class AiServiceTest {
     }
 
     @Test
-    void subscribeSendsTerminalStatusAndCompletesEmitter() {
+    void subscribeSendsStrategyForTheRequestedPostAndCompletesEmitter() {
         Long userId = 1L;
         Long postId = 10L;
+        Long strategyId = 200L;
         AiFunctionStatusRequest request =
             new AiFunctionStatusRequest(AiFunctions.POST_ANALYSIS, postId);
         AiFunctionStatusResponse response = new AiFunctionStatusResponse(
             AiFunctions.POST_ANALYSIS,
             postId,
             AiFunctionStatus.READY,
-            null,
+            strategyId,
             null
         );
         SseEmitter emitter = new SseEmitter();
         Post completedPost = Post.createFromCache("https://example.com/job", userId, 100L);
+        PortfolioStrategy strategy = PortfolioStrategy.builder()
+            .id(strategyId)
+            .userId(userId)
+            .postId(postId)
+            .postAnalysisId(100L)
+            .status(PortfolioStrategyGenerateStatus.DRAFT)
+            .build();
 
         when(aiJobSseService.register(userId, AiFunctions.POST_ANALYSIS, postId))
             .thenReturn(emitter);
         when(postRepository.findByIdAndCreatedBy(postId, userId))
             .thenReturn(Optional.of(completedPost));
+        when(portfolioStrategyRepository.findByPostIdAndUserId(postId, userId))
+            .thenReturn(Optional.of(strategy));
 
         SseEmitter result = aiService.subscribe(userId, request);
 
         assertThat(result).isSameAs(emitter);
         verify(aiJobSseService).send(userId, response);
         verify(aiJobSseService).complete(userId, AiFunctions.POST_ANALYSIS, postId);
+        verify(portfolioStrategyRepository).findByPostIdAndUserId(postId, userId);
     }
 }
