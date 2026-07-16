@@ -426,6 +426,7 @@ class PortfolioStrategyServiceTest {
             // given
             PortfolioStrategyListResultItem strategy1 = createPortfolioStrategyListItem(
                     100L,
+                    10L,
                     "백엔드 개발자 채용",
                     JobType.BACKEND,
                     "핀테크",
@@ -435,6 +436,7 @@ class PortfolioStrategyServiceTest {
 
             PortfolioStrategyListResultItem strategy2 = createPortfolioStrategyListItem(
                     99L,
+                    11L,
                     "서버 개발자 채용",
                     JobType.BACKEND,
                     "마스터",
@@ -457,6 +459,7 @@ class PortfolioStrategyServiceTest {
 
             PortfolioStrategyListResultItem first = result.contents().get(0);
             assertEquals(100L, first.strategyId());
+            assertEquals(10L, first.postAnalysisId());
             assertEquals("백엔드 개발자 채용", first.postAnalysisTitle());
             assertEquals(JobType.BACKEND, first.jobType());
             assertEquals("핀테크", first.industryName());
@@ -465,6 +468,7 @@ class PortfolioStrategyServiceTest {
 
             PortfolioStrategyListResultItem second = result.contents().get(1);
             assertEquals(99L, second.strategyId());
+            assertEquals(11L, second.postAnalysisId());
             assertEquals("서버 개발자 채용", second.postAnalysisTitle());
             assertEquals(JobType.BACKEND, second.jobType());
             assertEquals("마스터", second.industryName());
@@ -561,6 +565,7 @@ class PortfolioStrategyServiceTest {
             // then
             assertNotNull(result);
             assertEquals(strategyId, result.strategyId());
+            assertEquals(POST_ANALYSIS_ID, result.postAnalysisId());
             assertEquals("백엔드 개발자 채용", result.postAnalysisTitle());
             assertEquals(JobType.BACKEND, result.jobType());
             assertEquals("핀테크", result.industryName());
@@ -698,6 +703,7 @@ class PortfolioStrategyServiceTest {
 
     private PortfolioStrategyListResultItem createPortfolioStrategyListItem(
             Long id,
+            Long postAnalysisId,
             String postAnalysisTitle,
             JobType jobType,
             String industryName,
@@ -706,6 +712,7 @@ class PortfolioStrategyServiceTest {
     ) {
         return PortfolioStrategyListResultItem.builder()
                 .strategyId(id)
+                .postAnalysisId(postAnalysisId)
                 .postAnalysisTitle(postAnalysisTitle)
                 .jobType(jobType)
                 .industryName(industryName)
@@ -727,7 +734,7 @@ class PortfolioStrategyServiceTest {
                 userId,
                 jobType,
                 industryId,
-                null,
+                POST_ANALYSIS_ID,
                 1,
                 createdAt,
                 generatedDate
