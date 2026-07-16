@@ -65,8 +65,8 @@ public class SecurityConfig {
 
             // 4. API 경로별 인가(권한) 설정
             .authorizeHttpRequests(auth -> auth
-                    // 최초 REQUEST에서 인증을 마친 SSE 요청의 종료용 ASYNC 재디스패치는 다시 인증하지 않는다.
-                    .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
+                    // 최초 REQUEST에서 인증을 마친 SSE 요청의 종료용 재디스패치는 다시 인증하지 않는다.
+                    .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                     .requestMatchers("/actuator/health").permitAll() // 헬스체크는 모두 허용
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll() // Swagger 문서는 모두 허용
                     .requestMatchers("/api/v1/auth/social/login/**", "/oauth2/**").permitAll() // 인증 진입점은 모두 허용
