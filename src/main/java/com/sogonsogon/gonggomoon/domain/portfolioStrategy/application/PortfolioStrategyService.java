@@ -97,11 +97,11 @@ public class PortfolioStrategyService {
     }
 
     @Transactional
-    public Long createDraft(Long userId, Long postAnalysisId) {
+    public Long createDraft(Long userId, Long postId, Long postAnalysisId) {
         Instant now = Instant.now();
         LocalDate today = now.atZone(KST).toLocalDate();
 
-        PortfolioStrategy draft = PortfolioStrategy.createDraft(userId, postAnalysisId, now, today);
+        PortfolioStrategy draft = PortfolioStrategy.createDraft(userId, postId, postAnalysisId, now, today);
         PortfolioStrategy savedDraft = portfolioStrategyRepository.save(draft);
 
         return savedDraft.getId();

@@ -216,6 +216,7 @@ public class AiCallbackServiceTest {
 
             PortfolioStrategy strategy = PortfolioStrategy.create(
                     USER_ID,
+                    20L,
                     JobType.BACKEND,
                     INDUSTRY_ID,
                     null,
