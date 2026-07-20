@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -16,7 +17,7 @@ public class AiJobSseService {
 
     private final Map<AiJobKey, Set<SseEmitter>> emitters = new ConcurrentHashMap<>();
 
-    public SseEmitter register(Long userId, AiFunctions type, Long id) {
+    public SseEmitter register(Long userId, AiFunctions type, UUID id) {
         AiJobKey key = new AiJobKey(userId, type, id);
         SseEmitter emitter = new SseEmitter(SSE_TIMEOUT_MILLIS);
 
@@ -41,7 +42,7 @@ public class AiJobSseService {
         jobEmitters.forEach(emitter -> sendToEmitter(key, emitter, response));
     }
 
-    public void complete(Long userId, AiFunctions type, Long id) {
+    public void complete(Long userId, AiFunctions type, UUID id) {
         AiJobKey key = new AiJobKey(userId, type, id);
         Set<SseEmitter> jobEmitters = emitters.remove(key);
 
@@ -75,6 +76,6 @@ public class AiJobSseService {
         }
     }
 
-    private record AiJobKey(Long userId, AiFunctions type, Long id) {
+    private record AiJobKey(Long userId, AiFunctions type, UUID id) {
     }
 }

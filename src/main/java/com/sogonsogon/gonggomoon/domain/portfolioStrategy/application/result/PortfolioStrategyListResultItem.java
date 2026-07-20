@@ -5,12 +5,13 @@ import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrate
 import lombok.Builder;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Builder
 public record PortfolioStrategyListResultItem(
-        Long strategyId,
-        Long postId,
-        Long postAnalysisId,
+        UUID strategyId,
+        UUID postId,
+        UUID postAnalysisId,
         String postAnalysisTitle,
         JobType jobType,
         String industryName,

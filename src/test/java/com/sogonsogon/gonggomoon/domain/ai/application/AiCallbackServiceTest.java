@@ -147,6 +147,8 @@ public class AiCallbackServiceTest {
 
             when(extractedExperienceRepository.findAllById(List.of(extractedExperienceId)))
                     .thenReturn(List.of(extractedExperience));
+            when(extractedExperienceRepository.findByUserIdAndId(USER_ID, extractedExperienceId))
+                    .thenReturn(Optional.of(extractedExperience));
             when(experienceResultMapper.toExperiencesFromCallbackItem(any(JsonNode.class)))
                     .thenReturn(experiences);
 
@@ -195,6 +197,8 @@ public class AiCallbackServiceTest {
 
             when(extractedExperienceRepository.findAllById(List.of(extractedExperienceId)))
                     .thenReturn(List.of(extractedExperience));
+            when(extractedExperienceRepository.findByUserIdAndId(USER_ID, extractedExperienceId))
+                    .thenReturn(Optional.of(extractedExperience));
 
             // when
             aiCallbackService.createExtractedExperience(request);

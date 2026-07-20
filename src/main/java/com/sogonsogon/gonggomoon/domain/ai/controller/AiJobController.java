@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import java.util.UUID;
 
 @Tag(name = "AI 작업", description = "AI 기능 작업 상태 조회 및 실시간 구독 관련 API")
 @RestController
@@ -84,7 +85,7 @@ public class AiJobController {
     public ResponseEntity<SseEmitter> subscribeAiJobStatus(
         @AuthenticationPrincipal AccessUser user,
         @RequestParam AiFunctions type,
-        @RequestParam Long id
+        @RequestParam UUID id
     ) {
         AiFunctionStatusRequest request = new AiFunctionStatusRequest(type, id);
 

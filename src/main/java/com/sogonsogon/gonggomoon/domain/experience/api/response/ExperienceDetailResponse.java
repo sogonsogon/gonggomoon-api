@@ -4,10 +4,11 @@ import com.sogonsogon.gonggomoon.domain.experience.application.result.Experience
 import lombok.Builder;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Builder
 public record ExperienceDetailResponse(
-        Long experienceId,
+        UUID experienceId,
         String title,
         String experienceType,
         String experienceContent,

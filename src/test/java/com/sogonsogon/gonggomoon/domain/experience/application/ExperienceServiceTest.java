@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Nested;
 import java.util.Collections;
@@ -40,7 +41,7 @@ class ExperienceServiceTest {
     private ExperienceService experienceService;
 
     private final Long userId = 1L;
-    private final Long experienceId = 100L;
+    private final UUID experienceId = UUID.randomUUID();
 
     @Nested
     class CreateTest {
@@ -155,7 +156,7 @@ class ExperienceServiceTest {
                     LocalDate.of(2025, 2, 28)
             );
 
-            when(experienceRepository.findByIdAndUserId(experienceId, userId))
+            when(experienceRepository.findByPublicIdAndUserId(experienceId, userId))
                     .thenReturn(Optional.of(experience));
 
             // when
@@ -163,7 +164,7 @@ class ExperienceServiceTest {
 
             // then
             assertThat(result).isNotNull();
-            verify(experienceRepository).findByIdAndUserId(experienceId, userId);
+            verify(experienceRepository).findByPublicIdAndUserId(experienceId, userId);
 
             // then - 엔티티 상태 및 result 검증
             assertThat(experience.getTitle()).isEqualTo("수정된 제목");
@@ -183,7 +184,7 @@ class ExperienceServiceTest {
             );
 
             // 찾지 못한 상황을 가정한다.
-            when(experienceRepository.findByIdAndUserId(experienceId, userId))
+            when(experienceRepository.findByPublicIdAndUserId(experienceId, userId))
                     .thenReturn(Optional.empty());
 
             // when & then - update를 실행했을 때 예외가 발생하는지 테스트
@@ -192,7 +193,7 @@ class ExperienceServiceTest {
                     .extracting("errorCode") // errorCode가
                     .isEqualTo(ExperienceErrorCode.NOT_FOUND); // ExperienceErrorCode.NOT_FOUND가 맞는지
 
-            verify(experienceRepository).findByIdAndUserId(experienceId, userId);
+            verify(experienceRepository).findByPublicIdAndUserId(experienceId, userId);
         }
 
         @Test
@@ -215,7 +216,7 @@ class ExperienceServiceTest {
                     LocalDate.of(2025, 2, 28)
             );
 
-            when(experienceRepository.findByIdAndUserId(experienceId, userId))
+            when(experienceRepository.findByPublicIdAndUserId(experienceId, userId))
                     .thenReturn(Optional.of(experience));
 
             // when & then
@@ -245,7 +246,7 @@ class ExperienceServiceTest {
                     LocalDate.of(2024, 2, 28)
             );
 
-            when(experienceRepository.findByIdAndUserId(experienceId, userId))
+            when(experienceRepository.findByPublicIdAndUserId(experienceId, userId))
                     .thenReturn(Optional.of(experience));
 
             // when & then
@@ -271,21 +272,21 @@ class ExperienceServiceTest {
                     LocalDate.of(2025, 1, 31)
             );
 
-            when(experienceRepository.findByIdAndUserId(experienceId, userId))
+            when(experienceRepository.findByPublicIdAndUserId(experienceId, userId))
                     .thenReturn(Optional.of(experience));
 
             // when
             experienceService.deleteExperience(experienceId, userId);
 
             // then
-            verify(experienceRepository).findByIdAndUserId(experienceId, userId);
+            verify(experienceRepository).findByPublicIdAndUserId(experienceId, userId);
             verify(experienceRepository).delete(experience);
         }
 
         @Test
         void deleteExperience_존재하지_않는_경험이면_NOT_FOUND_예외가_발생한다() {
             // given
-            when(experienceRepository.findByIdAndUserId(experienceId, userId))
+            when(experienceRepository.findByPublicIdAndUserId(experienceId, userId))
                     .thenReturn(Optional.empty());
 
             // when & then
@@ -313,7 +314,7 @@ class ExperienceServiceTest {
                     LocalDate.of(2025, 1, 31)
             );
 
-            when(experienceRepository.findByIdAndUserId(experienceId, userId))
+            when(experienceRepository.findByPublicIdAndUserId(experienceId, userId))
                     .thenReturn(Optional.of(experience));
 
             // when
@@ -321,7 +322,7 @@ class ExperienceServiceTest {
 
             // then
             assertThat(result).isNotNull();
-            verify(experienceRepository).findByIdAndUserId(experienceId, userId);
+            verify(experienceRepository).findByPublicIdAndUserId(experienceId, userId);
 
             assertThat(result.title()).isEqualTo("제목");
             assertThat(result.experienceContent()).isEqualTo("내용");
@@ -330,7 +331,7 @@ class ExperienceServiceTest {
         @Test
         void getExperienceDetail_존재하지_않는_경험이면_NOT_FOUND_예외가_발생한다() {
             // given
-            when(experienceRepository.findByIdAndUserId(experienceId, userId))
+            when(experienceRepository.findByPublicIdAndUserId(experienceId, userId))
                     .thenReturn(Optional.empty());
 
             // when & then

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -43,8 +44,8 @@ public class ExperienceService {
      * @return
      */
     @Transactional
-    public ExperienceDetailResult update(Long experienceId, Long userId, UpdateExperienceRequest req) {
-        Experience experience = experienceRepository.findByIdAndUserId(experienceId, userId)
+    public ExperienceDetailResult update(UUID experienceId, Long userId, UpdateExperienceRequest req) {
+        Experience experience = experienceRepository.findByPublicIdAndUserId(experienceId, userId)
                 .orElseThrow(() -> new BaseException(ExperienceErrorCode.NOT_FOUND));
 
         experience.update(req.title(), req.experienceType(), req.experienceContent(), req.startDate(), req.endDate());
@@ -58,8 +59,8 @@ public class ExperienceService {
      * @param userId
      */
     @Transactional
-    public void deleteExperience(Long experienceId, Long userId) {
-        Experience experience = experienceRepository.findByIdAndUserId(experienceId, userId)
+    public void deleteExperience(UUID experienceId, Long userId) {
+        Experience experience = experienceRepository.findByPublicIdAndUserId(experienceId, userId)
                 .orElseThrow(() -> new BaseException(ExperienceErrorCode.NOT_FOUND));
 
         experienceRepository.delete(experience);
@@ -82,8 +83,8 @@ public class ExperienceService {
      * @param userId
      * @return
      */
-    public ExperienceDetailResult getExperienceDetail(Long experienceId, Long userId) {
-        Experience experience = experienceRepository.findByIdAndUserId(experienceId, userId)
+    public ExperienceDetailResult getExperienceDetail(UUID experienceId, Long userId) {
+        Experience experience = experienceRepository.findByPublicIdAndUserId(experienceId, userId)
                 .orElseThrow(() -> new BaseException(ExperienceErrorCode.NOT_FOUND));
 
         return ExperienceDetailResult.from(experience);

@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.UUID;
 
 @Tag(name = "포트폴리오 전략", description = "포트폴리오 전략 생성, 조회, 삭제 API")
 @RestController
@@ -109,7 +110,7 @@ public class PortfolioStrategyController {
     @GetMapping("/{strategyId}")
     public ResponseEntity<BaseResponse<PortfolioStrategyDetailResponse>> getPortfolioStrategyDetail(
             @AuthenticationPrincipal AccessUser user,
-            @PathVariable("strategyId") Long strategyId) {
+            @PathVariable("strategyId") UUID strategyId) {
         PortfolioStrategyDetailResult result = portfolioStrategyService.getPortfolioStrategyDetail(strategyId, user.getId());
 
         return ResponseEntity.ok(BaseResponse.success(PortfolioStrategyDetailResponse.from(result)));
@@ -131,7 +132,7 @@ public class PortfolioStrategyController {
     @DeleteMapping("/{strategyId}")
     public ResponseEntity<BaseResponse<Void>> deletePortfolioStrategy(
             @AuthenticationPrincipal AccessUser user,
-            @PathVariable("strategyId") Long strategyId) {
+            @PathVariable("strategyId") UUID strategyId) {
         portfolioStrategyService.deletePortfolioStrategy(strategyId, user.getId());
 
         return ResponseEntity.ok(BaseResponse.success());

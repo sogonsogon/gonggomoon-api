@@ -113,9 +113,9 @@ public class PostService {
         return PostAnalysisResponse.from(newPost);
     }
 
-    public PostResponse getAnalysisById(Long analysisId) throws JsonProcessingException {
+    public PostResponse getAnalysisByPublicId(UUID analysisId) throws JsonProcessingException {
 
-        PostAnalysis postAnalysis = postAnalysisRepository.findById(analysisId)
+        PostAnalysis postAnalysis = postAnalysisRepository.findByPublicId(analysisId)
                 .orElseThrow(() -> new BaseException(PostErrorCode.POST_ANALYSIS_NOT_FOUND));
 
         return PostResponse.of(postAnalysis);

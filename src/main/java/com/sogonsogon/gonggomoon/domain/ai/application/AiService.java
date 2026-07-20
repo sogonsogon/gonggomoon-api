@@ -34,6 +34,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.StreamSupport;
 
 @Service
@@ -72,6 +73,10 @@ public class AiService {
             .map(ExtractedExperience::getId)
             .toList();
 
+        List<UUID> savedExtractedExperiencePublicIds = savedExtractedExperiences.stream()
+            .map(ExtractedExperience::getPublicId)
+            .toList();
+
         // 워커가 S3에서 다운로드할 파일과 결과 매핑용 (file_asset_id ↔ extracted_experience_id) 쌍
         List<ExperienceExtractionAiServerRequest.FileAssetTarget> fileAssetTargets = savedExtractedExperiences.stream()
             .map(extractedExperience -> new ExperienceExtractionAiServerRequest.FileAssetTarget(
@@ -91,7 +96,7 @@ public class AiService {
             throw exception;
         }
 
-        return new ExperienceExtractResponse(savedExtractedExperienceIds);
+        return new ExperienceExtractResponse(savedExtractedExperiencePublicIds);
     }
 
     /*
@@ -202,7 +207,7 @@ public class AiService {
 
         AiFunctionStatus resolvedStatus = AiFunctionStatus.valueOf(status);
 
-        Long strategyId = null;
+        UUID strategyId = null;
         if (request.type() == AiFunctions.POST_ANALYSIS && resolvedStatus == AiFunctionStatus.READY) {
             strategyId = getStrategyIdByPostId(userId, request.id());
         }
@@ -240,27 +245,27 @@ public class AiService {
         return status == AiFunctionStatus.READY || status == AiFunctionStatus.FAILED;
     }
 
-    private String getExperienceExtractionStatus(Long userId, Long extractedExperienceId) {
-        ExtractedExperience foundExtractedExperience = extractedExperienceRepository.findByUserIdAndId(userId, extractedExperienceId)
+    private String getExperienceExtractionStatus(Long userId, UUID extractedExperienceId) {
+        ExtractedExperience foundExtractedExperience = extractedExperienceRepository.findByPublicIdAndUserId(extractedExperienceId, userId)
             .orElseThrow(() -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND));
 
         return foundExtractedExperience.getStatus().name();
     }
 
-    private String getPortfolioStrategyGenerationStatus(Long userId, Long extractedExperienceId) {
-        return portfolioStrategyRepository.findByIdAndUserId(extractedExperienceId, userId)
+    private String getPortfolioStrategyGenerationStatus(Long userId, UUID portfolioStrategyId) {
+        return portfolioStrategyRepository.findByPublicIdAndUserId(portfolioStrategyId, userId)
             .map(strategy -> strategy.getStatus().name())
             .orElseThrow(() -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND));
     }
 
-    private String getInterviewStrategyGenerationStatus(Long userId, Long extractedExperienceId) {
-        return interviewStrategyRepository.findByIdAndUserId(extractedExperienceId, userId)
+    private String getInterviewStrategyGenerationStatus(Long userId, UUID interviewStrategyId) {
+        return interviewStrategyRepository.findByPublicIdAndUserId(interviewStrategyId, userId)
             .map(strategy -> strategy.getStatus().name())
             .orElseThrow(() -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND));
     }
 
-    private String getPostAnalysisStatus(Long userId, Long postId) {
-        Post foundPost = postRepository.findByIdAndCreatedBy(postId, userId)
+    private String getPostAnalysisStatus(Long userId, UUID postId) {
+        Post foundPost = postRepository.findByPublicIdAndCreatedBy(postId, userId)
             .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_FOUND));
 
         return switch (foundPost.getStatus()) {
@@ -270,9 +275,12 @@ public class AiService {
         };
     }
 
-    private Long getStrategyIdByPostId(Long userId, Long postId) {
-        return portfolioStrategyRepository.findByPostIdAndUserId(postId, userId)
-                .map(PortfolioStrategy::getId)
+    private UUID getStrategyIdByPostId(Long userId, UUID postId) {
+        Post post = postRepository.findByPublicIdAndCreatedBy(postId, userId)
+                .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_FOUND));
+
+        return portfolioStrategyRepository.findByPostIdAndUserId(post.getId(), userId)
+                .map(PortfolioStrategy::getPublicId)
                 .orElse(null);
     }
 }

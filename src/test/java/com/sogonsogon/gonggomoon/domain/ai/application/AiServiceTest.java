@@ -25,6 +25,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -85,17 +86,12 @@ class AiServiceTest {
         Long userId = 1L;
         Long postId = 10L;
         Long strategyId = 200L;
-        AiFunctionStatusRequest request =
-            new AiFunctionStatusRequest(AiFunctions.POST_ANALYSIS, postId);
-        AiFunctionStatusResponse response = new AiFunctionStatusResponse(
-            AiFunctions.POST_ANALYSIS,
-            postId,
-            AiFunctionStatus.READY,
-            strategyId,
-            null
-        );
-        SseEmitter emitter = new SseEmitter();
         Post completedPost = Post.createFromCache("https://example.com/job", userId, 100L);
+        org.springframework.test.util.ReflectionTestUtils.setField(completedPost, "id", postId);
+        UUID postPublicId = completedPost.getPublicId();
+        AiFunctionStatusRequest request =
+            new AiFunctionStatusRequest(AiFunctions.POST_ANALYSIS, postPublicId);
+        SseEmitter emitter = new SseEmitter();
         PortfolioStrategy strategy = PortfolioStrategy.builder()
             .id(strategyId)
             .userId(userId)
@@ -103,10 +99,17 @@ class AiServiceTest {
             .postAnalysisId(100L)
             .status(PortfolioStrategyGenerateStatus.DRAFT)
             .build();
+        AiFunctionStatusResponse response = new AiFunctionStatusResponse(
+            AiFunctions.POST_ANALYSIS,
+            postPublicId,
+            AiFunctionStatus.READY,
+            strategy.getPublicId(),
+            null
+        );
 
-        when(aiJobSseService.register(userId, AiFunctions.POST_ANALYSIS, postId))
+        when(aiJobSseService.register(userId, AiFunctions.POST_ANALYSIS, postPublicId))
             .thenReturn(emitter);
-        when(postRepository.findByIdAndCreatedBy(postId, userId))
+        when(postRepository.findByPublicIdAndCreatedBy(postPublicId, userId))
             .thenReturn(Optional.of(completedPost));
         when(portfolioStrategyRepository.findByPostIdAndUserId(postId, userId))
             .thenReturn(Optional.of(strategy));
@@ -115,7 +118,7 @@ class AiServiceTest {
 
         assertThat(result).isSameAs(emitter);
         verify(aiJobSseService).send(userId, response);
-        verify(aiJobSseService).complete(userId, AiFunctions.POST_ANALYSIS, postId);
+        verify(aiJobSseService).complete(userId, AiFunctions.POST_ANALYSIS, postPublicId);
         verify(portfolioStrategyRepository).findByPostIdAndUserId(postId, userId);
     }
 }

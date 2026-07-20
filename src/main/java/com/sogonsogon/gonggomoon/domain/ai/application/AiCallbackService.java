@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -397,23 +398,48 @@ public class AiCallbackService {
     }
 
     private void notifyJobStatusAfterCommit(Long userId, AiFunctions type, List<Long> ids, AiFunctionStatus status) {
-        runAfterCommit(() -> ids.forEach(id -> notifyJobStatus(userId, type, id, status)));
+        List<UUID> publicIds = ids.stream()
+            .map(id -> resolvePublicId(userId, type, id))
+            .toList();
+        runAfterCommit(() -> publicIds.forEach(id -> notifyJobStatus(userId, type, id, status)));
     }
 
     private void notifyJobStatusAfterCommit(Long userId, AiFunctions type, Long id, AiFunctionStatus status) {
-        runAfterCommit(() -> notifyJobStatus(userId, type, id, status));
+        UUID publicId = resolvePublicId(userId, type, id);
+        runAfterCommit(() -> notifyJobStatus(userId, type, publicId, status));
     }
 
     private void notifyJobStatusAfterCommit(Long userId, AiFunctions type, Long id, AiFunctionStatus status, Long extraId) {
-        runAfterCommit(() -> notifyJobStatus(userId, type, id, status, extraId));
+        UUID publicId = resolvePublicId(userId, type, id);
+        UUID strategyPublicId = portfolioStrategyRepository.findByIdAndUserId(extraId, userId)
+            .map(PortfolioStrategy::getPublicId)
+            .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
+        runAfterCommit(() -> notifyJobStatus(userId, type, publicId, status, strategyPublicId));
     }
 
-    private void notifyJobStatus(Long userId, AiFunctions type, Long id, AiFunctionStatus status) {
+    private UUID resolvePublicId(Long userId, AiFunctions type, Long id) {
+        return switch (type) {
+            case EXTRACT_EXPERIENCE -> extractedExperienceRepository.findByUserIdAndId(userId, id)
+                .map(ExtractedExperience::getPublicId)
+                .orElseThrow(() -> new BaseException(ExtractedExperienceErrorCode.NOT_FOUND));
+            case PORTFOLIO_STRATEGY -> portfolioStrategyRepository.findByIdAndUserId(id, userId)
+                .map(PortfolioStrategy::getPublicId)
+                .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
+            case INTERVIEW_STRATEGY -> interviewStrategyRepository.findByIdAndUserId(id, userId)
+                .map(InterviewStrategy::getPublicId)
+                .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.NOT_FOUND));
+            case POST_ANALYSIS -> postRepository.findByIdAndCreatedBy(id, userId)
+                .map(Post::getPublicId)
+                .orElseThrow(() -> new BaseException(PostErrorCode.POST_NOT_FOUND));
+        };
+    }
+
+    private void notifyJobStatus(Long userId, AiFunctions type, UUID id, AiFunctionStatus status) {
         aiJobSseService.send(userId, new AiFunctionStatusResponse(type, id, status,null, null));
         aiJobSseService.complete(userId, type, id);
     }
 
-    private void notifyJobStatus(Long userId, AiFunctions type, Long id, AiFunctionStatus status, Long strategyId) {
+    private void notifyJobStatus(Long userId, AiFunctions type, UUID id, AiFunctionStatus status, UUID strategyId) {
         aiJobSseService.send(userId, new AiFunctionStatusResponse(type, id, status, strategyId, null));
         aiJobSseService.complete(userId, type, id);
     }

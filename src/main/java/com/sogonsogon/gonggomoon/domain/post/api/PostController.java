@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.UUID;
 
 @Tag(name = "공고", description = "공고 조회 및 검색 관련 API")
 @RestController
@@ -82,8 +83,8 @@ public class PostController {
     })
 
     @GetMapping("/{postAnalysisId}")
-    public ResponseEntity<BaseResponse<PostResponse>> getAnalysis(@PathVariable Long postAnalysisId) throws JsonProcessingException {
-        PostResponse response = postService.getAnalysisById(postAnalysisId);
+    public ResponseEntity<BaseResponse<PostResponse>> getAnalysis(@PathVariable UUID postAnalysisId) throws JsonProcessingException {
+        PostResponse response = postService.getAnalysisByPublicId(postAnalysisId);
         return ResponseEntity.ok(BaseResponse.success(response));
     }
 

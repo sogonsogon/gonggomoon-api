@@ -24,6 +24,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -88,8 +89,8 @@ public class InterviewStrategyService {
     /**
      * 면접 전략 질문 상세 조회 서비스
      */
-    public InterviewStrategyDetailResult getInterviewStrategyDetail(Long interviewStrategyId, Long userId) {
-        InterviewStrategy interviewStrategy = interviewStrategyRepository.findByIdAndUserId(interviewStrategyId, userId)
+    public InterviewStrategyDetailResult getInterviewStrategyDetail(UUID interviewStrategyId, Long userId) {
+        InterviewStrategy interviewStrategy = interviewStrategyRepository.findByPublicIdAndUserId(interviewStrategyId, userId)
                 .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.NOT_FOUND));
 
         if (interviewStrategy.getStatus() == InterviewGenerateStatus.PROCESSING) {
@@ -114,8 +115,8 @@ public class InterviewStrategyService {
     /**
      * 면접 전략 질문 삭제 서비스
      */
-    public void deleteInterviewStrategy(Long interviewStrategyId, Long userId) {
-        InterviewStrategy interviewStrategy = interviewStrategyRepository.findByIdAndUserId(interviewStrategyId, userId)
+    public void deleteInterviewStrategy(UUID interviewStrategyId, Long userId) {
+        InterviewStrategy interviewStrategy = interviewStrategyRepository.findByPublicIdAndUserId(interviewStrategyId, userId)
                 .orElseThrow(() -> new BaseException(InterviewStrategyErrorCode.NOT_FOUND));
         interviewStrategyRepository.delete(interviewStrategy);
     }

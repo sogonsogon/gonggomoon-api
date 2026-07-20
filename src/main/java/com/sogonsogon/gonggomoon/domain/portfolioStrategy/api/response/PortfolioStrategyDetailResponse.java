@@ -9,12 +9,13 @@ import lombok.Builder;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Builder
 public record PortfolioStrategyDetailResponse(
-        Long strategyId,
-        Long postId,
-        Long postAnalysisId,
+        UUID strategyId,
+        UUID postId,
+        UUID postAnalysisId,
         String postAnalysisTitle,
         JobType jobType,
         String industryName,

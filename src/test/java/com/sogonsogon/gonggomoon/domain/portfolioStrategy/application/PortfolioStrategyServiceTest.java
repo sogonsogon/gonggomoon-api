@@ -3,6 +3,8 @@ package com.sogonsogon.gonggomoon.domain.portfolioStrategy.application;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysis;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysisRepository;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceType;
@@ -41,6 +43,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,6 +57,9 @@ class PortfolioStrategyServiceTest {
 
     @Mock
     private ExperienceRepository experienceRepository;
+
+    @Mock
+    private PostAnalysisRepository postAnalysisRepository;
 
     @Mock
     private IndustryRepository industryRepository;
@@ -73,6 +79,11 @@ class PortfolioStrategyServiceTest {
     @BeforeEach
     void setUp() throws Exception {
         setField(portfolioStrategyService, "weeklyLimitEnabled", true);
+        PostAnalysis postAnalysis = PostAnalysis.create("https://example.com/job", "공고", "요약");
+        ReflectionTestUtils.setField(postAnalysis, "id", POST_ANALYSIS_ID);
+        ReflectionTestUtils.setField(postAnalysis, "publicId", POST_ANALYSIS_PUBLIC_ID);
+        lenient().when(postAnalysisRepository.findByPublicId(POST_ANALYSIS_PUBLIC_ID))
+                .thenReturn(Optional.of(postAnalysis));
     }
 
     private static final Long USER_ID = 1L;
@@ -82,6 +93,12 @@ class PortfolioStrategyServiceTest {
     private static final Long INDUSTRY_ID = 1L;
 
     private static final Long POST_ANALYSIS_ID = 10L;
+
+    private static final UUID POST_ANALYSIS_PUBLIC_ID = UUID.randomUUID();
+
+    private static final UUID EXPERIENCE_PUBLIC_ID_1 = UUID.randomUUID();
+
+    private static final UUID EXPERIENCE_PUBLIC_ID_2 = UUID.randomUUID();
 
     @Nested
     @DisplayName("createDraft")
@@ -121,7 +138,7 @@ class PortfolioStrategyServiceTest {
         void generate_fail_whenExperienceIdsIsNull() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    POST_ANALYSIS_ID,
+                    POST_ANALYSIS_PUBLIC_ID,
                     null
             );
 
@@ -141,7 +158,7 @@ class PortfolioStrategyServiceTest {
         void generate_fail_whenExperienceIdsIsEmpty() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    POST_ANALYSIS_ID,
+                    POST_ANALYSIS_PUBLIC_ID,
                     List.of()
             );
 
@@ -161,13 +178,13 @@ class PortfolioStrategyServiceTest {
         void generate_fail_whenSomeRequestedExperiencesAreNotFound() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    POST_ANALYSIS_ID,
-                    List.of(1L, 2L)
+                    POST_ANALYSIS_PUBLIC_ID,
+                    List.of(EXPERIENCE_PUBLIC_ID_1, EXPERIENCE_PUBLIC_ID_2)
             );
 
             Experience experience = createExperience(USER_ID, "캡스톤 프로젝트");
 
-            when(experienceRepository.findAllByIdInAndUserId(req.experienceIds(), USER_ID))
+            when(experienceRepository.findAllByPublicIdInAndUserId(req.experienceIds(), USER_ID))
                     .thenReturn(List.of(experience)); // 2개 요청했지만 1개만 조회됨
 
             // when
@@ -178,7 +195,7 @@ class PortfolioStrategyServiceTest {
 
             // then
             assertEquals(PortfolioStrategyErrorCode.REQUESTED_EXPERIENCE_NOT_FOUND, exception.getErrorCode());
-            verify(experienceRepository).findAllByIdInAndUserId(req.experienceIds(), USER_ID);
+            verify(experienceRepository).findAllByPublicIdInAndUserId(req.experienceIds(), USER_ID);
             verifyNoInteractions(portfolioStrategyContentGenerator);
             verifyNoInteractions(aiUsagePolicyService);
             verify(portfolioStrategyRepository, never()).save(any(PortfolioStrategy.class));
@@ -189,8 +206,8 @@ class PortfolioStrategyServiceTest {
         void generate_success() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    POST_ANALYSIS_ID,
-                    List.of(1L, 2L)
+                    POST_ANALYSIS_PUBLIC_ID,
+                    List.of(EXPERIENCE_PUBLIC_ID_1, EXPERIENCE_PUBLIC_ID_2)
             );
 
             Experience experience1 = createExperience(USER_ID, "캡스톤 프로젝트");
@@ -200,20 +217,20 @@ class PortfolioStrategyServiceTest {
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
                     POST_ID,
-                    req.postAnalysisId(),
+                    POST_ANALYSIS_ID,
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
             );
             ReflectionTestUtils.setField(draftStrategy, "id", 100L);
             ReflectionTestUtils.setField(portfolioStrategyService, "weeklyLimitEnabled", true);
 
-            when(experienceRepository.findAllByIdInAndUserId(anyList(), anyLong()))
+            when(experienceRepository.findAllByPublicIdInAndUserId(anyList(), anyLong()))
                     .thenReturn(experiences);
             when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY))
                     .thenReturn(true);
             when(portfolioStrategyRepository.findFirstByUserIdAndPostAnalysisIdAndStatusOrderByCreatedAtDesc(
                     USER_ID,
-                    req.postAnalysisId(),
+                    POST_ANALYSIS_ID,
                     PortfolioStrategyGenerateStatus.DRAFT
             )).thenReturn(Optional.of(draftStrategy));
 
@@ -222,7 +239,7 @@ class PortfolioStrategyServiceTest {
 
             // then
             assertNotNull(result);
-            assertEquals(100L, result.strategyId());
+            assertEquals(draftStrategy.getPublicId(), result.strategyId());
             assertEquals(PortfolioStrategyGenerateStatus.PROCESSING, draftStrategy.getStatus());
             assertNull(draftStrategy.getJobType());
             assertNull(draftStrategy.getIndustryId());
@@ -233,7 +250,7 @@ class PortfolioStrategyServiceTest {
                     eq(USER_ID),
                     eq(100L),
                     eq(experiences),
-                    eq(req.postAnalysisId())
+                    eq(POST_ANALYSIS_ID)
             );
             verifyNoInteractions(industryRepository);
         }
@@ -243,8 +260,8 @@ class PortfolioStrategyServiceTest {
         void generate_success_withoutJobTypeAndIndustry() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    POST_ANALYSIS_ID,
-                    List.of(1L)
+                    POST_ANALYSIS_PUBLIC_ID,
+                    List.of(EXPERIENCE_PUBLIC_ID_1)
             );
 
             Experience experience = createExperience(USER_ID, "캡스톤 프로젝트");
@@ -253,17 +270,17 @@ class PortfolioStrategyServiceTest {
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
                     POST_ID,
-                    req.postAnalysisId(),
+                    POST_ANALYSIS_ID,
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
             );
             ReflectionTestUtils.setField(draftStrategy, "id", 100L);
 
-            when(experienceRepository.findAllByIdInAndUserId(req.experienceIds(), USER_ID))
+            when(experienceRepository.findAllByPublicIdInAndUserId(req.experienceIds(), USER_ID))
                     .thenReturn(experiences);
             when(portfolioStrategyRepository.findFirstByUserIdAndPostAnalysisIdAndStatusOrderByCreatedAtDesc(
                     USER_ID,
-                    req.postAnalysisId(),
+                    POST_ANALYSIS_ID,
                     PortfolioStrategyGenerateStatus.DRAFT
             )).thenReturn(Optional.of(draftStrategy));
             when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY))
@@ -274,7 +291,7 @@ class PortfolioStrategyServiceTest {
 
             // then
             assertNotNull(result);
-            assertEquals(100L, result.strategyId());
+            assertEquals(draftStrategy.getPublicId(), result.strategyId());
             assertEquals(PortfolioStrategyGenerateStatus.PROCESSING, draftStrategy.getStatus());
             assertNull(draftStrategy.getJobType());
             assertNull(draftStrategy.getIndustryId());
@@ -283,7 +300,7 @@ class PortfolioStrategyServiceTest {
                     eq(USER_ID),
                     eq(100L),
                     eq(experiences),
-                    eq(req.postAnalysisId())
+                    eq(POST_ANALYSIS_ID)
             );
             verifyNoInteractions(industryRepository);
         }
@@ -293,25 +310,25 @@ class PortfolioStrategyServiceTest {
         void generate_fail_whenWeeklyLimitReached() {
             // given
             GeneratePortfolioStrategyRequest req = new GeneratePortfolioStrategyRequest(
-                    POST_ANALYSIS_ID,
-                    List.of(1L)
+                    POST_ANALYSIS_PUBLIC_ID,
+                    List.of(EXPERIENCE_PUBLIC_ID_1)
             );
 
             Experience experience = createExperience(USER_ID, "캡스톤 프로젝트");
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
                     POST_ID,
-                    req.postAnalysisId(),
+                    POST_ANALYSIS_ID,
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
             );
             ReflectionTestUtils.setField(draftStrategy, "id", 100L);
 
-            when(experienceRepository.findAllByIdInAndUserId(req.experienceIds(), USER_ID))
+            when(experienceRepository.findAllByPublicIdInAndUserId(req.experienceIds(), USER_ID))
                     .thenReturn(List.of(experience));
             when(portfolioStrategyRepository.findFirstByUserIdAndPostAnalysisIdAndStatusOrderByCreatedAtDesc(
                     USER_ID,
-                    req.postAnalysisId(),
+                    POST_ANALYSIS_ID,
                     PortfolioStrategyGenerateStatus.DRAFT
             )).thenReturn(Optional.of(draftStrategy));
             when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY))
@@ -326,7 +343,7 @@ class PortfolioStrategyServiceTest {
             // then
             assertEquals(PortfolioStrategyErrorCode.WEEKLY_LIMIT_EXCEEDED, exception.getErrorCode());
             verify(aiUsagePolicyService).reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY);
-            verify(experienceRepository).findAllByIdInAndUserId(req.experienceIds(), USER_ID);
+            verify(experienceRepository).findAllByPublicIdInAndUserId(req.experienceIds(), USER_ID);
             verify(portfolioStrategyRepository, never()).save(any(PortfolioStrategy.class));
         }
 
@@ -337,24 +354,24 @@ class PortfolioStrategyServiceTest {
             setField(portfolioStrategyService, "weeklyLimitEnabled", true);
 
             GeneratePortfolioStrategyRequest req =
-                    new GeneratePortfolioStrategyRequest(POST_ANALYSIS_ID, List.of(1L, 2L));
+                    new GeneratePortfolioStrategyRequest(POST_ANALYSIS_PUBLIC_ID, List.of(EXPERIENCE_PUBLIC_ID_1, EXPERIENCE_PUBLIC_ID_2));
 
             Experience experience1 = createExperience(USER_ID, "캡스톤 프로젝트");
             Experience experience2 = createExperience(USER_ID, "인턴 경험");
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
                     POST_ID,
-                    req.postAnalysisId(),
+                    POST_ANALYSIS_ID,
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
             );
             ReflectionTestUtils.setField(draftStrategy, "id", 100L);
 
-            when(experienceRepository.findAllByIdInAndUserId(req.experienceIds(), USER_ID))
+            when(experienceRepository.findAllByPublicIdInAndUserId(req.experienceIds(), USER_ID))
                     .thenReturn(List.of(experience1, experience2));
             when(portfolioStrategyRepository.findFirstByUserIdAndPostAnalysisIdAndStatusOrderByCreatedAtDesc(
                     USER_ID,
-                    req.postAnalysisId(),
+                    POST_ANALYSIS_ID,
                     PortfolioStrategyGenerateStatus.DRAFT
             )).thenReturn(Optional.of(draftStrategy));
             when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY))
@@ -376,7 +393,7 @@ class PortfolioStrategyServiceTest {
             setField(portfolioStrategyService, "weeklyLimitEnabled", true);
 
             GeneratePortfolioStrategyRequest req =
-                    new GeneratePortfolioStrategyRequest(POST_ANALYSIS_ID, List.of(1L, 2L));
+                    new GeneratePortfolioStrategyRequest(POST_ANALYSIS_PUBLIC_ID, List.of(EXPERIENCE_PUBLIC_ID_1, EXPERIENCE_PUBLIC_ID_2));
 
             Experience experience1 = createExperience(USER_ID, "캡스톤 프로젝트");
             Experience experience2 = createExperience(USER_ID, "인턴 경험");
@@ -385,19 +402,19 @@ class PortfolioStrategyServiceTest {
             PortfolioStrategy draftStrategy = PortfolioStrategy.createDraft(
                     USER_ID,
                     POST_ID,
-                    req.postAnalysisId(),
+                    POST_ANALYSIS_ID,
                     Instant.now(),
                     LocalDate.now(ZoneId.of("Asia/Seoul"))
             );
             setField(draftStrategy, "id", 100L);
 
-            when(experienceRepository.findAllByIdInAndUserId(req.experienceIds(), USER_ID))
+            when(experienceRepository.findAllByPublicIdInAndUserId(req.experienceIds(), USER_ID))
                     .thenReturn(experiences);
             when(aiUsagePolicyService.reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY))
                     .thenReturn(true);
             when(portfolioStrategyRepository.findFirstByUserIdAndPostAnalysisIdAndStatusOrderByCreatedAtDesc(
                     USER_ID,
-                    req.postAnalysisId(),
+                    POST_ANALYSIS_ID,
                     PortfolioStrategyGenerateStatus.DRAFT
             )).thenReturn(Optional.of(draftStrategy));
 
@@ -406,11 +423,11 @@ class PortfolioStrategyServiceTest {
 
             // then
             assertNotNull(result);
-            assertEquals(100L, result.strategyId());
+            assertEquals(draftStrategy.getPublicId(), result.strategyId());
 
             verify(aiUsagePolicyService).reserve(USER_ID, AiUsageType.PORTFOLIO_STRATEGY);
             verify(experienceRepository)
-                    .findAllByIdInAndUserId(req.experienceIds(), USER_ID);
+                    .findAllByPublicIdInAndUserId(req.experienceIds(), USER_ID);
             verify(portfolioStrategyRepository)
                     .save(draftStrategy);
             verify(portfolioStrategyContentGenerator)
@@ -418,7 +435,7 @@ class PortfolioStrategyServiceTest {
                             eq(USER_ID),
                             eq(100L),
                             eq(experiences),
-                            eq(req.postAnalysisId())
+                            eq(POST_ANALYSIS_ID)
                     );
             verifyNoInteractions(industryRepository);
         }
@@ -432,10 +449,16 @@ class PortfolioStrategyServiceTest {
         @DisplayName("사용자의 포트폴리오 전략 목록을 조회하면 totalCount와 contents를 반환한다")
         void getPortfolioStrategyList_success() throws Exception {
             // given
+            UUID strategyPublicId1 = UUID.randomUUID();
+            UUID postPublicId1 = UUID.randomUUID();
+            UUID postAnalysisPublicId1 = UUID.randomUUID();
+            UUID strategyPublicId2 = UUID.randomUUID();
+            UUID postPublicId2 = UUID.randomUUID();
+            UUID postAnalysisPublicId2 = UUID.randomUUID();
             PortfolioStrategyListResultItem strategy1 = createPortfolioStrategyListItem(
-                    100L,
-                    POST_ID,
-                    10L,
+                    strategyPublicId1,
+                    postPublicId1,
+                    postAnalysisPublicId1,
                     "백엔드 개발자 채용",
                     JobType.BACKEND,
                     "핀테크",
@@ -444,9 +467,9 @@ class PortfolioStrategyServiceTest {
             );
 
             PortfolioStrategyListResultItem strategy2 = createPortfolioStrategyListItem(
-                    99L,
-                    21L,
-                    11L,
+                    strategyPublicId2,
+                    postPublicId2,
+                    postAnalysisPublicId2,
                     "서버 개발자 채용",
                     JobType.BACKEND,
                     "마스터",
@@ -468,9 +491,9 @@ class PortfolioStrategyServiceTest {
             assertEquals(2, result.contents().size());
 
             PortfolioStrategyListResultItem first = result.contents().get(0);
-            assertEquals(100L, first.strategyId());
-            assertEquals(POST_ID, first.postId());
-            assertEquals(10L, first.postAnalysisId());
+            assertEquals(strategyPublicId1, first.strategyId());
+            assertEquals(postPublicId1, first.postId());
+            assertEquals(postAnalysisPublicId1, first.postAnalysisId());
             assertEquals("백엔드 개발자 채용", first.postAnalysisTitle());
             assertEquals(JobType.BACKEND, first.jobType());
             assertEquals("핀테크", first.industryName());
@@ -478,9 +501,9 @@ class PortfolioStrategyServiceTest {
             assertEquals(Instant.parse("2026-03-10T10:00:00Z"), first.createdAt());
 
             PortfolioStrategyListResultItem second = result.contents().get(1);
-            assertEquals(99L, second.strategyId());
-            assertEquals(21L, second.postId());
-            assertEquals(11L, second.postAnalysisId());
+            assertEquals(strategyPublicId2, second.strategyId());
+            assertEquals(postPublicId2, second.postId());
+            assertEquals(postAnalysisPublicId2, second.postAnalysisId());
             assertEquals("서버 개발자 채용", second.postAnalysisTitle());
             assertEquals(JobType.BACKEND, second.jobType());
             assertEquals("마스터", second.industryName());
@@ -528,6 +551,9 @@ class PortfolioStrategyServiceTest {
                     INDUSTRY_ID,
                     createdAt
             );
+            UUID strategyPublicId = portfolioStrategy.getPublicId();
+            UUID postPublicId = UUID.randomUUID();
+            UUID postAnalysisPublicId = UUID.randomUUID();
 
             PortfolioStrategyContent content = PortfolioStrategyContent.of(
                     "대규모 트래픽 환경에서 안정성과 데이터 기반 의사결정을 설계하는 백엔드 개발자",
@@ -560,9 +586,11 @@ class PortfolioStrategyServiceTest {
             Industry industry = mock(Industry.class);
             when(industry.getName()).thenReturn("핀테크");
 
-            when(portfolioStrategyRepository.findPortfolioStrategyDetailByIdAndUserId(strategyId, USER_ID))
+            when(portfolioStrategyRepository.findPortfolioStrategyDetailByPublicIdAndUserId(strategyPublicId, USER_ID))
                     .thenReturn(Optional.of(new PortfolioStrategyDetailQueryResult(
                             portfolioStrategy,
+                            postPublicId,
+                            postAnalysisPublicId,
                             "백엔드 개발자 채용"
                     )));
             when(objectMapper.readValue(portfolioStrategy.getResultJson(), PortfolioStrategyContent.class))
@@ -572,13 +600,13 @@ class PortfolioStrategyServiceTest {
 
             // when
             PortfolioStrategyDetailResult result =
-                    portfolioStrategyService.getPortfolioStrategyDetail(strategyId, USER_ID);
+                    portfolioStrategyService.getPortfolioStrategyDetail(strategyPublicId, USER_ID);
 
             // then
             assertNotNull(result);
-            assertEquals(strategyId, result.strategyId());
-            assertEquals(POST_ID, result.postId());
-            assertEquals(POST_ANALYSIS_ID, result.postAnalysisId());
+            assertEquals(strategyPublicId, result.strategyId());
+            assertEquals(postPublicId, result.postId());
+            assertEquals(postAnalysisPublicId, result.postAnalysisId());
             assertEquals("백엔드 개발자 채용", result.postAnalysisTitle());
             assertEquals(JobType.BACKEND, result.jobType());
             assertEquals("핀테크", result.industryName());
@@ -606,7 +634,7 @@ class PortfolioStrategyServiceTest {
             assertEquals(1, result.improvementGuides().size());
             assertEquals("성과 수치 보완", result.improvementGuides().get(0).title());
 
-            verify(portfolioStrategyRepository).findPortfolioStrategyDetailByIdAndUserId(strategyId, USER_ID);
+            verify(portfolioStrategyRepository).findPortfolioStrategyDetailByPublicIdAndUserId(strategyPublicId, USER_ID);
             verify(objectMapper).readValue(portfolioStrategy.getResultJson(), PortfolioStrategyContent.class);
         }
 
@@ -614,9 +642,9 @@ class PortfolioStrategyServiceTest {
         @DisplayName("해당 사용자의 전략이 없으면 NOT_FOUND 예외가 발생한다")
         void getPortfolioStrategyDetail_fail_whenStrategyNotFound() {
             // given
-            Long strategyId = 100L;
+            UUID strategyId = UUID.randomUUID();
 
-            when(portfolioStrategyRepository.findPortfolioStrategyDetailByIdAndUserId(strategyId, USER_ID))
+            when(portfolioStrategyRepository.findPortfolioStrategyDetailByPublicIdAndUserId(strategyId, USER_ID))
                     .thenReturn(Optional.empty());
 
             // when
@@ -627,7 +655,7 @@ class PortfolioStrategyServiceTest {
 
             // then
             assertEquals(PortfolioStrategyErrorCode.NOT_FOUND, exception.getErrorCode());
-            verify(portfolioStrategyRepository).findPortfolioStrategyDetailByIdAndUserId(strategyId, USER_ID);
+            verify(portfolioStrategyRepository).findPortfolioStrategyDetailByPublicIdAndUserId(strategyId, USER_ID);
             verifyNoInteractions(objectMapper);
         }
 
@@ -644,22 +672,25 @@ class PortfolioStrategyServiceTest {
                     LocalDate.of(2026, 3, 10)
             );
             ReflectionTestUtils.setField(portfolioStrategy, "id", strategyId);
+            UUID strategyPublicId = portfolioStrategy.getPublicId();
 
-            when(portfolioStrategyRepository.findPortfolioStrategyDetailByIdAndUserId(strategyId, USER_ID))
+            when(portfolioStrategyRepository.findPortfolioStrategyDetailByPublicIdAndUserId(strategyPublicId, USER_ID))
                     .thenReturn(Optional.of(new PortfolioStrategyDetailQueryResult(
                             portfolioStrategy,
+                            UUID.randomUUID(),
+                            UUID.randomUUID(),
                             "백엔드 개발자 채용"
                     )));
 
             // when
             BaseException exception = assertThrows(
                     BaseException.class,
-                    () -> portfolioStrategyService.getPortfolioStrategyDetail(strategyId, USER_ID)
+                    () -> portfolioStrategyService.getPortfolioStrategyDetail(strategyPublicId, USER_ID)
             );
 
             // then
             assertEquals(PortfolioStrategyErrorCode.RESULT_NOT_READY, exception.getErrorCode());
-            verify(portfolioStrategyRepository).findPortfolioStrategyDetailByIdAndUserId(strategyId, USER_ID);
+            verify(portfolioStrategyRepository).findPortfolioStrategyDetailByPublicIdAndUserId(strategyPublicId, USER_ID);
             verifyNoInteractions(objectMapper);
         }
     }
@@ -681,15 +712,16 @@ class PortfolioStrategyServiceTest {
                     INDUSTRY_ID,
                     Instant.parse("2026-03-10T10:00:00Z")
             );
+            UUID strategyPublicId = portfolioStrategy.getPublicId();
 
-            when(portfolioStrategyRepository.findByIdAndUserId(strategyId, USER_ID))
+            when(portfolioStrategyRepository.findByPublicIdAndUserId(strategyPublicId, USER_ID))
                     .thenReturn(Optional.of(portfolioStrategy));
 
             // when
-            portfolioStrategyService.deletePortfolioStrategy(strategyId, USER_ID);
+            portfolioStrategyService.deletePortfolioStrategy(strategyPublicId, USER_ID);
 
             // then
-            verify(portfolioStrategyRepository).findByIdAndUserId(strategyId, USER_ID);
+            verify(portfolioStrategyRepository).findByPublicIdAndUserId(strategyPublicId, USER_ID);
             verify(portfolioStrategyRepository).delete(portfolioStrategy);
         }
 
@@ -697,9 +729,9 @@ class PortfolioStrategyServiceTest {
         @DisplayName("해당 사용자의 포트폴리오 전략이 없으면 NOT_FOUND 예외가 발생한다")
         void deletePortfolioStrategy_fail_whenStrategyNotFound() {
             // given
-            Long strategyId = 100L;
+            UUID strategyId = UUID.randomUUID();
 
-            when(portfolioStrategyRepository.findByIdAndUserId(strategyId, USER_ID))
+            when(portfolioStrategyRepository.findByPublicIdAndUserId(strategyId, USER_ID))
                     .thenReturn(Optional.empty());
 
             // when
@@ -710,15 +742,15 @@ class PortfolioStrategyServiceTest {
 
             // then
             assertEquals(PortfolioStrategyErrorCode.NOT_FOUND, exception.getErrorCode());
-            verify(portfolioStrategyRepository).findByIdAndUserId(strategyId, USER_ID);
+            verify(portfolioStrategyRepository).findByPublicIdAndUserId(strategyId, USER_ID);
             verify(portfolioStrategyRepository, never()).delete(any(PortfolioStrategy.class));
         }
     }
 
     private PortfolioStrategyListResultItem createPortfolioStrategyListItem(
-            Long id,
-            Long postId,
-            Long postAnalysisId,
+            UUID id,
+            UUID postId,
+            UUID postAnalysisId,
             String postAnalysisTitle,
             JobType jobType,
             String industryName,

@@ -3,6 +3,7 @@ package com.sogonsogon.gonggomoon.domain.post.domain;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface PostRepository {
 
@@ -11,6 +12,8 @@ public interface PostRepository {
     Optional<Post> findById(Long postId);
 
     Optional<Post> findByIdAndCreatedBy(Long postId, Long createdBy);
+
+    Optional<Post> findByPublicIdAndCreatedBy(UUID publicId, Long createdBy);
 
     List<Post> findAllById(Iterable<Long> ids);
 

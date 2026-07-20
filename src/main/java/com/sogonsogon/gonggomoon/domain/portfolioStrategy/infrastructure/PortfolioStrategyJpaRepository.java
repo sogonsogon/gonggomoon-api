@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface PortfolioStrategyJpaRepository
@@ -19,9 +20,9 @@ public interface PortfolioStrategyJpaRepository
     // COALESCE 함수로 NULL 값 처리
     @Query("""
         select new com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResultItem(
-            ps.id,
-            ps.postId,
-            ps.postAnalysisId,
+            ps.publicId,
+            p.publicId,
+            pa.publicId,
             pa.title,
             ps.jobType,
             coalesce(i.name, '마스터'),
@@ -29,6 +30,7 @@ public interface PortfolioStrategyJpaRepository
             ps.createdAt
         )
         from PortfolioStrategy ps
+        left join Post p on ps.postId = p.id
         left join PostAnalysis pa on ps.postAnalysisId = pa.id
         left join Industry i on ps.industryId = i.id
         where ps.userId = :userId
@@ -39,15 +41,18 @@ public interface PortfolioStrategyJpaRepository
     @Query("""
         select new com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyDetailQueryResult(
             ps,
+            p.publicId,
+            pa.publicId,
             pa.title
         )
         from PortfolioStrategy ps
+        left join Post p on ps.postId = p.id
         left join PostAnalysis pa on ps.postAnalysisId = pa.id
-        where ps.id = :id
+        where ps.publicId = :publicId
           and ps.userId = :userId
     """)
-    Optional<PortfolioStrategyDetailQueryResult> findPortfolioStrategyDetailByIdAndUserId(
-            @Param("id") Long id,
+    Optional<PortfolioStrategyDetailQueryResult> findPortfolioStrategyDetailByPublicIdAndUserId(
+            @Param("publicId") UUID publicId,
             @Param("userId") Long userId
     );
 }
