@@ -6,9 +6,12 @@ import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.Por
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface PortfolioStrategyRepository {
     Optional<PortfolioStrategy> findByIdAndUserId(Long id, Long userId);
+
+    Optional<PortfolioStrategy> findByPublicIdAndUserId(UUID publicId, Long userId);
 
     Optional<PortfolioStrategy> findFirstByUserIdAndPostAnalysisIdAndStatusOrderByCreatedAtDesc(
             Long userId,
@@ -22,7 +25,7 @@ public interface PortfolioStrategyRepository {
 
     List<PortfolioStrategyListResultItem> findPortfolioStrategyListByUserId(Long userId);
 
-    Optional<PortfolioStrategyDetailQueryResult> findPortfolioStrategyDetailByIdAndUserId(Long id, Long userId);
+    Optional<PortfolioStrategyDetailQueryResult> findPortfolioStrategyDetailByPublicIdAndUserId(UUID publicId, Long userId);
 
     boolean existsByUserIdAndGeneratedDate(Long userId, LocalDate today);
 

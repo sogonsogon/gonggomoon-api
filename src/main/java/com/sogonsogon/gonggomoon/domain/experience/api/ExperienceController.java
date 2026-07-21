@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/experiences")
@@ -87,7 +88,7 @@ public class ExperienceController {
     })
     @PatchMapping("/{experienceId}")
     public ResponseEntity<BaseResponse<ExperienceDetailResponse>> updateExperience(@AuthenticationPrincipal AccessUser user,
-                                                                   @PathVariable("experienceId") Long experienceId,
+                                                                   @PathVariable("experienceId") UUID experienceId,
                                                                    @RequestBody @Valid UpdateExperienceRequest req) {
         ExperienceDetailResult result = experienceService.update(experienceId, user.getId(), req);
 
@@ -104,7 +105,7 @@ public class ExperienceController {
     @Operation(summary = "경험 삭제", description = "경험 ID에 해당하는 경험을 삭제합니다.")
     @DeleteMapping("/{experienceId}")
     public ResponseEntity<BaseResponse<Void>> deleteExperience(@AuthenticationPrincipal AccessUser user,
-                                               @PathVariable("experienceId") Long experienceId) {
+                                               @PathVariable("experienceId") UUID experienceId) {
         experienceService.deleteExperience(experienceId, user.getId());
 
         return ResponseEntity.ok(BaseResponse.success());
@@ -133,7 +134,7 @@ public class ExperienceController {
     @Operation(summary = "경험 상세 조회", description = "경험 ID에 해당하는 경험의 상세 정보를 조회합니다.")
     @GetMapping("/{experienceId}")
     public ResponseEntity<BaseResponse<ExperienceDetailResponse>> getExperienceDetail(@AuthenticationPrincipal AccessUser user,
-                                                                                      @PathVariable("experienceId") Long experienceId) {
+                                                                                      @PathVariable("experienceId") UUID experienceId) {
         ExperienceDetailResult result = experienceService.getExperienceDetail(experienceId, user.getId());
 
         return ResponseEntity.ok(BaseResponse.success(ExperienceDetailResponse.from(result)));

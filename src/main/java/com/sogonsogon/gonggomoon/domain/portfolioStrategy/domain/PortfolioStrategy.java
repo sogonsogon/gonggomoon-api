@@ -18,10 +18,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.DialectOverride;
+import org.hibernate.dialect.PostgreSQLDialect;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -34,6 +38,15 @@ public class PortfolioStrategy {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Builder.Default
+    @Column(name = "public_id", nullable = false, updatable = false, unique = true)
+    @ColumnDefault("random_uuid()")
+    @DialectOverride.ColumnDefault(
+            dialect = PostgreSQLDialect.class,
+            override = @ColumnDefault("gen_random_uuid()")
+    )
+    private UUID publicId = UUID.randomUUID();
 
     @Column(nullable = false)
     private Long userId;

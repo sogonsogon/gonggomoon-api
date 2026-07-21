@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import java.util.UUID;
 
 class AiJobControllerTest {
 
@@ -23,8 +24,9 @@ class AiJobControllerTest {
     void subscribeAlwaysReturnsSseResponse() {
         AccessUser user = mock(AccessUser.class);
         SseEmitter emitter = new SseEmitter();
+        UUID jobId = UUID.randomUUID();
         AiFunctionStatusRequest request =
-            new AiFunctionStatusRequest(AiFunctions.POST_ANALYSIS, 10L);
+            new AiFunctionStatusRequest(AiFunctions.POST_ANALYSIS, jobId);
 
         when(user.getId()).thenReturn(1L);
         when(aiService.subscribe(1L, request)).thenReturn(emitter);
@@ -32,7 +34,7 @@ class AiJobControllerTest {
         ResponseEntity<SseEmitter> response = controller.subscribeAiJobStatus(
             user,
             AiFunctions.POST_ANALYSIS,
-            10L
+            jobId
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

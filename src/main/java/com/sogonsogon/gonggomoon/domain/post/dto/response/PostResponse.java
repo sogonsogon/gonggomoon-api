@@ -4,9 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysis;
+import java.util.UUID;
 
 public record PostResponse(
-        Long postAnalysisId,
+        UUID postAnalysisId,
         String url,
         String title,
         JsonNode summary
@@ -16,7 +17,7 @@ public record PostResponse(
         public static PostResponse of(PostAnalysis analysis) throws JsonProcessingException {
             JsonNode convertedSummary = objectMapper.readTree(analysis.getSummary());
             return new PostResponse(
-                    analysis.getId(),
+                    analysis.getPublicId(),
                     analysis.getUrl(),
                     analysis.getTitle(),
                     convertedSummary

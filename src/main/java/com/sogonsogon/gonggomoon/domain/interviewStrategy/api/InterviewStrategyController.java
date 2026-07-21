@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.UUID;
 
 @Hidden
 @Deprecated
@@ -69,7 +70,7 @@ public class InterviewStrategyController {
     @GetMapping("/interviews/{interviewStrategyId}")
     public ResponseEntity<BaseResponse<InterviewStrategyDetailResponse>> getInterviewStrategyDetail (
             @AuthenticationPrincipal AccessUser user,
-            @PathVariable("interviewStrategyId") Long interviewStrategyId) {
+            @PathVariable("interviewStrategyId") UUID interviewStrategyId) {
         InterviewStrategyDetailResult result = interviewStrategyService.getInterviewStrategyDetail(interviewStrategyId, user.getId());
 
         return ResponseEntity.ok(BaseResponse.success(InterviewStrategyDetailResponse.from(result)));
@@ -81,7 +82,7 @@ public class InterviewStrategyController {
     @Operation(summary = "면접 전략 질문 세트 삭제", description = "면접 전략 질문 세트 ID로 로그인한 사용자의 질문 세트를 삭제합니다.")
     @DeleteMapping("/interviews/{interviewStrategyId}")
     public ResponseEntity<BaseResponse<Void>> deleteInterviewStrategy(@AuthenticationPrincipal AccessUser user,
-                                                                      @PathVariable("interviewStrategyId") Long interviewStrategyId) {
+                                                                      @PathVariable("interviewStrategyId") UUID interviewStrategyId) {
         interviewStrategyService.deleteInterviewStrategy(interviewStrategyId, user.getId());
 
         return ResponseEntity.ok(BaseResponse.success());

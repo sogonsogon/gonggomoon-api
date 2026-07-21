@@ -5,13 +5,14 @@ import lombok.Builder;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 /**
  * Experience list 객체입니다.
  */
 @Builder
 public record ExperienceListResultItem(
-        Long experienceId,
+        UUID experienceId,
         String title,
         String experienceType,
         String experienceContent,
@@ -22,7 +23,7 @@ public record ExperienceListResultItem(
 
     public static ExperienceListResultItem from(Experience e) {
         return ExperienceListResultItem.builder()
-                .experienceId(e.getId())
+                .experienceId(e.getPublicId())
                 .title(e.getTitle())
                 .experienceType(e.getExperienceType().name())
                 .experienceContent(e.getExperienceContent())

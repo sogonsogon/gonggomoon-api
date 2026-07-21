@@ -6,10 +6,11 @@ import lombok.Builder;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Builder
 public record InterviewStrategyDetailResult(
-        Long interviewStrategyId,
+        UUID interviewStrategyId,
         String basePortfolio,
         Instant createdAt,
         int questionTotalCount,
@@ -23,7 +24,7 @@ public record InterviewStrategyDetailResult(
                 .toList();
 
         return InterviewStrategyDetailResult.builder()
-                .interviewStrategyId(interviewStrategy.getId())
+                .interviewStrategyId(interviewStrategy.getPublicId())
                 .basePortfolio(fileAsset.getOriginalFileName())
                 .createdAt(interviewStrategy.getCreatedAt())
                 .questionTotalCount(items.size())

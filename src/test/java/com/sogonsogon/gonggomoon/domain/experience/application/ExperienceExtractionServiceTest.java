@@ -23,6 +23,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,7 +36,7 @@ public class ExperienceExtractionServiceTest {
 
     private static final Long USER_ID = 1L;
     private static final Long FILE_ASSET_ID = 10L;
-    private static final Long EXTRACTION_ID = 100L;
+    private static final UUID EXTRACTION_ID = UUID.randomUUID();
 
     @Mock
     private AiService aiService;

@@ -1,11 +1,12 @@
 package com.sogonsogon.gonggomoon.domain.interviewStrategy.application.result;
 
 import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrategy;
+import java.util.UUID;
 
 public record GenerateInterviewQuestionSetResult(
-        Long interviewStrategyId
+        UUID interviewStrategyId
 ) {
     public static GenerateInterviewQuestionSetResult from (InterviewStrategy interviewStrategy) {
-        return new GenerateInterviewQuestionSetResult(interviewStrategy.getId());
+        return new GenerateInterviewQuestionSetResult(interviewStrategy.getPublicId());
     }
 }

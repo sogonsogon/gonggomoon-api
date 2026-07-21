@@ -11,8 +11,12 @@ import lombok.Builder;
 import lombok.Getter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.DialectOverride;
+import org.hibernate.dialect.PostgreSQLDialect;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -23,6 +27,14 @@ public class PostAnalysis {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "public_id", nullable = false, updatable = false, unique = true)
+    @ColumnDefault("random_uuid()")
+    @DialectOverride.ColumnDefault(
+            dialect = PostgreSQLDialect.class,
+            override = @ColumnDefault("gen_random_uuid()")
+    )
+    private UUID publicId = UUID.randomUUID();
 
     @Column(name = "url", columnDefinition = "TEXT", unique = true)
     private String url;

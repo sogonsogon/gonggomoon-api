@@ -1,12 +1,13 @@
 package com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result;
 
 import lombok.Builder;
+import java.util.UUID;
 
 @Builder
 public record GeneratePortfolioStrategyResult(
-        Long strategyId
+        UUID strategyId
 ) {
-    public static GeneratePortfolioStrategyResult from (Long strategyId) {
+    public static GeneratePortfolioStrategyResult from (UUID strategyId) {
         return GeneratePortfolioStrategyResult.builder()
                 .strategyId(strategyId)
                 .build();
