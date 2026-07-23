@@ -12,6 +12,7 @@ import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.Por
 import com.sogonsogon.gonggomoon.global.docs.ErrorResponseExamples;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,6 +20,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,13 +31,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 import java.util.UUID;
 
 @Tag(name = "포트폴리오 전략", description = "포트폴리오 전략 생성, 조회, 삭제 API")
 @RestController
 @RequestMapping("/api/v1/portfolio-strategies")
 @RequiredArgsConstructor
+@Validated
 public class PortfolioStrategyController {
     private final PortfolioStrategyService portfolioStrategyService;
 
@@ -70,16 +75,24 @@ public class PortfolioStrategyController {
     /**
      * 포트폴리오 전략 목록을 조회합니다.
      */
-    @Operation(summary = "포트폴리오 전략 목록 조회", description = "로그인한 사용자가 생성한 포트폴리오 전략 목록을 조회합니다.")
+    @Operation(
+            summary = "포트폴리오 전략 목록 조회",
+            description = "포트폴리오 전략을 최신순으로 cursor 페이지 조회합니다. 첫 요청에서는 cursor를 생략합니다."
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "포트폴리오 전략 목록 조회 성공"),
             @ApiResponse(responseCode = "401", description = "인증 실패 (액세스 토큰 누락/만료)")
     })
     @GetMapping
     public ResponseEntity<BaseResponse<PortfolioStrategyListResponse>> getPortfolioStrategyList(
-            @AuthenticationPrincipal AccessUser user
+            @AuthenticationPrincipal AccessUser user,
+            @Parameter(description = "이전 응답의 nextCursor. 첫 조회에서는 생략합니다.")
+            @RequestParam(required = false) String cursor,
+            @Parameter(description = "조회할 전략 수", example = "20", required = true)
+            @RequestParam @Positive int size
     ) {
-        PortfolioStrategyListResult result = portfolioStrategyService.getPortfolioStrategyList(user.getId());
+        PortfolioStrategyListResult result =
+                portfolioStrategyService.getPortfolioStrategyList(user.getId(), cursor, size);
 
         return ResponseEntity.ok(BaseResponse.success(PortfolioStrategyListResponse.from(result)));
     }

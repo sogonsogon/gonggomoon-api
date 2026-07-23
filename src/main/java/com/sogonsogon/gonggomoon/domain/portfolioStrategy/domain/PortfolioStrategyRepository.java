@@ -1,8 +1,10 @@
 package com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain;
 
-import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResultItem;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListQueryItem;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyDetailQueryResult;
+import org.springframework.data.domain.Pageable;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +25,17 @@ public interface PortfolioStrategyRepository {
 
     void delete(PortfolioStrategy portfolioStrategy);
 
-    List<PortfolioStrategyListResultItem> findPortfolioStrategyListByUserId(Long userId);
+    List<PortfolioStrategyListQueryItem> findFirstPortfolioStrategyListByUserId(
+            Long userId,
+            Pageable pageable
+    );
+
+    List<PortfolioStrategyListQueryItem> findNextPortfolioStrategyListByUserId(
+            Long userId,
+            Instant cursorCreatedAt,
+            Long cursorId,
+            Pageable pageable
+    );
 
     Optional<PortfolioStrategyDetailQueryResult> findPortfolioStrategyDetailByPublicIdAndUserId(UUID publicId, Long userId);
 
