@@ -6,12 +6,18 @@ import java.util.List;
 
 @Builder
 public record PortfolioStrategyListResult(
-        int totalCount,
+        String nextCursor,
+        boolean hasNext,
         List<PortfolioStrategyListResultItem> contents
 ) {
-    public static PortfolioStrategyListResult from(List<PortfolioStrategyListResultItem> items) {
+    public static PortfolioStrategyListResult of(
+            List<PortfolioStrategyListResultItem> items,
+            String nextCursor,
+            boolean hasNext
+    ) {
         return PortfolioStrategyListResult.builder()
-                .totalCount(items.size())
+                .nextCursor(nextCursor)
+                .hasNext(hasNext)
                 .contents(items)
                 .build();
     }

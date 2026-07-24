@@ -18,6 +18,8 @@ import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.Por
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyDetailResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResultItem;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListQueryItem;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.support.PortfolioStrategyCursor;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.content.PortfolioStrategyContent;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategy;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrategyGenerateStatus;
@@ -27,6 +29,7 @@ import com.sogonsogon.gonggomoon.domain.portfolioStrategy.generator.PortfolioStr
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -118,10 +121,37 @@ public class PortfolioStrategyService {
     /**
      * 포트폴리오 전략 목록 조회 서비스
      */
-    public PortfolioStrategyListResult getPortfolioStrategyList(Long userId) {
-        List<PortfolioStrategyListResultItem> items = portfolioStrategyRepository.findPortfolioStrategyListByUserId(userId);
+    @Transactional(readOnly = true)
+    public PortfolioStrategyListResult getPortfolioStrategyList(Long userId, String encodedCursor, int size) {
+        PortfolioStrategyCursor cursor = PortfolioStrategyCursor.decode(encodedCursor);
+        PageRequest pageRequest = PageRequest.of(0, size + 1);
 
-        return PortfolioStrategyListResult.from(items);
+        List<PortfolioStrategyListQueryItem> queriedItems = cursor == null
+                ? portfolioStrategyRepository.findFirstPortfolioStrategyListByUserId(userId, pageRequest)
+                : portfolioStrategyRepository.findNextPortfolioStrategyListByUserId(
+                        userId,
+                        cursor.createdAt(),
+                        cursor.id(),
+                        pageRequest
+                );
+
+        boolean hasNext = queriedItems.size() > size;
+        List<PortfolioStrategyListQueryItem> currentItems = hasNext
+                ? queriedItems.subList(0, size)
+                : queriedItems;
+        List<PortfolioStrategyListResultItem> contents = currentItems.stream()
+                .map(PortfolioStrategyListQueryItem::toResultItem)
+                .toList();
+
+        String nextCursor = hasNext
+                ? toCursor(currentItems.get(currentItems.size() - 1))
+                : null;
+
+        return PortfolioStrategyListResult.of(contents, nextCursor, hasNext);
+    }
+
+    private String toCursor(PortfolioStrategyListQueryItem item) {
+        return new PortfolioStrategyCursor(item.createdAt(), item.id()).encode();
     }
 
     /**

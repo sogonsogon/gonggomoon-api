@@ -16,6 +16,8 @@ import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.Por
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyDetailResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResultItem;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListQueryItem;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.support.PortfolioStrategyCursor;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.content.ExperienceOrderingItem;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.content.ExperienceStrategyPoint;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.content.ImprovementGuide;
@@ -27,6 +29,7 @@ import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.PortfolioStrate
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.error.PortfolioStrategyErrorCode;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.generator.PortfolioStrategyContentGenerator;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
+import com.sogonsogon.gonggomoon.global.error.GlobalErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,7 +37,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
@@ -446,7 +451,7 @@ class PortfolioStrategyServiceTest {
     class GetListTest {
 
         @Test
-        @DisplayName("사용자의 포트폴리오 전략 목록을 조회하면 totalCount와 contents를 반환한다")
+        @DisplayName("첫 조회는 size보다 하나 더 조회해 nextCursor와 hasNext를 반환한다")
         void getPortfolioStrategyList_success() throws Exception {
             // given
             UUID strategyPublicId1 = UUID.randomUUID();
@@ -455,7 +460,8 @@ class PortfolioStrategyServiceTest {
             UUID strategyPublicId2 = UUID.randomUUID();
             UUID postPublicId2 = UUID.randomUUID();
             UUID postAnalysisPublicId2 = UUID.randomUUID();
-            PortfolioStrategyListResultItem strategy1 = createPortfolioStrategyListItem(
+            PortfolioStrategyListQueryItem strategy1 = createPortfolioStrategyListQueryItem(
+                    100L,
                     strategyPublicId1,
                     postPublicId1,
                     postAnalysisPublicId1,
@@ -466,7 +472,8 @@ class PortfolioStrategyServiceTest {
                     Instant.parse("2026-03-10T10:00:00Z")
             );
 
-            PortfolioStrategyListResultItem strategy2 = createPortfolioStrategyListItem(
+            PortfolioStrategyListQueryItem strategy2 = createPortfolioStrategyListQueryItem(
+                    99L,
                     strategyPublicId2,
                     postPublicId2,
                     postAnalysisPublicId2,
@@ -477,17 +484,31 @@ class PortfolioStrategyServiceTest {
                     Instant.parse("2026-03-09T10:00:00Z")
             );
 
-            List<PortfolioStrategyListResultItem> items = List.of(strategy1, strategy2);
+            PortfolioStrategyListQueryItem strategy3 = createPortfolioStrategyListQueryItem(
+                    98L,
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    UUID.randomUUID(),
+                    "세 번째 채용",
+                    JobType.BACKEND,
+                    "마스터",
+                    PortfolioStrategyGenerateStatus.READY,
+                    Instant.parse("2026-03-08T10:00:00Z")
+            );
 
-            when(portfolioStrategyRepository.findPortfolioStrategyListByUserId(USER_ID))
-                    .thenReturn(items);
+            when(portfolioStrategyRepository.findFirstPortfolioStrategyListByUserId(
+                    eq(USER_ID),
+                    any(Pageable.class)
+            )).thenReturn(List.of(strategy1, strategy2, strategy3));
 
             // when
-            PortfolioStrategyListResult result = portfolioStrategyService.getPortfolioStrategyList(USER_ID);
+            PortfolioStrategyListResult result =
+                    portfolioStrategyService.getPortfolioStrategyList(USER_ID, null, 2);
 
             // then
             assertNotNull(result);
-            assertEquals(2, result.totalCount());
+            assertTrue(result.hasNext());
+            assertNotNull(result.nextCursor());
             assertEquals(2, result.contents().size());
 
             PortfolioStrategyListResultItem first = result.contents().get(0);
@@ -510,26 +531,65 @@ class PortfolioStrategyServiceTest {
             assertEquals(PortfolioStrategyGenerateStatus.DRAFT, second.status());
             assertEquals(Instant.parse("2026-03-09T10:00:00Z"), second.createdAt());
 
-            verify(portfolioStrategyRepository).findPortfolioStrategyListByUserId(USER_ID);
+            PortfolioStrategyCursor nextCursor = PortfolioStrategyCursor.decode(result.nextCursor());
+            assertEquals(strategy2.createdAt(), nextCursor.createdAt());
+            assertEquals(strategy2.id(), nextCursor.id());
+
+            ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+            verify(portfolioStrategyRepository).findFirstPortfolioStrategyListByUserId(
+                    eq(USER_ID),
+                    pageableCaptor.capture()
+            );
+            assertEquals(3, pageableCaptor.getValue().getPageSize());
         }
 
         @Test
-        @DisplayName("조회된 포트폴리오 전략이 없으면 빈 목록을 반환한다")
-        void getPortfolioStrategyList_empty() {
+        @DisplayName("커서가 있으면 커서보다 뒤의 전략을 조회한다")
+        void getPortfolioStrategyList_withCursor() {
             // given
-            when(portfolioStrategyRepository.findPortfolioStrategyListByUserId(USER_ID))
+            PortfolioStrategyCursor cursor = new PortfolioStrategyCursor(
+                    Instant.parse("2026-03-09T10:00:00Z"),
+                    99L
+            );
+            when(portfolioStrategyRepository.findNextPortfolioStrategyListByUserId(
+                    eq(USER_ID),
+                    eq(cursor.createdAt()),
+                    eq(cursor.id()),
+                    any(Pageable.class)
+            ))
                     .thenReturn(List.of());
 
             // when
-            PortfolioStrategyListResult result = portfolioStrategyService.getPortfolioStrategyList(USER_ID);
+            PortfolioStrategyListResult result =
+                    portfolioStrategyService.getPortfolioStrategyList(USER_ID, cursor.encode(), 20);
 
             // then
             assertNotNull(result);
-            assertEquals(0, result.totalCount());
+            assertFalse(result.hasNext());
+            assertNull(result.nextCursor());
             assertNotNull(result.contents());
             assertTrue(result.contents().isEmpty());
 
-            verify(portfolioStrategyRepository).findPortfolioStrategyListByUserId(USER_ID);
+            verify(portfolioStrategyRepository).findNextPortfolioStrategyListByUserId(
+                    eq(USER_ID),
+                    eq(cursor.createdAt()),
+                    eq(cursor.id()),
+                    any(Pageable.class)
+            );
+            verify(portfolioStrategyRepository, never())
+                    .findFirstPortfolioStrategyListByUserId(anyLong(), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("유효하지 않은 커서는 INVALID_INPUT_VALUE 예외가 발생한다")
+        void getPortfolioStrategyList_invalidCursor() {
+            BaseException exception = assertThrows(
+                    BaseException.class,
+                    () -> portfolioStrategyService.getPortfolioStrategyList(USER_ID, "invalid", 20)
+            );
+
+            assertEquals(GlobalErrorCode.INVALID_INPUT_VALUE, exception.getErrorCode());
+            verifyNoInteractions(portfolioStrategyRepository);
         }
     }
 
@@ -747,8 +807,9 @@ class PortfolioStrategyServiceTest {
         }
     }
 
-    private PortfolioStrategyListResultItem createPortfolioStrategyListItem(
-            UUID id,
+    private PortfolioStrategyListQueryItem createPortfolioStrategyListQueryItem(
+            Long id,
+            UUID strategyId,
             UUID postId,
             UUID postAnalysisId,
             String postAnalysisTitle,
@@ -757,16 +818,17 @@ class PortfolioStrategyServiceTest {
             PortfolioStrategyGenerateStatus status,
             Instant createdAt
     ) {
-        return PortfolioStrategyListResultItem.builder()
-                .strategyId(id)
-                .postId(postId)
-                .postAnalysisId(postAnalysisId)
-                .postAnalysisTitle(postAnalysisTitle)
-                .jobType(jobType)
-                .industryName(industryName)
-                .status(status)
-                .createdAt(createdAt)
-                .build();
+        return new PortfolioStrategyListQueryItem(
+                id,
+                strategyId,
+                postId,
+                postAnalysisId,
+                postAnalysisTitle,
+                jobType,
+                industryName,
+                status,
+                createdAt
+        );
     }
 
     private PortfolioStrategy createPortfolioStrategy(

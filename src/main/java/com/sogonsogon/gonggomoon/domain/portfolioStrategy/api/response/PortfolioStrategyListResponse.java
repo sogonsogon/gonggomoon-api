@@ -8,12 +8,14 @@ import java.util.List;
 
 @Builder
 public record PortfolioStrategyListResponse(
-        int totalCount,
+        String nextCursor,
+        boolean hasNext,
         List<PortfolioStrategyListResultItem> contents
 ) {
     public static PortfolioStrategyListResponse from (PortfolioStrategyListResult result) {
         return PortfolioStrategyListResponse.builder()
-                .totalCount(result.totalCount())
+                .nextCursor(result.nextCursor())
+                .hasNext(result.hasNext())
                 .contents(result.contents())
                 .build();
     }

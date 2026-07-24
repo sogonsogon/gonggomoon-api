@@ -5,13 +5,16 @@ import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.JobType;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.error.PortfolioStrategyErrorCode;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
 import java.util.List;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestCookieException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @Slf4j
 @RestControllerAdvice
@@ -115,5 +118,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(errorCode.getStatus())
             .body(BaseResponse.fail(errorCode.getCode(), errorCode.getMessage()));
+    }
+
+    @ExceptionHandler({
+            MissingServletRequestParameterException.class,
+            MethodArgumentTypeMismatchException.class,
+            ConstraintViolationException.class
+    })
+    public ResponseEntity<BaseResponse<?>> handleInvalidRequestParameter(Exception e) {
+        GlobalErrorCode errorCode = GlobalErrorCode.INVALID_INPUT_VALUE;
+
+        log.warn("Invalid request parameter", e);
+
+        return ResponseEntity
+                .status(errorCode.getStatus())
+                .body(BaseResponse.fail(errorCode.getCode(), errorCode.getMessage()));
     }
 }
