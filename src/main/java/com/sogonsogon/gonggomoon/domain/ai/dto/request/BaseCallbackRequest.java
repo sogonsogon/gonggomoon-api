@@ -21,7 +21,8 @@ public record BaseCallbackRequest(
     @NotNull(message = "status는 필수입니다.")
     AiJobStatus status,
 
-    @NotNull(message = "result는 필수입니다.")
+    // 실패(FAILED) 콜백은 result 없이 error만 올 수 있으므로 null을 허용한다.
+    // 성공 콜백의 result 검증은 각 핸들러에서 수행한다.
     JsonNode result,
 
     String error,

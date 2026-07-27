@@ -4,18 +4,19 @@ import com.sogonsogon.gonggomoon.domain.interviewStrategy.domain.InterviewStrate
 import lombok.Builder;
 
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * InterviewStrategy list 객체입니다.
  */
 @Builder
 public record InterviewStrategiesResultItem(
-        Long interviewStrategyId,
+        UUID interviewStrategyId,
         Instant createdAt
 ) {
     public static InterviewStrategiesResultItem from(InterviewStrategy interviewStrategy) {
         return InterviewStrategiesResultItem.builder()
-                .interviewStrategyId(interviewStrategy.getId())
+                .interviewStrategyId(interviewStrategy.getPublicId())
                 .createdAt(interviewStrategy.getCreatedAt())
                 .build();
     }

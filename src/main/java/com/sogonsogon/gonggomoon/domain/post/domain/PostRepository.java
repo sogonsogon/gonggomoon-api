@@ -1,18 +1,23 @@
 package com.sogonsogon.gonggomoon.domain.post.domain;
 
-import com.sogonsogon.gonggomoon.domain.post.dto.response.PostResponse;
-import com.sogonsogon.gonggomoon.domain.post.dto.response.PostsResponse;
-import com.sogonsogon.gonggomoon.domain.portfolioStrategy.domain.JobType;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface PostRepository {
 
-    boolean existsByUrl(String url);
+    Post save(Post newPost);
 
-    Page<PostsResponse> searchPosts(JobType jobType, PostStatus status, String title, Pageable pageable);
+    Optional<Post> findById(Long postId);
 
-    Optional<PostResponse> getPost(Long id);
+    Optional<Post> findByIdAndCreatedBy(Long postId, Long createdBy);
+
+    Optional<Post> findByPublicIdAndCreatedBy(UUID publicId, Long createdBy);
+
+    List<Post> findAllById(Iterable<Long> ids);
+
+    <S extends Post> List<S> saveAll(Iterable<S> entities);
+
+    void delete(Post post);
 }

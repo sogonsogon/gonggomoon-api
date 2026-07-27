@@ -18,10 +18,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.DialectOverride;
+import org.hibernate.dialect.PostgreSQLDialect;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -35,6 +39,15 @@ public class PortfolioStrategy {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Builder.Default
+    @Column(name = "public_id", nullable = false, updatable = false, unique = true)
+    @ColumnDefault("random_uuid()")
+    @DialectOverride.ColumnDefault(
+            dialect = PostgreSQLDialect.class,
+            override = @ColumnDefault("gen_random_uuid()")
+    )
+    private UUID publicId = UUID.randomUUID();
+
     @Column(nullable = false)
     private Long userId;
 
@@ -45,10 +58,16 @@ public class PortfolioStrategy {
     private String resultJson;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column
     private JobType jobType;
 
     private Long industryId;
+
+    @Column(name = "post_analysis_id")
+    private Long postAnalysisId;
+
+    @Column(name = "post_id", nullable = false, updatable = false)
+    private Long postId;
 
     /**
      * 전략 생성 상태
@@ -72,13 +91,16 @@ public class PortfolioStrategy {
      * */
     public static PortfolioStrategy create(
             Long userId,
+            Long postId,
             JobType jobType,
             Long industryId,
+            Long postAnalysisId,
             int selectedExperienceCount,
             Instant now,
             LocalDate generatedDate
     ) {
         ValidationUtils.requireNonNull(userId, PortfolioStrategyErrorCode.USERID_REQUIRED);
+        ValidationUtils.requireNonNull(postId, PortfolioStrategyErrorCode.POST_ID_REQUIRED);
         ValidationUtils.requireNonNull(jobType, PortfolioStrategyErrorCode.JOB_TYPE_REQUIRED);
 
         // 프로그래밍 오류
@@ -87,13 +109,53 @@ public class PortfolioStrategy {
 
         return PortfolioStrategy.builder()
                 .userId(userId)
+                .postId(postId)
                 .jobType(jobType)
                 .industryId(industryId)
+                .postAnalysisId(postAnalysisId)
                 .selectedExperienceCount(selectedExperienceCount)
                 .createdAt(now)
                 .generatedDate(generatedDate)
                 .status(PortfolioStrategyGenerateStatus.PROCESSING)
                 .build();
+    }
+
+    public static PortfolioStrategy createDraft(
+            Long userId,
+            Long postId,
+            Long postAnalysisId,
+            Instant now,
+            LocalDate generatedDate
+    ) {
+        ValidationUtils.requireNonNull(userId, PortfolioStrategyErrorCode.USERID_REQUIRED);
+        ValidationUtils.requireNonNull(postId, PortfolioStrategyErrorCode.POST_ID_REQUIRED);
+
+        // 프로그래밍 오류
+        Objects.requireNonNull(now, "now must not be null");
+        Objects.requireNonNull(generatedDate, "generatedDate must not be null");
+
+        return PortfolioStrategy.builder()
+                .userId(userId)
+                .postId(postId)
+                .postAnalysisId(postAnalysisId)
+                .selectedExperienceCount(0)
+                .createdAt(now)
+                .generatedDate(generatedDate)
+                .status(PortfolioStrategyGenerateStatus.DRAFT)
+                .build();
+    }
+
+    public void startProcessing(int selectedExperienceCount) {
+        if (this.status != PortfolioStrategyGenerateStatus.DRAFT) {
+            throw new BaseException(PortfolioStrategyErrorCode.INVALID_STATUS);
+        }
+
+        if (selectedExperienceCount <= 0) {
+            throw new BaseException(PortfolioStrategyErrorCode.EXPERIENCE_IDS_REQUIRED);
+        }
+
+        this.selectedExperienceCount = selectedExperienceCount;
+        this.status = PortfolioStrategyGenerateStatus.PROCESSING;
     }
 
     public void updateStatus(PortfolioStrategyGenerateStatus status) {

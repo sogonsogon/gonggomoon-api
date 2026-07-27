@@ -8,15 +8,17 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.DialectOverride;
+import org.hibernate.dialect.PostgreSQLDialect;
 
 @Entity
 @Table(name = "extracted_experiences")
@@ -28,6 +30,14 @@ public class ExtractedExperience {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "public_id", nullable = false, updatable = false, unique = true)
+    @ColumnDefault("random_uuid()")
+    @DialectOverride.ColumnDefault(
+        dialect = PostgreSQLDialect.class,
+        override = @ColumnDefault("gen_random_uuid()")
+    )
+    private UUID publicId = UUID.randomUUID();
 
     /**
      * 요청한 유저 ID User 엔티티와 연관관계로 묶을 수도 있지만, 우선 단순 ID 참조로 두면 AI/배치성 도메인에서는 더 가볍게 운영 가능
@@ -65,13 +75,6 @@ public class ExtractedExperience {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    /**
-     * 추출된 경험 목록 jsonb
-     */
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "experiences", columnDefinition = "jsonb")
-    private Experiences experiences;
-
     @Builder
     private ExtractedExperience(
         Long userId,
@@ -92,10 +95,6 @@ public class ExtractedExperience {
             .status(ExtractionStatus.PROCESSING)
             .generatedDate(generatedDate)
             .build();
-    }
-
-    public void updateExperiences(Experiences experiences) {
-        this.experiences = experiences;
     }
 
     public void updateStatus(ExtractionStatus newStatus) {

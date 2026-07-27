@@ -4,7 +4,16 @@ import com.sogonsogon.gonggomoon.domain.auth.infrastructure.security.AccessUser;
 import com.sogonsogon.gonggomoon.domain.user.api.dto.UserReadResponse;
 import com.sogonsogon.gonggomoon.domain.user.application.UserService;
 import com.sogonsogon.gonggomoon.domain.user.domain.User;
+import com.sogonsogon.gonggomoon.global.docs.ErrorResponseExamples;
 import com.sogonsogon.gonggomoon.global.response.BaseResponse;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "사용자", description = "사용자 정보 조회 및 회원 탈퇴 등 사용자 관련 API")
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
@@ -22,6 +32,9 @@ public class UserController {
     @Autowired
     public UserController(UserService userService) {this.userService = userService;}
 
+    @Deprecated
+    @Hidden
+    @Operation(summary = "내 정보 조회", description = "현재 로그인한 사용자의 정보를 조회한다.")
     @GetMapping("/me")
     public ResponseEntity<BaseResponse<UserReadResponse>> getUserInfo(@AuthenticationPrincipal AccessUser user) {
 
@@ -29,6 +42,21 @@ public class UserController {
         return ResponseEntity.ok(BaseResponse.success(UserReadResponse.from(findUser)));
     }
 
+    @Operation(summary = "회원 탈퇴", description = "현재 로그인한 사용자의 계정을 탈퇴 처리한다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "회원 탈퇴 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (액세스 토큰 누락/만료)"),
+            @ApiResponse(responseCode = "404",
+                    description = "사용자를 찾을 수 없음(USER_NOT_FOUND)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.USER_NOT_FOUND))),
+            @ApiResponse(responseCode = "500",
+                    description = "OAuth 연동 해제 실패(AUTH_OAUTH_UNLINK_FAIL)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BaseResponse.class),
+                            examples = @ExampleObject(value = ErrorResponseExamples.AUTH_OAUTH_UNLINK_FAIL)))
+    })
     @DeleteMapping("/me")
     public ResponseEntity<BaseResponse<Void>> withdrawUser(@AuthenticationPrincipal AccessUser user) {
 

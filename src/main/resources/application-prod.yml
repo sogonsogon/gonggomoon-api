@@ -46,12 +46,16 @@ jwt:
   access-token-validity-in-seconds: ${ACCESS_TOKEN_VALIDITY_IN_SECONDS}
   refresh-token-validity-in-seconds: ${REFRESH_TOKEN_VALIDITY_IN_SECONDS}
 
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 app:
   cors:
     allowed-origins:
-      - http://localhost:3000
-      - https://gonggommon.com
-      - http://gonggommon.com
+      - https://gonggomoon.com
     allowed-methods:
       - GET
       - POST
@@ -76,9 +80,9 @@ app:
     storage-type: ${FILE_STORAGE_TYPE} # s3 || gcs
   cookie:
     domain: gonggomoon.com
-    secure: true # 개발 환경에서는 false, 운영 환경에서는 true로 설정하세요.
+    secure: true
     http-only: true
-    same-site: lax # 프론트/백엔드가 같은 localhost면 Lax로 테스트 가능
+    same-site: lax
 
 management:
   endpoints:
@@ -93,6 +97,15 @@ ai:
   server:
     base-url: ${AI_SERVER_URL}
     internal-api-key: ${INTERNAL_API_KEY}
+  callback:
+    # 워커가 결과를 회신할 수 있는, 외부에서 접근 가능한 API 서버 base URL
+    base-url: ${API_CALLBACK_BASE_URL}
+
+gcp:
+  cloud-tasks:
+    project-id: ${GCP_PROJECT_ID}
+    location: ${CLOUD_TASKS_LOCATION}
+    queue: ${CLOUD_TASKS_QUEUE}
 
 strategy:
   portfolio:
@@ -103,3 +116,7 @@ strategy:
 experience:
   extraction:
     weekly-limit-enabled: ${EXPERIENCE_EXTRACTION_WEEKLY_LIMIT_ENABLED}
+
+tavily:
+  base-url: ${TAVILY_BASE_URL}
+  api-key: ${TAVILY_API_KEY}

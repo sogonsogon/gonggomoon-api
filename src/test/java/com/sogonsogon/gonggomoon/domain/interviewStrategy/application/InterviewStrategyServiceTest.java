@@ -31,6 +31,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
@@ -55,6 +56,7 @@ public class InterviewStrategyServiceTest {
     private static final Long USER_ID = 1L;
     private static final Long FILE_ASSET_ID = 10L;
     private static final Long INTERVIEW_STRATEGY_ID = 100L;
+    private static final UUID INTERVIEW_STRATEGY_PUBLIC_ID = UUID.randomUUID();
     private static final Long PORTFOLIO_FILE_ASSET_ID = 200L;
 
     @Nested
@@ -143,7 +145,7 @@ public class InterviewStrategyServiceTest {
                     .request(USER_ID, INTERVIEW_STRATEGY_ID);
 
             assertNotNull(result);
-            assertEquals(INTERVIEW_STRATEGY_ID, result.interviewStrategyId());
+            assertEquals(savedStrategy.getPublicId(), result.interviewStrategyId());
         }
 
         @Test
@@ -184,11 +186,13 @@ public class InterviewStrategyServiceTest {
 
             InterviewStrategy strategy1 = mock(InterviewStrategy.class);
             InterviewStrategy strategy2 = mock(InterviewStrategy.class);
+            UUID strategyPublicId1 = UUID.randomUUID();
+            UUID strategyPublicId2 = UUID.randomUUID();
 
-            when(strategy1.getId()).thenReturn(10L);
+            when(strategy1.getPublicId()).thenReturn(strategyPublicId1);
             when(strategy1.getCreatedAt()).thenReturn(createdAt1);
 
-            when(strategy2.getId()).thenReturn(20L);
+            when(strategy2.getPublicId()).thenReturn(strategyPublicId2);
             when(strategy2.getCreatedAt()).thenReturn(createdAt2);
 
             when(interviewStrategyRepository.findAllByUserIdOrderByCreatedAtDesc(USER_ID))
@@ -204,11 +208,11 @@ public class InterviewStrategyServiceTest {
             assertEquals(2, result.contents().size());
 
             InterviewStrategiesResultItem first = result.contents().get(0);
-            assertEquals(10L, first.interviewStrategyId());
+            assertEquals(strategyPublicId1, first.interviewStrategyId());
             assertEquals(createdAt1, first.createdAt());
 
             InterviewStrategiesResultItem second = result.contents().get(1);
-            assertEquals(20L, second.interviewStrategyId());
+            assertEquals(strategyPublicId2, second.interviewStrategyId());
             assertEquals(createdAt2, second.createdAt());
 
             verify(interviewStrategyRepository, times(1))
@@ -258,7 +262,7 @@ public class InterviewStrategyServiceTest {
             when(question2.getQuestionLevel()).thenReturn(QuestionLevel.HIGH);
 
             InterviewStrategy interviewStrategy = mock(InterviewStrategy.class);
-            when(interviewStrategy.getId()).thenReturn(INTERVIEW_STRATEGY_ID);
+            when(interviewStrategy.getPublicId()).thenReturn(INTERVIEW_STRATEGY_PUBLIC_ID);
             when(interviewStrategy.getFileAssetId()).thenReturn(PORTFOLIO_FILE_ASSET_ID);
             when(interviewStrategy.getCreatedAt()).thenReturn(createdAt);
             when(interviewStrategy.getQuestions()).thenReturn(List.of(question1, question2));
@@ -266,7 +270,7 @@ public class InterviewStrategyServiceTest {
             FileAsset fileAsset = mock(FileAsset.class);
             when(fileAsset.getOriginalFileName()).thenReturn("backend_portfolio.pdf");
 
-            when(interviewStrategyRepository.findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID))
+            when(interviewStrategyRepository.findByPublicIdAndUserId(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID))
                     .thenReturn(Optional.of(interviewStrategy));
             when(fileAssetRepository.findById(PORTFOLIO_FILE_ASSET_ID))
                     .thenReturn(Optional.of(fileAsset));
@@ -274,11 +278,11 @@ public class InterviewStrategyServiceTest {
             interviewStrategy.updateStatusReady();
             // when
             InterviewStrategyDetailResult result =
-                    interviewStrategyService.getInterviewStrategyDetail(INTERVIEW_STRATEGY_ID, USER_ID);
+                    interviewStrategyService.getInterviewStrategyDetail(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID);
 
             // then
             assertNotNull(result);
-            assertEquals(INTERVIEW_STRATEGY_ID, result.interviewStrategyId());
+            assertEquals(INTERVIEW_STRATEGY_PUBLIC_ID, result.interviewStrategyId());
             assertEquals("backend_portfolio.pdf", result.basePortfolio());
             assertEquals(createdAt, result.createdAt());
             assertEquals(2, result.questionTotalCount());
@@ -295,7 +299,7 @@ public class InterviewStrategyServiceTest {
             assertEquals(QuestionLevel.HIGH, second.questionLevel());
 
             verify(interviewStrategyRepository, times(1))
-                    .findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID);
+                    .findByPublicIdAndUserId(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID);
             verify(fileAssetRepository, times(1))
                     .findById(PORTFOLIO_FILE_ASSET_ID);
         }
@@ -304,20 +308,20 @@ public class InterviewStrategyServiceTest {
         @DisplayName("존재하지 않는 면접 전략 질문 세트면 예외가 발생한다")
         void getInterviewStrategyDetail_notFound() {
             // given
-            when(interviewStrategyRepository.findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID))
+            when(interviewStrategyRepository.findByPublicIdAndUserId(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID))
                     .thenReturn(Optional.empty());
 
             // when
             BaseException exception = assertThrows(
                     BaseException.class,
-                    () -> interviewStrategyService.getInterviewStrategyDetail(INTERVIEW_STRATEGY_ID, USER_ID)
+                    () -> interviewStrategyService.getInterviewStrategyDetail(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID)
             );
 
             // then
             assertEquals(InterviewStrategyErrorCode.NOT_FOUND, exception.getErrorCode());
 
             verify(interviewStrategyRepository, times(1))
-                    .findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID);
+                    .findByPublicIdAndUserId(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID);
             verify(fileAssetRepository, never()).findById(anyLong());
         }
 
@@ -332,7 +336,7 @@ public class InterviewStrategyServiceTest {
             when(interviewStrategy.getQuestions()).thenReturn(questions);
             when(interviewStrategy.getFileAssetId()).thenReturn(PORTFOLIO_FILE_ASSET_ID);
 
-            when(interviewStrategyRepository.findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID))
+            when(interviewStrategyRepository.findByPublicIdAndUserId(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID))
                     .thenReturn(Optional.of(interviewStrategy));
             when(fileAssetRepository.findById(PORTFOLIO_FILE_ASSET_ID))
                     .thenReturn(Optional.empty());
@@ -340,14 +344,14 @@ public class InterviewStrategyServiceTest {
             // when
             BaseException exception = assertThrows(
                     BaseException.class,
-                    () -> interviewStrategyService.getInterviewStrategyDetail(INTERVIEW_STRATEGY_ID, USER_ID)
+                    () -> interviewStrategyService.getInterviewStrategyDetail(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID)
             );
 
             // then
             assertEquals(InterviewStrategyErrorCode.FILE_ASSET_NOT_FOUND, exception.getErrorCode());
 
             verify(interviewStrategyRepository, times(1))
-                    .findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID);
+                    .findByPublicIdAndUserId(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID);
             verify(fileAssetRepository, times(1))
                     .findById(PORTFOLIO_FILE_ASSET_ID);
         }
@@ -362,15 +366,15 @@ public class InterviewStrategyServiceTest {
             // given
             InterviewStrategy interviewStrategy = mock(InterviewStrategy.class);
 
-            when(interviewStrategyRepository.findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID))
+            when(interviewStrategyRepository.findByPublicIdAndUserId(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID))
                     .thenReturn(Optional.of(interviewStrategy));
 
             // when
-            interviewStrategyService.deleteInterviewStrategy(INTERVIEW_STRATEGY_ID, USER_ID);
+            interviewStrategyService.deleteInterviewStrategy(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID);
 
             // then
             verify(interviewStrategyRepository, times(1))
-                    .findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID);
+                    .findByPublicIdAndUserId(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID);
             verify(interviewStrategyRepository, times(1))
                     .delete(interviewStrategy);
         }
@@ -379,20 +383,20 @@ public class InterviewStrategyServiceTest {
         @DisplayName("존재하지 않는 면접 전략 질문 세트면 예외가 발생한다")
         void deleteInterviewStrategy_notFound() {
             // given
-            when(interviewStrategyRepository.findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID))
+            when(interviewStrategyRepository.findByPublicIdAndUserId(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID))
                     .thenReturn(Optional.empty());
 
             // when
             BaseException exception = assertThrows(
                     BaseException.class,
-                    () -> interviewStrategyService.deleteInterviewStrategy(INTERVIEW_STRATEGY_ID, USER_ID)
+                    () -> interviewStrategyService.deleteInterviewStrategy(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID)
             );
 
             // then
             assertEquals(InterviewStrategyErrorCode.NOT_FOUND, exception.getErrorCode());
 
             verify(interviewStrategyRepository, times(1))
-                    .findByIdAndUserId(INTERVIEW_STRATEGY_ID, USER_ID);
+                    .findByPublicIdAndUserId(INTERVIEW_STRATEGY_PUBLIC_ID, USER_ID);
             verify(interviewStrategyRepository, never())
                     .delete(any(InterviewStrategy.class));
         }

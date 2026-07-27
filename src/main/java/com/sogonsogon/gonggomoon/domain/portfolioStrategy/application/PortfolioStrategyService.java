@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sogonsogon.gonggomoon.domain.ai.application.AiUsagePolicyService;
 import com.sogonsogon.gonggomoon.domain.ai.domain.AiUsageType;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysis;
+import com.sogonsogon.gonggomoon.domain.ai.domain.PostAnalysisRepository;
+import com.sogonsogon.gonggomoon.domain.ai.error.PostAnalysisErrorCode;
 import com.sogonsogon.gonggomoon.domain.experience.domain.Experience;
 import com.sogonsogon.gonggomoon.domain.experience.domain.ExperienceRepository;
 import com.sogonsogon.gonggomoon.domain.industry.domain.Industry;
@@ -11,6 +14,7 @@ import com.sogonsogon.gonggomoon.domain.industry.domain.IndustryRepository;
 import com.sogonsogon.gonggomoon.domain.industry.error.IndustryErrorCode;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.api.request.GeneratePortfolioStrategyRequest;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.GeneratePortfolioStrategyResult;
+import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyDetailQueryResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyDetailResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResult;
 import com.sogonsogon.gonggomoon.domain.portfolioStrategy.application.result.PortfolioStrategyListResultItem;
@@ -30,6 +34,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +42,7 @@ public class PortfolioStrategyService {
 
     private final PortfolioStrategyRepository portfolioStrategyRepository;
     private final ExperienceRepository experienceRepository;
+    private final PostAnalysisRepository postAnalysisRepository;
     private final IndustryRepository industryRepository;
     private final PortfolioStrategyContentGenerator portfolioStrategyContentGenerator;
     private final ObjectMapper objectMapper;
@@ -60,19 +66,23 @@ public class PortfolioStrategyService {
         }
 
         /**
-         * now : 기준 시각 1개
-         * today : 그 시각에서 파생된 날짜
-         */
-        Instant now = Instant.now();
-        LocalDate today = now.atZone(KST).toLocalDate();
-
-        /**
          * 경험 목록 조회
          */
-        List<Experience> experiences = experienceRepository.findAllByIdInAndUserId(req.experienceIds(), userId);
+        List<Experience> experiences = experienceRepository.findAllByPublicIdInAndUserId(req.experienceIds(), userId);
         if (experiences.size() != req.experienceIds().size()) {
             throw new BaseException(PortfolioStrategyErrorCode.REQUESTED_EXPERIENCE_NOT_FOUND);
         }
+
+        PostAnalysis postAnalysis = postAnalysisRepository.findByPublicId(req.postAnalysisId())
+                .orElseThrow(() -> new BaseException(PostAnalysisErrorCode.NOT_FOUND));
+
+        PortfolioStrategy draftStrategy = portfolioStrategyRepository
+                .findFirstByUserIdAndPostAnalysisIdAndStatusOrderByCreatedAtDesc(
+                        userId,
+                        postAnalysis.getId(),
+                        PortfolioStrategyGenerateStatus.DRAFT
+                )
+                .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
 
         /**
          * 이번 주 성공한 전략 생성 횟수를 검증
@@ -81,36 +91,28 @@ public class PortfolioStrategyService {
             throw new BaseException(PortfolioStrategyErrorCode.WEEKLY_LIMIT_EXCEEDED);
         }
 
-        /**
-         * 포트폴리오 전략 엔티티 생성
-         * 기본 값으로 생성하는 이유는 AI가 포트폴리오 전략을 생성하고 난 후,
-         * 어떤 portfolio_strategy에 그 값을 저장해야하는지 명시
-         */
-        PortfolioStrategy strategy = PortfolioStrategy.create(
-                userId,
-                req.jobType(),
-                req.industryId(),
-                experiences.size(),
-                now,
-                today);
-
-        PortfolioStrategy draftStrategy = portfolioStrategyRepository.save(strategy);
-
-        /**
-         * 산업 조회 및 산업이름 반환
-         * 산업을 조회하는 이유는 AI에게 포트폴리오 전략을 생성할 때, 값으로 넣어주기 위함
-         */
-        String industryName = resolveIndustryName(draftStrategy, req.industryId());
+        draftStrategy.startProcessing(experiences.size());
+        portfolioStrategyRepository.save(draftStrategy);
 
         // AI Service에 포폴 전략 생성 요청
         portfolioStrategyContentGenerator.request(
                 userId,
                 draftStrategy.getId(),
                 experiences,
-                req.jobType().name(),
-                industryName);
+                draftStrategy.getPostAnalysisId());
 
-        return GeneratePortfolioStrategyResult.from(draftStrategy.getId());
+        return GeneratePortfolioStrategyResult.from(draftStrategy.getPublicId());
+    }
+
+    @Transactional
+    public Long createDraft(Long userId, Long postId, Long postAnalysisId) {
+        Instant now = Instant.now();
+        LocalDate today = now.atZone(KST).toLocalDate();
+
+        PortfolioStrategy draft = PortfolioStrategy.createDraft(userId, postId, postAnalysisId, now, today);
+        PortfolioStrategy savedDraft = portfolioStrategyRepository.save(draft);
+
+        return savedDraft.getId();
     }
 
     /**
@@ -125,11 +127,12 @@ public class PortfolioStrategyService {
     /**
      * 포트폴리오 전략 상세 조회 서비스
      */
-    public PortfolioStrategyDetailResult getPortfolioStrategyDetail(Long strategyId, Long userId) {
-        PortfolioStrategy portfolioStrategy = portfolioStrategyRepository.findByIdAndUserId(strategyId, userId)
-                .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
+    public PortfolioStrategyDetailResult getPortfolioStrategyDetail(UUID strategyId, Long userId) {
+        PortfolioStrategyDetailQueryResult queryResult = getPortfolioStrategyDetailQueryResult(strategyId, userId);
+        PortfolioStrategy portfolioStrategy = queryResult.portfolioStrategy();
 
-        if (portfolioStrategy.getStatus() == PortfolioStrategyGenerateStatus.PROCESSING) {
+        if (portfolioStrategy.getStatus() == PortfolioStrategyGenerateStatus.DRAFT ||
+                portfolioStrategy.getStatus() == PortfolioStrategyGenerateStatus.PROCESSING) {
             throw new BaseException(PortfolioStrategyErrorCode.RESULT_NOT_READY);
         }
 
@@ -153,14 +156,30 @@ public class PortfolioStrategyService {
 
         String industryName = resolveIndustryName(portfolioStrategy, industryId);
 
-        return PortfolioStrategyDetailResult.of(portfolioStrategy, content, industryName);
+        return PortfolioStrategyDetailResult.of(
+                portfolioStrategy,
+                queryResult.postId(),
+                queryResult.postAnalysisId(),
+                queryResult.postAnalysisTitle(),
+                content,
+                industryName
+        );
+    }
+
+    /**
+     * 상세 조회에 필요한 포트폴리오 전략과 채용 공고 분석 제목을 함께 조회한다.
+     */
+    private PortfolioStrategyDetailQueryResult getPortfolioStrategyDetailQueryResult(UUID strategyId, Long userId) {
+        return portfolioStrategyRepository
+                .findPortfolioStrategyDetailByPublicIdAndUserId(strategyId, userId)
+                .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
     }
 
     /**
      * 포트폴리오 삭제 서비스
      */
-    public void deletePortfolioStrategy(Long strategyId, Long userId) {
-        PortfolioStrategy portfolioStrategy = portfolioStrategyRepository.findByIdAndUserId(strategyId, userId)
+    public void deletePortfolioStrategy(UUID strategyId, Long userId) {
+        PortfolioStrategy portfolioStrategy = portfolioStrategyRepository.findByPublicIdAndUserId(strategyId, userId)
                 .orElseThrow(() -> new BaseException(PortfolioStrategyErrorCode.NOT_FOUND));
 
         portfolioStrategyRepository.delete(portfolioStrategy);

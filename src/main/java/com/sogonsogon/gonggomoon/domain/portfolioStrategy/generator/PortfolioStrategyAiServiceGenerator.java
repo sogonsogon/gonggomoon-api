@@ -14,7 +14,12 @@ public class PortfolioStrategyAiServiceGenerator implements PortfolioStrategyCon
     private final AiService aiService;
 
     @Override
-    public void request(Long userId, Long portfolioStrategyId, List<Experience> experiences, String positionType, String industryType) {
-        aiService.requestPortfolioStrategyGeneration(userId, portfolioStrategyId, experiences, positionType, industryType);
+    public void request(
+            Long userId,
+            Long portfolioStrategyId,
+            List<Experience> experiences,
+            Long postAnalysisId
+    ) {
+        aiService.requestPortfolioStrategyGeneration(userId, portfolioStrategyId, experiences, postAnalysisId);
     }
 }

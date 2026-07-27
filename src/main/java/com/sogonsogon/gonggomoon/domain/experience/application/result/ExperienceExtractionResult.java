@@ -1,15 +1,15 @@
 package com.sogonsogon.gonggomoon.domain.experience.application.result;
 
 import lombok.Builder;
-import java.util.List;
+import java.util.UUID;
 
 @Builder
 public record ExperienceExtractionResult(
-        List<Long> extractedExperienceIds
+        UUID extractionId
 ) {
-    public static ExperienceExtractionResult from (List<Long> extractedExperienceIds) {
+    public static ExperienceExtractionResult from(UUID extractionId) {
         return ExperienceExtractionResult.builder()
-                .extractedExperienceIds(extractedExperienceIds)
+                .extractionId(extractionId)
                 .build();
     }
 }

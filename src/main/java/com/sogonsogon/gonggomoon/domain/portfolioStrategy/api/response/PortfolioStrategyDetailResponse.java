@@ -9,10 +9,14 @@ import lombok.Builder;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Builder
 public record PortfolioStrategyDetailResponse(
-        Long strategyId,
+        UUID strategyId,
+        UUID postId,
+        UUID postAnalysisId,
+        String postAnalysisTitle,
         JobType jobType,
         String industryName,
         int selectedExperienceCount,
@@ -28,6 +32,9 @@ public record PortfolioStrategyDetailResponse(
     public static PortfolioStrategyDetailResponse from (PortfolioStrategyDetailResult result) {
         return PortfolioStrategyDetailResponse.builder()
                 .strategyId(result.strategyId())
+                .postId(result.postId())
+                .postAnalysisId(result.postAnalysisId())
+                .postAnalysisTitle(result.postAnalysisTitle())
                 .jobType(result.jobType())
                 .industryName(result.industryName())
                 .selectedExperienceCount(result.selectedExperienceCount())
