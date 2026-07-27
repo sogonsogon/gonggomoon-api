@@ -1,77 +1,77 @@
-name: CI/CD Pipeline
+# name: CI/CD Pipeline
 
-on:
-  push:
-    branches: [ "main" ] # main 브랜치에 코드가 푸시되면 실행
+# on:
+#   push:
+#     branches: [ "main" ] # main 브랜치에 코드가 푸시되면 실행
 
-permissions:
-  contents: read
-  id-token: write
-  packages: write
-env:
-  # 소문자로 작성해야 에러가 안 납니다.
-  DOCKER_IMAGE: ghcr.io/${{ github.repository_owner }}/gonggomoon-api
+# permissions:
+#   contents: read
+#   id-token: write
+#   packages: write
+# env:
+#   # 소문자로 작성해야 에러가 안 납니다.
+#   DOCKER_IMAGE: ghcr.io/${{ github.repository_owner }}/gonggomoon-api
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest # GitHub의 강력한 서버 사용
+# jobs:
+#   build-and-deploy:
+#     runs-on: ubuntu-latest # GitHub의 강력한 서버 사용
 
-    steps:
-      # 1. 내 코드 가져오기
-      - uses: actions/checkout@v3
+#     steps:
+#       # 1. 내 코드 가져오기
+#       - uses: actions/checkout@v3
 
-      # 2. JDK 17 세팅
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
+#       # 2. JDK 17 세팅
+#       - name: Set up JDK 17
+#         uses: actions/setup-java@v3
+#         with:
+#           java-version: '17'
+#           distribution: 'temurin'
 
-      # 3. Spring Boot 빌드 (테스트 코드는 생략하여 속도 향상)
-      - name: Build with Gradle
-        run: |
-          chmod +x ./gradlew
-          ./gradlew clean build -x test
+#       # 3. Spring Boot 빌드 (테스트 코드는 생략하여 속도 향상)
+#       - name: Build with Gradle
+#         run: |
+#           chmod +x ./gradlew
+#           ./gradlew clean build -x test
 
-      # 4. Docker 이미지 빌드
-      - name: Build Docker Image
-        run: docker build -t ${{ env.DOCKER_IMAGE }}:latest .
+#       # 4. Docker 이미지 빌드
+#       - name: Build Docker Image
+#         run: docker build -t ${{ env.DOCKER_IMAGE }}:latest .
 
-      # 5. GHCR 로그인 (GitHub 기본 제공 토큰 사용)
-      - name: Login to GHCR
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+#       # 5. GHCR 로그인 (GitHub 기본 제공 토큰 사용)
+#       - name: Login to GHCR
+#         uses: docker/login-action@v2
+#         with:
+#           registry: ghcr.io
+#           username: ${{ github.repository_owner }}
+#           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 6. 만들어진 도커 이미지를 GHCR에 업로드
-      - name: Push Docker Image
-        run: docker push ${{ env.DOCKER_IMAGE }}:latest
+#       # 6. 만들어진 도커 이미지를 GHCR에 업로드
+#       - name: Push Docker Image
+#         run: docker push ${{ env.DOCKER_IMAGE }}:latest
 
-      # 7. GCP VM에 접속해서 배포 명령 실행
-      - name: Deploy to GCP VM
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.GCP_VM_IP }}
-          username: ${{ secrets.GCP_VM_USER }}
-          key: ${{ secrets.GCP_VM_SSH_KEY }}
-          script: |
-            # 1) VM 내부에서 GHCR 로그인
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+#       # 7. GCP VM에 접속해서 배포 명령 실행
+#       - name: Deploy to GCP VM
+#         uses: appleboy/ssh-action@master
+#         with:
+#           host: ${{ secrets.GCP_VM_IP }}
+#           username: ${{ secrets.GCP_VM_USER }}
+#           key: ${{ secrets.GCP_VM_SSH_KEY }}
+#           script: |
+#             # 1) VM 내부에서 GHCR 로그인
+#             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
             
-            # 2) 방금 올린 최신 이미지 다운로드
-            docker pull ${{ env.DOCKER_IMAGE }}:latest
+#             # 2) 방금 올린 최신 이미지 다운로드
+#             docker pull ${{ env.DOCKER_IMAGE }}:latest
             
-            # 3) 기존에 돌고 있던 컨테이너 멈추고 삭제 (없으면 무시)
-            docker stop api-server || true
-            docker rm api-server || true
+#             # 3) 기존에 돌고 있던 컨테이너 멈추고 삭제 (없으면 무시)
+#             docker stop api-server || true
+#             docker rm api-server || true
             
-            # 4) 새 컨테이너 실행 (여기가 수정된 부분입니다!)
-            docker run -d --name api-server -p 8080:8080 \
-              --env-file /home/${{ secrets.GCP_VM_USER }}/.env \
-              -e "SPRING_PROFILES_ACTIVE=prod" \
-              ${{ env.DOCKER_IMAGE }}:latest
+#             # 4) 새 컨테이너 실행 (여기가 수정된 부분입니다!)
+#             docker run -d --name api-server -p 8080:8080 \
+#               --env-file /home/${{ secrets.GCP_VM_USER }}/.env \
+#               -e "SPRING_PROFILES_ACTIVE=prod" \
+#               ${{ env.DOCKER_IMAGE }}:latest
             
-            # 5) 용량 확보를 위해 안 쓰는 옛날 이미지 삭제
-            docker image prune -f
+#             # 5) 용량 확보를 위해 안 쓰는 옛날 이미지 삭제
+#             docker image prune -f
