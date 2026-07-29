@@ -14,7 +14,6 @@ import com.sogonsogon.gonggomoon.domain.post.domain.PostRepository;
 import com.sogonsogon.gonggomoon.domain.post.dto.request.PostAnalysisRequest;
 import com.sogonsogon.gonggomoon.domain.post.dto.response.PostAnalysisResponse;
 import com.sogonsogon.gonggomoon.domain.post.dto.response.PostResponse;
-import com.sogonsogon.gonggomoon.domain.post.dto.response.TavilyExtractResponse;
 import com.sogonsogon.gonggomoon.domain.post.error.PostErrorCode;
 import com.sogonsogon.gonggomoon.global.error.BaseException;
 import com.sogonsogon.gonggomoon.global.post.InMemoryMultipartFile;
@@ -34,9 +33,9 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostAnalysisRepository postAnalysisRepository;
-    private final TavilyClient tavilyClient;
     private final AiService aiService;
     private final FileAssetService fileAssetService;
+    private final PostContentExtractionService postContentExtractionService;
     private final AiUsagePolicyService aiUsagePolicyService;
     private final PortfolioStrategyService portfolioStrategyService;
 
@@ -48,14 +47,15 @@ public class PostService {
                        TavilyClient tavilyClient,
                        AiService aiService,
                        FileAssetService fileAssetService,
+                       PostContentExtractionService postContentExtractionService,
                        AiUsagePolicyService aiUsagePolicyService,
                        PortfolioStrategyService portfolioStrategyService) {
         this.postRepository = postRepository;
         this.postAnalysisRepository = postAnalysisRepository;
-        this.tavilyClient = tavilyClient;
         this.aiService = aiService;
         this.fileAssetService = fileAssetService;
         this.aiUsagePolicyService = aiUsagePolicyService;
+        this.postContentExtractionService = postContentExtractionService;
         this.portfolioStrategyService = portfolioStrategyService;
     }
 
@@ -76,20 +76,20 @@ public class PostService {
             return PostAnalysisResponse.from(cachedPost);
         }
 
-        String rawContent;
+        String rawContent = postContentExtractionService.extract(request.postUrl());
 
         //TODO 77-96 주간 제한 추가 시 try-catch 문 2개 추가 해야함
-        TavilyExtractResponse response = tavilyClient.extract(request.postUrl());
-        List<TavilyExtractResponse.Result> results = response.results();
+//        TavilyExtractResponse response = tavilyClient.extract(request.postUrl());
+//        List<TavilyExtractResponse.Result> results = response.results();
 
         //TODO 실패시 처리 로직
-        if (results == null || results.isEmpty()){
-            //TODO 에러 코드 확인
-            log.warn("Tavily 추출 실패 url={}, failedResults={}", request.postUrl(), response.failedResults());
-            throw new BaseException(PostErrorCode.EXTRACTION_FAILED);
-        }
+//        if (results == null || results.isEmpty()){
+//            //TODO 에러 코드 확인
+//            log.warn("Tavily 추출 실패 url={}, failedResults={}", request.postUrl(), response.failedResults());
+//            throw new BaseException(PostErrorCode.EXTRACTION_FAILED);
+//        }
 
-        rawContent = results.get(0).rawContent();
+//        rawContent = results.get(0).rawContent();
 
         Long fileAssetId;
 
