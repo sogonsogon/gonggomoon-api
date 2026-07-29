@@ -29,7 +29,7 @@ public class TavilyClient {
                 List.of(url),
                 "advanced",
                 false,
-                "text"
+                "markdown"
         );
 
         return restClient.post()
